@@ -447,9 +447,13 @@ function _fixStudent(st){
 
 window.addEventListener('DOMContentLoaded', async ()=>{
   try {
-    const [sSnap, pwSnap] = await Promise.all([
-      _db.ref('heum/students').get(),
-      _db.ref('heum/config/teacher_pw').get()
+    const _timeout = new Promise((_,reject) => setTimeout(()=>reject(new Error('timeout')), 5000));
+    const [sSnap, pwSnap] = await Promise.race([
+      Promise.all([
+        _db.ref('heum/students').get(),
+        _db.ref('heum/config/teacher_pw').get()
+      ]),
+      _timeout
     ]);
 
     if (sSnap.exists()) {
