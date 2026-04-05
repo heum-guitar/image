@@ -355,7 +355,7 @@
   <div class="pw-dots" id="spw-dots"></div>
   <div class="numpad" id="spw-pad"></div>
   <p class="err-msg mt12" id="spw-err"></p>
-  <button class="btn-ghost mt12 small" onclick="goScreen('sc-birthdate')">← 돌아가기</button>
+  <button class="btn-ghost mt12 small" onclick="goScreen('sc-student-select')">← 돌아가기</button>
 </div>
 
 <!-- 비밀번호 입력 -->
@@ -406,6 +406,22 @@ const _db = firebase.database();
 // ── 데이터 캐시 ───────────────────────────────────────────────
 let _studentsCache = null;
 let _teacherPwCache = null;
+let _studentPwCache = {};
+
+// 학생 비밀번호 헬퍼 (Firebase + localStorage 이중 저장)
+function getStudentPw(id) {
+  return _studentPwCache[id] || localStorage.getItem(`heum_pw_${id}`) || null;
+}
+function saveStudentPw(id, pw) {
+  _studentPwCache[id] = pw;
+  localStorage.setItem(`heum_pw_${id}`, pw);
+  _db.ref('heum/student_pw/' + id).set(pw).catch(e=>console.error('학생 PW 저장 오류:', e));
+}
+function deleteStudentPw(id) {
+  delete _studentPwCache[id];
+  localStorage.removeItem(`heum_pw_${id}`);
+  _db.ref('heum/student_pw/' + id).remove().catch(e=>console.error('학생 PW 삭제 오류:', e));
+}
 
 // ── 데이터 ─────────────────────────────────────────────────
 const STUDENTS_DEFAULT = [
@@ -454,10 +470,11 @@ function _fixStudent(st){
 window.addEventListener('DOMContentLoaded', async ()=>{
   try {
     const _timeout = new Promise((_,reject) => setTimeout(()=>reject(new Error('timeout')), 5000));
-    const [sSnap, pwSnap] = await Promise.race([
+    const [sSnap, pwSnap, spwSnap] = await Promise.race([
       Promise.all([
         _db.ref('heum/students').get(),
-        _db.ref('heum/config/teacher_pw').get()
+        _db.ref('heum/config/teacher_pw').get(),
+        _db.ref('heum/student_pw').get()
       ]),
       _timeout
     ]);
@@ -475,6 +492,8 @@ window.addEventListener('DOMContentLoaded', async ()=>{
     _teacherPwCache = pwSnap.exists() ? pwSnap.val() : TEACHER_PW_DEFAULT;
     if (!pwSnap.exists()) saveTeacherPw(TEACHER_PW_DEFAULT);
 
+    _studentPwCache = spwSnap.exists() ? (spwSnap.val() || {}) : {};
+
     // 실시간 리스너: 강사가 데이터를 수정하면 학생 앱에도 즉시 반영
     _db.ref('heum/students').on('value', snap=>{
       if(!snap.exists())return;
@@ -484,6 +503,9 @@ window.addEventListener('DOMContentLoaded', async ()=>{
     });
     _db.ref('heum/config/teacher_pw').on('value', snap=>{
       if(snap.exists()) _teacherPwCache = snap.val();
+    });
+    _db.ref('heum/student_pw').on('value', snap=>{
+      _studentPwCache = snap.exists() ? (snap.val() || {}) : {};
     });
 
   } catch(e) {
@@ -639,7 +661,7 @@ function confirmDelete(id,name) {
 }
 function deleteStudent(id,name) {
   saveStudents(loadStudents().filter(s=>s.id!==id));
-  localStorage.removeItem(`heum_pw_${id}`); renderInfoScreen();
+  deleteStudentPw(id); renderInfoScreen();
 }
 
 // ── 학생 상세 (강사) ─────────────────────────────────────
@@ -1009,7 +1031,7 @@ function submitStudentLogin() {
     else { localStorage.removeItem('heum_autologin_id'); }
   } catch(e) {}
   curStudent = s;
-  const saved = localStorage.getItem(`heum_pw_${s.id}`);
+  const saved = getStudentPw(s.id);
   if (!saved) { startSetPw(); } else { startEnterPw(); }
 }
 function resetStudentLogin() {
@@ -1039,14 +1061,14 @@ function onSetPw(pin) {
       showErr('spw-err','비밀번호가 일치하지 않습니다. 처음부터 다시 설정하세요.'); setPwStep=1; setPwFirst='';
       document.getElementById('spw-sub').innerHTML='사용할 비밀번호를 입력하세요<br><span style="font-size:11px;color:var(--text3);">숫자 4자리</span>';
       buildPad('spw-pad','spw-dots',4,onSetPw,'spw-err');
-    } else { localStorage.setItem(`heum_pw_${curStudent.id}`,pin); enterStudent(); }
+    } else { saveStudentPw(curStudent.id, pin); enterStudent(); }
   }
 }
 function startEnterPw() {
   document.getElementById('epw-name').textContent=curStudent.name+' 레슨생';
   document.getElementById('epw-err').textContent='';
   function handleStudentPin(pin) {
-    if (pin===localStorage.getItem(`heum_pw_${curStudent.id}`)) { enterStudent(); }
+    if (pin===getStudentPw(curStudent.id)) { enterStudent(); }
     else { showErr('epw-err','비밀번호가 틀렸습니다'); resetPad('epw-pad','epw-dots',4,handleStudentPin,'epw-err'); }
   }
   buildPad('epw-pad','epw-dots',4,handleStudentPin,'epw-err');
@@ -1177,7 +1199,7 @@ function exportData() {
     exported_at: new Date().toISOString()
   };
   loadStudents().forEach(s => {
-    const pw = localStorage.getItem(`heum_pw_${s.id}`);
+    const pw = _studentPwCache[s.id] || localStorage.getItem(`heum_pw_${s.id}`);
     if (pw) data[`pw_${s.id}`] = pw;
   });
   document.getElementById('export-text').value = JSON.stringify(data, null, 2);
@@ -1208,7 +1230,7 @@ function submitImportText() {
     saveStudents(data.students);
     if (data.pw_teacher) saveTeacherPw(data.pw_teacher);
     data.students.forEach(s => {
-      if (data[`pw_${s.id}`]) localStorage.setItem(`heum_pw_${s.id}`, data[`pw_${s.id}`]);
+      if (data[`pw_${s.id}`]) saveStudentPw(s.id, data[`pw_${s.id}`]);
     });
     document.getElementById('import-modal').style.display = 'none';
     alert('데이터를 성공적으로 가져왔습니다');
