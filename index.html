@@ -393,7 +393,7 @@
 </div>
 
 <script>
-// ── Firebase 초기화 ────────────────────────────────────────
+// ── Firebase 설정 ──────────────────────────────────────────
 const firebaseConfig = {
   apiKey: "AIzaSyDMOVRBNURel5X_vOTGRQ8asiyTsREaLtc",
   authDomain: "guitar-lasson-app.firebaseapp.com",
@@ -402,8 +402,8 @@ const firebaseConfig = {
   messagingSenderId: "865808961682",
   appId: "1:865808961682:web:991066f4be72549107164b"
 };
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+
+let db = null;
 
 // ── 인메모리 캐시 ──────────────────────────────────────────
 let _students = null;
@@ -473,6 +473,12 @@ function nextId(arr) { return arr.length ? Math.max(...arr.map(s=>s.id))+1 : 1; 
 
 // ── 앱 시작 ────────────────────────────────────────────────
 window.addEventListener('load', async () => {
+  if (typeof firebase === 'undefined') {
+    document.getElementById('loading-screen').innerHTML = '<p style="color:#c45c4a;font-size:13px;text-align:center;padding:20px;">Firebase를 불러오지 못했습니다.<br>인터넷 연결을 확인하고 새로고침 하세요.</p>';
+    return;
+  }
+  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
   await initData();
   document.getElementById('loading-screen').style.display = 'none';
   goScreen('sc-main');
