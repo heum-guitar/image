@@ -180,12 +180,20 @@
   .info-row { display:flex; align-items:center; gap:10px; padding:12px 0; border-bottom:0.5px solid var(--border); }
   .info-row:last-child { border-bottom:none; }
   .info-name { font-size:14px; font-weight:500; min-width:56px; }
-  .info-date { flex:1; background:var(--surface3); border:0.5px solid var(--border2); border-radius:10px; color:var(--text); font-size:13px; padding:8px 12px; outline:none; }
-  .info-date:focus { border-color:var(--gold); }
   .save-btn { background:var(--gold); border:none; color:#111; font-size:12px; font-weight:500; padding:8px 14px; border-radius:8px; flex-shrink:0; }
   .badge-warn { font-size:10px; padding:3px 8px; border-radius:20px; background:rgba(196,92,74,0.15); color:var(--red); }
   .badge-ok  { font-size:10px; padding:3px 8px; border-radius:20px; background:rgba(90,154,106,0.15); color:var(--green); }
-  .info-name-edit { background:transparent; border:none; border-bottom:1.5px solid var(--gold); color:var(--text); font-size:14px; font-weight:500; padding:2px 4px; outline:none; width:auto; min-width:60px; max-width:120px; border-radius:0; }
+  .info-student-block { border-bottom:0.5px solid var(--border); }
+  .info-student-block:last-child { border-bottom:none; }
+  /* Horizontal student info grid */
+  .stu-info-grid { display:grid; grid-template-columns:1fr 1.1fr 1fr 0.7fr; gap:4px; padding:10px 2px; }
+  .stu-info-col { display:flex; flex-direction:column; gap:5px; min-width:0; }
+  .stu-info-key { font-size:10px; color:var(--text3); letter-spacing:0.03em; padding-left:6px; }
+  .stu-info-val { font-size:13px; color:var(--text); cursor:pointer; padding:5px 7px; border-radius:7px; transition:background 0.12s,color 0.12s; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .stu-info-val:hover { background:var(--surface3); color:var(--gold); }
+  .stu-info-val.placeholder { color:var(--text3); font-size:12px; }
+  .stu-info-input { font-size:13px; color:var(--text); background:var(--surface3); border:0.5px solid var(--gold); border-radius:7px; padding:5px 7px; width:100%; outline:none; border-radius:7px; }
+  .stu-info-select { font-size:13px; color:var(--text); background:var(--surface3); border:0.5px solid var(--gold); border-radius:7px; padding:5px 6px; width:100%; outline:none; }
   @media (hover: none) {
     .btn-primary:hover { background:var(--gold); }
     .btn:hover { background:transparent; color:var(--text2); }
@@ -303,13 +311,12 @@
       <div style="width:60px;"></div>
     </div>
     <div class="content">
-      <div class="card"><p class="section-title">생년월일</p><div id="info-birthdate-list"></div></div>
-      <div class="card mt8"><p class="section-title">수업 시작일</p><div id="info-startdate-list"></div></div>
+      <div class="card"><p class="section-title">레슨생 정보</p><div id="info-student-list"></div></div>
       <div class="card mt8">
         <p class="section-title">레슨생 추가</p>
         <div class="form-group"><p class="form-label">이름</p><input type="text" id="add-name" placeholder="이름 입력"></div>
         <div class="form-group"><p class="form-label">레벨</p><select id="add-level"><option value="초급">초급</option><option value="중급">중급</option><option value="고급">고급</option></select></div>
-        <div class="form-group"><p class="form-label">생년월일 (YYYYMMDD)</p><input type="tel" id="add-birth" maxlength="8" placeholder="예: 19990315" oninput="this.value=this.value.replace(/\D/g,'')"></div>
+        <div class="form-group"><p class="form-label">생년월일 (YYMMDD)</p><input type="tel" id="add-birth" maxlength="6" placeholder="예: 991124" oninput="this.value=this.value.replace(/\D/g,'')"></div>
         <div class="form-group"><p class="form-label">수업 시작일</p><input type="date" id="add-start"></div>
         <p class="err-msg" id="add-err" style="text-align:left;margin-bottom:8px;"></p>
         <button class="btn-primary" style="width:100%;padding:14px;font-size:14px;" onclick="addStudent()">추가하기</button>
@@ -345,7 +352,7 @@
   <p class="auth-sub">이름과 생년월일을 입력하세요</p>
   <div style="width:100%;max-width:300px;display:flex;flex-direction:column;gap:10px;">
     <input type="text" id="sl-name" placeholder="이름" autocomplete="name">
-    <input type="tel" id="sl-birth" maxlength="8" placeholder="생년월일 (YYYYMMDD)" oninput="this.value=this.value.replace(/\D/g,'')">
+    <input type="tel" id="sl-birth" maxlength="6" placeholder="생년월일 (YYMMDD)" oninput="this.value=this.value.replace(/\D/g,'')">
     <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);cursor:pointer;padding:2px 0;">
       <input type="checkbox" id="sl-autologin" style="width:16px;height:16px;padding:0;background:var(--surface3);border-radius:4px;accent-color:var(--gold);">
       자동로그인
@@ -634,55 +641,109 @@ function renderTeacherMenu() {
 }
 
 // ── 레슨생 정보 관리 ─────────────────────────────────────
+function normBd(bd) {
+  if (!bd || bd === '00000000' || bd === '000000') return '';
+  if (bd.length === 8) return bd.slice(2); // YYYYMMDD → YYMMDD
+  return bd;
+}
+function fmtStartDate(d) {
+  if (!d) return '';
+  const p = d.split('-');
+  return p.length === 3 ? p[0].slice(2) + '.' + p[1] + '.' + p[2] : d;
+}
 function renderInfoScreen() {
   const students = loadStudents();
-  document.getElementById('info-birthdate-list').innerHTML = students.map(s =>
-    `<div class="info-row"><p class="info-name" style="cursor:pointer;" title="클릭하여 이름 수정" onclick="startEditName(${s.id},this)">${s.name}</p><input type="tel" class="info-date" id="bd-${s.id}" maxlength="8" placeholder="YYYYMMDD" value="${s.birthdate!=='00000000'?s.birthdate:''}" oninput="this.value=this.value.replace(/\\D/g,'')"><button class="save-btn" onclick="saveBirthdate(${s.id})">저장</button></div>`
-  ).join('') || '<p class="small muted">등록된 레슨생이 없습니다</p>';
-  document.getElementById('info-startdate-list').innerHTML = students.map(s =>
-    `<div class="info-row"><p class="info-name" style="cursor:pointer;" title="클릭하여 이름 수정" onclick="startEditName(${s.id},this)">${s.name}</p><input type="date" class="info-date" id="sd-${s.id}" value="${s.startDate||''}"><button class="save-btn" onclick="saveStartDate(${s.id})">저장</button></div>`
-  ).join('') || '<p class="small muted">등록된 레슨생이 없습니다</p>';
+  document.getElementById('info-student-list').innerHTML = students.length ? students.map(s => {
+    const bd = normBd(s.birthdate);
+    const sd = fmtStartDate(s.startDate);
+    return `<div class="info-student-block">
+      <div class="stu-info-grid">
+        <div class="stu-info-col">
+          <p class="stu-info-key">이름</p>
+          <p class="stu-info-val" onclick="inlineEdit(${s.id},'name',this)">${s.name}</p>
+        </div>
+        <div class="stu-info-col">
+          <p class="stu-info-key">시작일</p>
+          <p class="stu-info-val${!sd?' placeholder':''}" onclick="inlineEdit(${s.id},'startDate',this)">${sd||'미설정'}</p>
+        </div>
+        <div class="stu-info-col">
+          <p class="stu-info-key">생년월일</p>
+          <p class="stu-info-val${!bd?' placeholder':''}" onclick="inlineEdit(${s.id},'birthdate',this)">${bd||'미입력'}</p>
+        </div>
+        <div class="stu-info-col">
+          <p class="stu-info-key">등급</p>
+          <p class="stu-info-val" onclick="inlineEdit(${s.id},'level',this)">${s.level}</p>
+        </div>
+      </div>
+    </div>`;
+  }).join('') : '<p class="small muted">등록된 레슨생이 없습니다</p>';
   document.getElementById('info-delete-list').innerHTML = students.map(s =>
     `<div class="info-row" id="del-row-${s.id}"><p class="info-name" style="flex:1;">${s.name}</p><span class="item-badge" style="margin-right:8px;">${s.level}</span><button class="btn-del-sm" onclick="confirmDelete(${s.id},'${s.name}')">삭제</button></div>`
   ).join('') || '<p class="small muted">등록된 레슨생이 없습니다</p>';
 }
-function startEditName(id, el) {
-  const currentName = el.textContent.trim();
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.value = currentName;
-  input.className = 'info-name-edit';
-  el.replaceWith(input);
-  input.focus();
-  input.select();
-  function commitName() {
-    const newName = input.value.trim();
-    if (!newName) { input.replaceWith(el); return; }
-    if (newName === currentName) { input.replaceWith(el); return; }
-    const students = loadStudents();
-    const s = students.find(x => x.id === id);
-    if (!s) return;
-    s.name = newName;
-    saveStudents(students);
-    renderInfoScreen();
+function inlineEdit(id, field, el) {
+  const s = loadStudents().find(x => x.id === id);
+  if (!s) return;
+  if (field === 'name') {
+    const inp = document.createElement('input');
+    inp.type = 'text'; inp.className = 'stu-info-input'; inp.value = s.name;
+    el.replaceWith(inp); inp.focus(); inp.select();
+    let committed = false;
+    function commit() {
+      if (committed) return; committed = true;
+      const v = inp.value.trim();
+      if (v && v !== s.name) { const arr=loadStudents(); arr.find(x=>x.id===id).name=v; saveStudents(arr); }
+      renderInfoScreen();
+    }
+    inp.addEventListener('blur', commit);
+    inp.addEventListener('keydown', e => { if(e.key==='Enter') inp.blur(); if(e.key==='Escape'){committed=true;renderInfoScreen();} });
+  } else if (field === 'startDate') {
+    const inp = document.createElement('input');
+    inp.type = 'date'; inp.className = 'stu-info-input'; inp.value = s.startDate || '';
+    el.replaceWith(inp); inp.focus();
+    let committed = false;
+    function commit() {
+      if (committed) return; committed = true;
+      const v = inp.value;
+      if (v) { const arr=loadStudents(); arr.find(x=>x.id===id).startDate=v; saveStudents(arr); }
+      renderInfoScreen();
+    }
+    inp.addEventListener('blur', commit);
+    inp.addEventListener('keydown', e => { if(e.key==='Enter') inp.blur(); if(e.key==='Escape'){committed=true;renderInfoScreen();} });
+  } else if (field === 'birthdate') {
+    const inp = document.createElement('input');
+    inp.type = 'tel'; inp.className = 'stu-info-input'; inp.maxLength = 6;
+    inp.placeholder = 'YYMMDD'; inp.value = normBd(s.birthdate);
+    inp.oninput = () => { inp.value = inp.value.replace(/\D/g,''); };
+    el.replaceWith(inp); inp.focus(); inp.select();
+    let committed = false;
+    function commit() {
+      if (committed) return; committed = true;
+      const v = inp.value.trim();
+      if (v && v.length === 6) { const arr=loadStudents(); arr.find(x=>x.id===id).birthdate=v; saveStudents(arr); }
+      else if (v && v.length !== 6) { alert('생년월일 6자리를 입력하세요 (예: 991124)'); }
+      renderInfoScreen();
+    }
+    inp.addEventListener('blur', commit);
+    inp.addEventListener('keydown', e => { if(e.key==='Enter') inp.blur(); if(e.key==='Escape'){committed=true;renderInfoScreen();} });
+  } else if (field === 'level') {
+    const sel = document.createElement('select');
+    sel.className = 'stu-info-select';
+    ['초급','중급','고급'].forEach(lv => {
+      const opt = document.createElement('option');
+      opt.value = lv; opt.textContent = lv; if(s.level===lv) opt.selected=true;
+      sel.appendChild(opt);
+    });
+    el.replaceWith(sel); sel.focus();
+    let committed = false;
+    function commit() {
+      if (committed) return; committed = true;
+      const arr=loadStudents(); arr.find(x=>x.id===id).level=sel.value; saveStudents(arr);
+      renderInfoScreen();
+    }
+    sel.addEventListener('change', () => { committed=false; commit(); });
+    sel.addEventListener('blur', () => { if(!committed) commit(); });
   }
-  input.addEventListener('blur', commitName);
-  input.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') { input.blur(); }
-    if (e.key === 'Escape') { input.removeEventListener('blur', commitName); input.replaceWith(el); }
-  });
-}
-function saveStartDate(id) {
-  const students=loadStudents(); const s=students.find(x=>x.id===id);
-  const val=document.getElementById(`sd-${id}`).value;
-  if (!val) { alert('날짜를 선택하세요'); return; }
-  s.startDate=val; saveStudents(students); alert(`${s.name}의 수업 시작일이 저장됐습니다`);
-}
-function saveBirthdate(id) {
-  const students=loadStudents(); const s=students.find(x=>x.id===id);
-  const val=document.getElementById(`bd-${id}`).value.trim();
-  if (val.length!==8) { alert('생년월일 8자리를 입력하세요'); return; }
-  s.birthdate=val; saveStudents(students); alert(`${s.name}의 생년월일이 저장됐습니다`);
 }
 function addStudent() {
   const name=document.getElementById('add-name').value.trim();
@@ -691,7 +752,7 @@ function addStudent() {
   const start=document.getElementById('add-start').value;
   const err=document.getElementById('add-err');
   if (!name) { err.textContent='이름을 입력하세요'; return; }
-  if (birth.length!==8) { err.textContent='생년월일 8자리를 입력하세요'; return; }
+  if (birth.length!==6) { err.textContent='생년월일 6자리를 입력하세요 (예: 991124)'; return; }
   err.textContent='';
   const students=loadStudents();
   students.push({ id:nextId(students),name,level,birthdate:birth,startDate:start||null,progress:0,module:"수업 준비 중",homework:[],songs:{canLearn:[],notYet:[]},events:[] });
@@ -1067,9 +1128,9 @@ function submitStudentLogin() {
   const birth = document.getElementById('sl-birth').value.trim();
   const autoLogin = document.getElementById('sl-autologin').checked;
   if (!name) { showErr('sl-err','이름을 입력하세요'); return; }
-  if (birth.length!==8) { showErr('sl-err','생년월일 8자리를 입력하세요'); return; }
+  if (birth.length!==6) { showErr('sl-err','생년월일 6자리를 입력하세요 (예: 991124)'); return; }
   const students = loadStudents();
-  const s = students.find(x=>x.name===name && x.birthdate===birth);
+  const s = students.find(x=>x.name===name && normBd(x.birthdate)===birth);
   if (!s) { showErr('sl-err','이름 또는 생년월일이 일치하지 않습니다'); return; }
   document.getElementById('sl-err').textContent='';
   try {
