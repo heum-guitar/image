@@ -9,23 +9,14 @@
 <link rel="apple-touch-icon" href="heum_icon_512.png">
 <link rel="manifest" href="manifest.json">
 <title>HEUM</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
-  // 기존 서비스 워커 전부 해제
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(regs => {
-      regs.forEach(r => r.unregister());
-    });
+    navigator.serviceWorker.register('/image/sw.js');
   }
 </script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <style>
-  #loading-screen { position:fixed; inset:0; background:#111; z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; }
-  #loading-screen p { font-size:13px; color:#5a5448; letter-spacing:0.1em; }
-  .spinner { width:28px; height:28px; border:2px solid #2a2a2a; border-top-color:#C9A84C; border-radius:50%; animation:spin 0.8s linear infinite; }
-  @keyframes spin { to { transform:rotate(360deg); } }
-</style>
-
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; background: #111; color: #e8e2d6; min-height: 100vh; }
   :root {
@@ -197,11 +188,13 @@
 </style>
 </head>
 <body>
-<div id="loading-screen">
-  <p style="font-size:24px;letter-spacing:0.2em;font-weight:300;color:#e8e2d6;">HEUM</p>
-  <div class="spinner"></div>
-  <p>불러오는 중...</p>
+
+<!-- 로딩 오버레이 -->
+<div id="loading-overlay" style="display:flex;position:fixed;inset:0;background:#111;z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:20px;">
+  <p style="font-size:28px;letter-spacing:0.25em;font-weight:300;color:#e8e2d6;">HEUM</p>
+  <div style="width:28px;height:28px;border:1.5px solid #333;border-top-color:#C9A84C;border-radius:50%;animation:_spin 0.8s linear infinite;"></div>
 </div>
+<style>@keyframes _spin{to{transform:rotate(360deg);}}</style>
 
 <!-- 메인 -->
 <div id="sc-main" class="auth-wrap">
@@ -396,71 +389,23 @@
 </div>
 
 <script>
-// ── Firebase 설정 ──────────────────────────────────────────
-const firebaseConfig = {
-  apiKey: "AIzaSyDMOVRBNURel5X_vOTGRQ8asiyTsREaLtc",
-  authDomain: "guitar-lasson-app.firebaseapp.com",
-  projectId: "guitar-lasson-app",
-  storageBucket: "guitar-lasson-app.firebasestorage.app",
-  messagingSenderId: "865808961682",
-  appId: "1:865808961682:web:991066f4be72549107164b"
+// ── Firebase 설정 ────────────────────────────────────────────
+// 아래 값을 본인의 Firebase 프로젝트 설정으로 교체하세요
+const FIREBASE_CONFIG = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.firebasestorage.app",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
+firebase.initializeApp(FIREBASE_CONFIG);
+const _db = firebase.database();
 
-let db = null;
-
-// ── 인메모리 캐시 ──────────────────────────────────────────
-let _students = null;
-let _teacherPw = null;
-let _studentPws = {};
-
-async function initData() {
-  try {
-    const sDoc = await db.collection('heum').doc('students').get();
-    if (sDoc.exists && sDoc.data().list) {
-      _students = sDoc.data().list;
-      _students.forEach(st => {
-        if (!st.events) st.events = [];
-        if (!st.currentWeek) st.currentWeek = 1;
-        if (st.nextLesson === undefined) st.nextLesson = '';
-      });
-    } else {
-      _students = JSON.parse(JSON.stringify(STUDENTS_DEFAULT));
-    }
-    const cDoc = await db.collection('heum').doc('config').get();
-    if (cDoc.exists) {
-      _teacherPw = cDoc.data().teacher_pw || TEACHER_PW_DEFAULT;
-      _studentPws = cDoc.data().student_pws || {};
-    } else {
-      _teacherPw = TEACHER_PW_DEFAULT;
-      _studentPws = {};
-    }
-  } catch(e) {
-    _students = JSON.parse(JSON.stringify(STUDENTS_DEFAULT));
-    _teacherPw = TEACHER_PW_DEFAULT;
-    _studentPws = {};
-    alert('데이터 불러오기 실패. 인터넷 연결을 확인하세요.');
-  }
-}
-
-function loadStudents() { return JSON.parse(JSON.stringify(_students)); }
-function saveStudents(arr) {
-  _students = arr;
-  db.collection('heum').doc('students').set({ list: arr });
-}
-function getTeacherPw() { return _teacherPw || TEACHER_PW_DEFAULT; }
-function saveTeacherPw(pw) {
-  _teacherPw = pw;
-  db.collection('heum').doc('config').set({ teacher_pw: pw, student_pws: _studentPws });
-}
-function getStudentPw(id) { return _studentPws[String(id)] || null; }
-function saveStudentPw(id, pw) {
-  _studentPws[String(id)] = pw;
-  db.collection('heum').doc('config').set({ teacher_pw: _teacherPw || TEACHER_PW_DEFAULT, student_pws: _studentPws });
-}
-function removeStudentPw(id) {
-  delete _studentPws[String(id)];
-  db.collection('heum').doc('config').set({ teacher_pw: _teacherPw || TEACHER_PW_DEFAULT, student_pws: _studentPws });
-}
+// ── 데이터 캐시 ───────────────────────────────────────────────
+let _studentsCache = null;
+let _teacherPwCache = null;
 
 // ── 데이터 ─────────────────────────────────────────────────
 const STUDENTS_DEFAULT = [
@@ -468,23 +413,86 @@ const STUDENTS_DEFAULT = [
   { id:2, name:"인영",   level:"초급", birthdate:"00000000", startDate:null, progress:0, module:"수업 준비 중", currentWeek:1, nextLesson:"", homework:[], songs:{canLearn:[],notYet:[]}, events:[] }
 ];
 const TEACHER_PW_DEFAULT = "0912";
+
+function getTeacherPw() { return _teacherPwCache || TEACHER_PW_DEFAULT; }
+function saveTeacherPw(pw) {
+  _teacherPwCache = pw;
+  _db.ref('heum/config/teacher_pw').set(pw).catch(e=>console.error('강사 PW 저장 오류:', e));
+}
+function loadStudents() {
+  if (_studentsCache) return JSON.parse(JSON.stringify(_studentsCache));
+  return JSON.parse(JSON.stringify(STUDENTS_DEFAULT));
+}
+function saveStudents(arr) {
+  _studentsCache = JSON.parse(JSON.stringify(arr));
+  const obj = {};
+  arr.forEach(s => { obj[s.id] = s; });
+  _db.ref('heum/students').set(obj).catch(e=>console.error('학생 데이터 저장 오류:', e));
+}
 function calcMonths(startDate) {
   if (!startDate) return 0;
   return Math.max(0, Math.floor((Date.now() - new Date(startDate).getTime()) / (1000*60*60*24*30.44)));
 }
 function nextId(arr) { return arr.length ? Math.max(...arr.map(s=>s.id))+1 : 1; }
 
-// ── 앱 시작 ────────────────────────────────────────────────
-window.addEventListener('load', async () => {
-  if (typeof firebase === 'undefined') {
-    document.getElementById('loading-screen').innerHTML = '<p style="color:#c45c4a;font-size:13px;text-align:center;padding:20px;">Firebase를 불러오지 못했습니다.<br>인터넷 연결을 확인하고 새로고침 하세요.</p>';
-    return;
+// ── Firebase 초기화 및 실시간 동기화 ─────────────────────────
+function showLoading(v){document.getElementById('loading-overlay').style.display=v?'flex':'none';}
+function _fixStudent(st){
+  if(!st.events)st.events=[];
+  if(!st.currentWeek)st.currentWeek=1;
+  if(st.nextLesson===undefined)st.nextLesson='';
+  if(!st.songs)st.songs={canLearn:[],notYet:[]};
+  if(!st.homework)st.homework=[];
+}
+
+window.addEventListener('DOMContentLoaded', async ()=>{
+  try {
+    const [sSnap, pwSnap] = await Promise.all([
+      _db.ref('heum/students').get(),
+      _db.ref('heum/config/teacher_pw').get()
+    ]);
+
+    if (sSnap.exists()) {
+      const obj = sSnap.val();
+      _studentsCache = Object.values(obj).sort((a,b)=>a.id-b.id);
+      _studentsCache.forEach(_fixStudent);
+    } else {
+      // 최초 실행: 기본 학생 데이터를 Firebase에 저장
+      _studentsCache = JSON.parse(JSON.stringify(STUDENTS_DEFAULT));
+      saveStudents(_studentsCache);
+    }
+
+    _teacherPwCache = pwSnap.exists() ? pwSnap.val() : TEACHER_PW_DEFAULT;
+    if (!pwSnap.exists()) saveTeacherPw(TEACHER_PW_DEFAULT);
+
+    // 실시간 리스너: 강사가 데이터를 수정하면 학생 앱에도 즉시 반영
+    _db.ref('heum/students').on('value', snap=>{
+      if(!snap.exists())return;
+      const arr = Object.values(snap.val()).sort((a,b)=>a.id-b.id);
+      arr.forEach(_fixStudent);
+      _studentsCache = arr;
+    });
+    _db.ref('heum/config/teacher_pw').on('value', snap=>{
+      if(snap.exists()) _teacherPwCache = snap.val();
+    });
+
+  } catch(e) {
+    console.error('Firebase 초기화 오류:', e);
+    _studentsCache = JSON.parse(JSON.stringify(STUDENTS_DEFAULT));
+    _teacherPwCache = TEACHER_PW_DEFAULT;
+    alert('서버 연결에 실패했습니다. Firebase 설정을 확인해주세요.');
   }
-  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-  db = firebase.firestore();
-  await initData();
-  document.getElementById('loading-screen').style.display = 'none';
-  goScreen('sc-main');
+
+  showLoading(false);
+
+  // 자동로그인 확인
+  try {
+    const autoId = localStorage.getItem('heum_autologin_id');
+    if (autoId) {
+      const s = loadStudents().find(x=>x.id===parseInt(autoId));
+      if (s) { curStudent=s; startEnterPw(); return; }
+    }
+  } catch(e){}
 });
 
 let curStudent = null;
@@ -621,7 +629,7 @@ function confirmDelete(id,name) {
 }
 function deleteStudent(id,name) {
   saveStudents(loadStudents().filter(s=>s.id!==id));
-  removeStudentPw(id); renderInfoScreen();
+  localStorage.removeItem(`heum_pw_${id}`); renderInfoScreen();
 }
 
 // ── 학생 상세 (강사) ─────────────────────────────────────
@@ -991,7 +999,7 @@ function submitStudentLogin() {
     else { localStorage.removeItem('heum_autologin_id'); }
   } catch(e) {}
   curStudent = s;
-  const saved = getStudentPw(s.id);
+  const saved = localStorage.getItem(`heum_pw_${s.id}`);
   if (!saved) { startSetPw(); } else { startEnterPw(); }
 }
 function resetStudentLogin() {
@@ -1021,14 +1029,14 @@ function onSetPw(pin) {
       showErr('spw-err','비밀번호가 일치하지 않습니다. 처음부터 다시 설정하세요.'); setPwStep=1; setPwFirst='';
       document.getElementById('spw-sub').innerHTML='사용할 비밀번호를 입력하세요<br><span style="font-size:11px;color:var(--text3);">숫자 4자리</span>';
       buildPad('spw-pad','spw-dots',4,onSetPw,'spw-err');
-    } else { saveStudentPw(curStudent.id, pin); enterStudent(); }
+    } else { localStorage.setItem(`heum_pw_${curStudent.id}`,pin); enterStudent(); }
   }
 }
 function startEnterPw() {
   document.getElementById('epw-name').textContent=curStudent.name+' 레슨생';
   document.getElementById('epw-err').textContent='';
   function handleStudentPin(pin) {
-    if (pin===getStudentPw(curStudent.id)) { enterStudent(); }
+    if (pin===localStorage.getItem(`heum_pw_${curStudent.id}`)) { enterStudent(); }
     else { showErr('epw-err','비밀번호가 틀렸습니다'); resetPad('epw-pad','epw-dots',4,handleStudentPin,'epw-err'); }
   }
   buildPad('epw-pad','epw-dots',4,handleStudentPin,'epw-err');
@@ -1155,40 +1163,46 @@ function exportData() {
   const data = {
     students: loadStudents(),
     pw_teacher: getTeacherPw(),
-    student_pws: _studentPws,
     exported_at: new Date().toISOString()
   };
+  loadStudents().forEach(s => {
+    const pw = localStorage.getItem(`heum_pw_${s.id}`);
+    if (pw) data[`pw_${s.id}`] = pw;
+  });
   document.getElementById('export-text').value = JSON.stringify(data, null, 2);
   document.getElementById('copy-btn').textContent = '전체 복사';
   document.getElementById('export-modal').style.display = 'block';
 }
 function copyExportText() {
   const el = document.getElementById('export-text');
-  el.select(); el.setSelectionRange(0, 99999);
+  el.select();
+  el.setSelectionRange(0, 99999);
   try {
-    navigator.clipboard.writeText(el.value).then(()=>{ document.getElementById('copy-btn').textContent='복사됨 ✓'; }).catch(()=>{ document.execCommand('copy'); document.getElementById('copy-btn').textContent='복사됨 ✓'; });
-  } catch { document.execCommand('copy'); document.getElementById('copy-btn').textContent='복사됨 ✓'; }
+    navigator.clipboard.writeText(el.value).then(()=>{
+      document.getElementById('copy-btn').textContent = '복사됨 ✓';
+    }).catch(()=>{ document.execCommand('copy'); document.getElementById('copy-btn').textContent = '복사됨 ✓'; });
+  } catch { document.execCommand('copy'); document.getElementById('copy-btn').textContent = '복사됨 ✓'; }
 }
 function openImportModal() {
-  document.getElementById('import-text').value='';
-  document.getElementById('import-err').textContent='';
-  document.getElementById('import-modal').style.display='block';
+  document.getElementById('import-text').value = '';
+  document.getElementById('import-err').textContent = '';
+  document.getElementById('import-modal').style.display = 'block';
 }
-async function submitImportText() {
+function submitImportText() {
   const raw = document.getElementById('import-text').value.trim();
-  if (!raw) { document.getElementById('import-err').textContent='내용을 붙여넣어 주세요'; return; }
+  if (!raw) { document.getElementById('import-err').textContent = '내용을 붙여넣어 주세요'; return; }
   try {
     const data = JSON.parse(raw);
-    if (!data.students || !Array.isArray(data.students)) { document.getElementById('import-err').textContent='올바른 데이터가 아닙니다'; return; }
-    await db.collection('heum').doc('students').set({ list: data.students });
-    await db.collection('heum').doc('config').set({ teacher_pw: data.pw_teacher || TEACHER_PW_DEFAULT, student_pws: data.student_pws || {} });
-    _students = data.students;
-    _teacherPw = data.pw_teacher || TEACHER_PW_DEFAULT;
-    _studentPws = data.student_pws || {};
-    document.getElementById('import-modal').style.display='none';
+    if (!data.students || !Array.isArray(data.students)) { document.getElementById('import-err').textContent = '올바른 데이터가 아닙니다'; return; }
+    saveStudents(data.students);
+    if (data.pw_teacher) saveTeacherPw(data.pw_teacher);
+    data.students.forEach(s => {
+      if (data[`pw_${s.id}`]) localStorage.setItem(`heum_pw_${s.id}`, data[`pw_${s.id}`]);
+    });
+    document.getElementById('import-modal').style.display = 'none';
     alert('데이터를 성공적으로 가져왔습니다');
     renderTeacherMenu();
-  } catch { document.getElementById('import-err').textContent='형식이 올바르지 않습니다'; }
+  } catch { document.getElementById('import-err').textContent = '형식이 올바르지 않습니다. 다시 확인해주세요'; }
 }
 function showErr(id,msg){document.getElementById(id).textContent=msg;}
 </script>
