@@ -894,7 +894,7 @@ function buildWeekGrid() {
     `<button class="week-chip" id="wk-${w}" onclick="selectWeek(${w})">${w}주차</button>`).join('');
 }
 function selectWeek(w) {
-  document.querySelectorAll('.week-chip').forEach(el=>el.classList.remove('selected'));
+  document.querySelectorAll('#week-grid .week-chip').forEach(el=>el.classList.remove('selected'));
   const el=document.getElementById(`wk-${w}`); if(el) el.classList.add('selected');
   selectedWeek=w;
 }
@@ -1086,9 +1086,9 @@ function enterStudent() {
     ${hwSection}
     ${nextCard}
     <div class="card"><p class="section-title gold">현재 배울 수 있는 곡 리스트 <span class="muted" style="font-weight:400;">${s.songs.canLearn.length}곡</span></p>
-    ${s.songs.canLearn.length?s.songs.canLearn.map(g=>`<div class="song-item"><div class="dot dot-gold"></div><p class="song-name" onclick="openYoutube('${g.replace(/'/g,"\'")}')"> ${g}</p></div>`).join(''):'<p class="small muted" style="padding:8px 0;text-align:center;">곡 목록을 기다리는 중</p>'}</div>
+    ${s.songs.canLearn.length?s.songs.canLearn.map(g=>`<div class="song-item"><div class="dot dot-gold"></div><p class="song-name" onclick="openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p></div>`).join(''):'<p class="small muted" style="padding:8px 0;text-align:center;">곡 목록을 기다리는 중</p>'}</div>
     <div class="card"><p class="section-title muted">연습이 필요한 곡</p>
-    ${s.songs.notYet.length?s.songs.notYet.map(g=>`<div class="song-item"><div class="dot dot-dim"></div><p class="song-name muted" onclick="openYoutube('${g.replace(/'/g,"\'")}')"> ${g}</p></div>`).join(''):'<p class="small muted" style="padding:8px 0;text-align:center;">없습니다</p>'}</div>`;
+    ${s.songs.notYet.length?s.songs.notYet.map(g=>`<div class="song-item"><div class="dot dot-dim"></div><p class="song-name muted" onclick="openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p></div>`).join(''):'<p class="small muted" style="padding:8px 0;text-align:center;">없습니다</p>'}</div>`;
   renderStudentHwTab(s);
   renderStudentSongsTab(s);
   goScreen('sc-student');
