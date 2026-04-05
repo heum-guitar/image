@@ -437,12 +437,18 @@ function nextId(arr) { return arr.length ? Math.max(...arr.map(s=>s.id))+1 : 1; 
 
 // ── Firebase 초기화 및 실시간 동기화 ─────────────────────────
 function showLoading(v){document.getElementById('loading-overlay').style.display=v?'flex':'none';}
+function _toArr(v){
+  if(!v) return [];
+  if(Array.isArray(v)) return v;
+  return Object.values(v);
+}
 function _fixStudent(st){
-  if(!st.events)st.events=[];
+  st.events   = _toArr(st.events);
+  st.homework = _toArr(st.homework);
   if(!st.currentWeek)st.currentWeek=1;
   if(st.nextLesson===undefined)st.nextLesson='';
-  if(!st.songs)st.songs={canLearn:[],notYet:[]};
-  if(!st.homework)st.homework=[];
+  if(!st.songs){ st.songs={canLearn:[],notYet:[]}; }
+  else{ st.songs.canLearn=_toArr(st.songs.canLearn); st.songs.notYet=_toArr(st.songs.notYet); }
 }
 
 window.addEventListener('DOMContentLoaded', async ()=>{
@@ -1049,7 +1055,8 @@ function startEnterPw() {
 
 // ── 레슨생 대시보드 ────────────────────────────────────────
 function enterStudent() {
-  const s=loadStudents().find(x=>x.id===curStudent.id);
+  const s=loadStudents().find(x=>x.id==curStudent.id);
+  if(!s){ goScreen('sc-main'); return; }
   const months=calcMonths(s.startDate);
   document.getElementById('s-name').textContent=s.name;
   document.getElementById('s-meta').textContent=`${s.level} · ${months>0?months+'개월차':'수업 시작 전'}`;
