@@ -126,6 +126,7 @@
   .song-item:last-child { border-bottom:none; }
   .dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
   .dot-gold { background:var(--gold); }
+  .dot-green { background:var(--green); }
   .dot-dim { background:var(--surface3); border:1px solid var(--border2); }
   .song-name { font-size:13px; flex:1; cursor:pointer; transition:color 0.12s; }
   .song-name:hover { color:var(--gold); }
@@ -206,6 +207,15 @@
   .s-progress-card.open .s-prog-extra { max-height: 40px; }
   /* Student homework card gold tint */
   .s-hw-card { border-color: rgba(201,168,76,0.28) !important; background: rgba(201,168,76,0.04) !important; }
+  /* Homework drawer animation */
+  .hw-body-drawer { overflow: hidden; max-height: 0; margin-top: 0; transition: max-height 0.38s cubic-bezier(0.4,0,0.2,1), margin-top 0.28s ease; }
+  .hw-body-drawer.open { max-height: 800px; margin-top: 12px; }
+  /* Gold glow for matched songs */
+  @keyframes goldGlow {
+    0%, 100% { color: var(--gold); text-shadow: 0 0 6px rgba(201,168,76,0.55); }
+    50% { color: #f0c96a; text-shadow: 0 0 14px rgba(201,168,76,0.9), 0 0 28px rgba(201,168,76,0.4); }
+  }
+  .song-match { animation: goldGlow 2.2s ease-in-out infinite; font-weight: 500; }
   @media (hover: none) {
     .btn-primary:hover { background:var(--gold); }
     .btn:hover { background:transparent; color:var(--text2); }
@@ -464,8 +474,8 @@ function deleteStudentPw(id) {
 
 // ── 데이터 ─────────────────────────────────────────────────
 const STUDENTS_DEFAULT = [
-  { id:1, name:"임슬찬", level:"초급", birthdate:"00000000", startDate:null, progress:0, module:"수업 준비 중", currentWeek:1, nextLesson:"", homework:[], songs:{canLearn:[],notYet:[]}, events:[] },
-  { id:2, name:"인영",   level:"초급", birthdate:"00000000", startDate:null, progress:0, module:"수업 준비 중", currentWeek:1, nextLesson:"", homework:[], songs:{canLearn:[],notYet:[]}, events:[] }
+  { id:1, name:"임슬찬", level:"초급", birthdate:"00000000", startDate:null, progress:0, module:"수업 준비 중", currentWeek:1, nextLesson:"", homework:[], songs:{canLearn:[],notYet:[],wantToLearn:[],learned:[]}, events:[] },
+  { id:2, name:"인영",   level:"초급", birthdate:"00000000", startDate:null, progress:0, module:"수업 준비 중", currentWeek:1, nextLesson:"", homework:[], songs:{canLearn:[],notYet:[],wantToLearn:[],learned:[]}, events:[] }
 ];
 const TEACHER_PW_DEFAULT = "0912";
 
@@ -502,8 +512,13 @@ function _fixStudent(st){
   st.homework = _toArr(st.homework);
   if(!st.currentWeek)st.currentWeek=1;
   if(st.nextLesson===undefined)st.nextLesson='';
-  if(!st.songs){ st.songs={canLearn:[],notYet:[]}; }
-  else{ st.songs.canLearn=_toArr(st.songs.canLearn); st.songs.notYet=_toArr(st.songs.notYet); }
+  if(!st.songs){ st.songs={canLearn:[],notYet:[],wantToLearn:[],learned:[]}; }
+  else{
+    st.songs.canLearn    = _toArr(st.songs.canLearn);
+    st.songs.notYet      = _toArr(st.songs.notYet);
+    st.songs.wantToLearn = _toArr(st.songs.wantToLearn);
+    st.songs.learned     = _toArr(st.songs.learned);
+  }
 }
 
 window.addEventListener('DOMContentLoaded', async ()=>{
@@ -551,6 +566,7 @@ window.addEventListener('DOMContentLoaded', async ()=>{
     console.error('Firebase 초기화 오류:', e);
     _studentsCache = JSON.parse(JSON.stringify(STUDENTS_DEFAULT));
     _teacherPwCache = TEACHER_PW_DEFAULT;
+    _studentPwCache = {};
     alert('서버 연결에 실패했습니다. Firebase 설정을 확인해주세요.');
   }
 
@@ -561,7 +577,12 @@ window.addEventListener('DOMContentLoaded', async ()=>{
     const autoId = localStorage.getItem('heum_autologin_id');
     if (autoId) {
       const s = loadStudents().find(x=>x.id===parseInt(autoId));
-      if (s) { curStudent=s; startEnterPw(); return; }
+      if (s) {
+        curStudent=s;
+        const savedPw = getStudentPw(s.id);
+        startEnterPw(savedPw);
+        return;
+      }
     }
   } catch(e){}
 });
@@ -654,9 +675,11 @@ function renderTeacherMenu() {
 
 // ── 레슨생 정보 관리 ─────────────────────────────────────
 function normBd(bd) {
-  if (!bd || bd === '00000000' || bd === '000000') return '';
-  if (bd.length === 8) return bd.slice(2); // YYYYMMDD → YYMMDD
-  return bd;
+  if (!bd) return '';
+  const s = String(bd);
+  if (s === '00000000') return '000000';
+  if (s.length === 8) return s.slice(2); // YYYYMMDD → YYMMDD
+  return s;
 }
 function fmtStartDate(d) {
   if (!d) return '';
@@ -767,7 +790,7 @@ function addStudent() {
   if (birth.length!==6) { err.textContent='생년월일 6자리를 입력하세요 (예: 991201)'; return; }
   err.textContent='';
   const students=loadStudents();
-  students.push({ id:nextId(students),name,level,birthdate:birth,startDate:start||null,progress:0,module:"수업 준비 중",homework:[],songs:{canLearn:[],notYet:[]},events:[] });
+  students.push({ id:nextId(students),name,level,birthdate:birth,startDate:start||null,progress:0,module:"수업 준비 중",currentWeek:1,nextLesson:'',homework:[],songs:{canLearn:[],notYet:[],wantToLearn:[],learned:[]},events:[] });
   saveStudents(students);
   document.getElementById('add-name').value=''; document.getElementById('add-birth').value=''; document.getElementById('add-start').value='';
   renderInfoScreen(); alert(`${name} 레슨생이 추가됐습니다`);
@@ -1053,19 +1076,20 @@ function submitHomework() {
 // ── 곡 탭 (강사) ─────────────────────────────────────────
 function renderSongsTab(s) {
   function songRow(g, type, idx) {
-    const enc=encodeURIComponent(g);
+    const dotCls = type==='canLearn'?'dot-gold':type==='learned'?'dot-green':'dot-dim';
+    const nameCls = (type==='canLearn'||type==='learned')?'':'muted';
     return `<div class="song-item">
-      <div class="dot ${type==='canLearn'?'dot-gold':'dot-dim'}"></div>
-      <p class="song-name ${type!=='canLearn'?'muted':''}" onclick="openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p>
+      <div class="dot ${dotCls}"></div>
+      <p class="song-name ${nameCls}" style="flex:1;" onclick="openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p>
       <button class="btn-red" onclick="deleteSong(${s.id},'${type}',${idx})">×</button>
     </div>`;
   }
-  const canItems = s.songs.canLearn.length
-    ? s.songs.canLearn.map((g,i)=>songRow(g,'canLearn',i)).join('')
-    : '<p class="small muted" style="padding:10px 0;text-align:center;">곡을 추가해주세요</p>';
-  const notItems = s.songs.notYet.length
-    ? s.songs.notYet.map((g,i)=>songRow(g,'notYet',i)).join('')
-    : '<p class="small muted" style="padding:10px 0;text-align:center;">곡을 추가해주세요</p>';
+  const canItems = s.songs.canLearn.length ? s.songs.canLearn.map((g,i)=>songRow(g,'canLearn',i)).join('') : '<p class="small muted" style="padding:10px 0;text-align:center;">곡을 추가해주세요</p>';
+  const notItems = s.songs.notYet.length ? s.songs.notYet.map((g,i)=>songRow(g,'notYet',i)).join('') : '<p class="small muted" style="padding:10px 0;text-align:center;">곡을 추가해주세요</p>';
+  const learnedItems = (s.songs.learned||[]).length ? s.songs.learned.map((g,i)=>songRow(g,'learned',i)).join('') : '<p class="small muted" style="padding:10px 0;text-align:center;">곡을 추가해주세요</p>';
+  const wantItems = (s.songs.wantToLearn||[]).length
+    ? s.songs.wantToLearn.map(g=>`<div class="song-item"><div class="dot dot-dim"></div><p class="song-name muted" style="flex:1;">${g}</p></div>`).join('')
+    : '<p class="small muted" style="padding:10px 0;text-align:center;">레슨생이 아직 없음</p>';
   document.getElementById('d-songs').innerHTML = `
     <div class="card">
       <p class="section-title gold">지금 배울 수 있는 곡</p>
@@ -1081,15 +1105,32 @@ function renderSongsTab(s) {
       </div>
     </div>
     <div class="card">
-      <p class="section-title muted">아직 어려운 곡</p>
+      <p class="section-title muted">배우고 싶은 곡 <span style="font-size:10px;color:var(--text3);font-weight:400;">(레슨생 입력)</span></p>
+      ${wantItems}
+    </div>
+    <div class="card">
+      <p class="section-title muted">연습이 필요한 곡</p>
       ${notItems}
       <button class="add-trigger" style="margin-top:10px;" onclick="toggleSongPanel('notYet')">+ 곡 추가</button>
       <div class="add-panel hidden" id="song-panel-notYet">
-        <p class="add-panel-title">아직 어려운 곡 추가</p>
+        <p class="add-panel-title">연습이 필요한 곡 추가</p>
         <div class="form-group"><textarea id="song-input-notYet" rows="1" placeholder="예: Tommy Emmanuel - Classical Gas"></textarea></div>
         <div class="panel-actions">
           <button class="panel-btn panel-btn-cancel" onclick="toggleSongPanel('notYet')">취소</button>
           <button class="panel-btn panel-btn-submit" onclick="submitSong('notYet')">추가</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <p class="section-title" style="color:var(--green);">지금까지 배운 곡</p>
+      ${learnedItems}
+      <button class="add-trigger" style="margin-top:10px;" onclick="toggleSongPanel('learned')">+ 곡 추가</button>
+      <div class="add-panel hidden" id="song-panel-learned">
+        <p class="add-panel-title">배운 곡 추가</p>
+        <div class="form-group"><textarea id="song-input-learned" rows="1" placeholder="예: 버스커버스커 - 여수 밤바다"></textarea></div>
+        <div class="panel-actions">
+          <button class="panel-btn panel-btn-cancel" onclick="toggleSongPanel('learned')">취소</button>
+          <button class="panel-btn panel-btn-submit" onclick="submitSong('learned')">추가</button>
         </div>
       </div>
     </div>`;
@@ -1114,6 +1155,65 @@ function submitSong(type) {
 function openYoutube(name) {
   window.open('https://www.youtube.com/results?search_query='+encodeURIComponent(name),'_blank');
 }
+// ── 레슨생 '배우고 싶은 곡' ─────────────────────────────
+function _refreshWantLists(s) {
+  const canSet = new Set((s.songs.canLearn||[]).map(g=>g.trim().toLowerCase()));
+  const rows = (s.songs.wantToLearn||[]).map((g,i)=>{
+    const matched = canSet.has(g.trim().toLowerCase());
+    const dotCls = matched ? 'dot-gold' : 'dot-dim';
+    const nameCls = matched ? 'song-name song-match' : 'song-name muted';
+    return `<div class="song-item"><div class="dot ${dotCls}"></div><p class="${nameCls}" style="flex:1;" onclick="openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p><button class="btn-red" onclick="deleteStudentWantSong(${i})">×</button></div>`;
+  }).join('') || '<p class="small muted" style="padding:4px 0;text-align:center;">아직 없어요</p>';
+  const h = document.getElementById('s-home-want-list');
+  const t = document.getElementById('s-tab-want-list');
+  if (h) h.innerHTML = rows;
+  if (t) t.innerHTML = rows;
+}
+function toggleStudentWantPanel() {
+  const p = document.getElementById('s-want-panel');
+  if (!p) return;
+  const hide = !p.classList.contains('hidden');
+  p.classList.toggle('hidden', hide);
+  if (!hide) { const i=document.getElementById('s-want-input'); if(i) i.value=''; }
+}
+function toggleStudentWantPanelTab() {
+  const p = document.getElementById('s-tab-want-panel');
+  if (!p) return;
+  const hide = !p.classList.contains('hidden');
+  p.classList.toggle('hidden', hide);
+  if (!hide) { const i=document.getElementById('s-tab-want-input'); if(i) i.value=''; }
+}
+function submitStudentWantSong() {
+  const inp = document.getElementById('s-want-input');
+  const text = inp ? inp.value.trim() : '';
+  if (!text) { alert('곡 이름을 입력하세요'); return; }
+  const students=loadStudents(); const s=students.find(x=>x.id===curStudent.id);
+  if (!s) return;
+  if (!s.songs.wantToLearn) s.songs.wantToLearn=[];
+  s.songs.wantToLearn.push(text); saveStudents(students);
+  if (inp) inp.value='';
+  document.getElementById('s-want-panel').classList.add('hidden');
+  _refreshWantLists(s);
+}
+function submitStudentWantSongTab() {
+  const inp = document.getElementById('s-tab-want-input');
+  const text = inp ? inp.value.trim() : '';
+  if (!text) { alert('곡 이름을 입력하세요'); return; }
+  const students=loadStudents(); const s=students.find(x=>x.id===curStudent.id);
+  if (!s) return;
+  if (!s.songs.wantToLearn) s.songs.wantToLearn=[];
+  s.songs.wantToLearn.push(text); saveStudents(students);
+  if (inp) inp.value='';
+  document.getElementById('s-tab-want-panel').classList.add('hidden');
+  _refreshWantLists(s);
+}
+function deleteStudentWantSong(idx) {
+  if (!confirm('이 곡을 삭제하시겠습니까?')) return;
+  const students=loadStudents(); const s=students.find(x=>x.id===curStudent.id);
+  if (!s || !s.songs.wantToLearn) return;
+  s.songs.wantToLearn.splice(idx,1); saveStudents(students);
+  _refreshWantLists(s);
+}
 
 function switchDTab(tab,btn) {
   document.querySelectorAll('#sc-detail .tab').forEach(t=>t.classList.remove('active'));
@@ -1128,7 +1228,7 @@ function initStudentLoginForm() {
     if (autoId) {
       const students = loadStudents();
       const s = students.find(x=>x.id===parseInt(autoId));
-      if (s) { curStudent=s; startEnterPw(); return; }
+      if (s) { curStudent=s; startEnterPw(getStudentPw(s.id)); return; }
     }
     document.getElementById('sl-name').value = localStorage.getItem('heum_saved_name')||'';
     document.getElementById('sl-birth').value = localStorage.getItem('heum_saved_birth')||'';
@@ -1153,7 +1253,7 @@ function submitStudentLogin() {
   } catch(e) {}
   curStudent = s;
   const saved = getStudentPw(s.id);
-  if (!saved) { startSetPw(); } else { startEnterPw(); }
+  if (!saved) { startSetPw(); } else { startEnterPw(saved); }
 }
 function resetStudentLogin() {
   localStorage.removeItem('heum_autologin_id');
@@ -1185,19 +1285,29 @@ function onSetPw(pin) {
     } else { saveStudentPw(curStudent.id, pin); enterStudent(); }
   }
 }
-function startEnterPw() {
+function startEnterPw(cachedPw) {
   document.getElementById('epw-name').textContent=curStudent.name+' 레슨생';
   document.getElementById('epw-err').textContent='';
   function handleStudentPin(pin) {
-    if (pin===getStudentPw(curStudent.id)) { enterStudent(); }
+    // cachedPw가 있으면 우선 사용, 없으면 현재 캐시에서 조회 (Firebase 리스너 타이밍 문제 방지)
+    const pw = (cachedPw != null) ? String(cachedPw) : String(getStudentPw(curStudent.id) || '');
+    if (!pw) {
+      showErr('epw-err','비밀번호를 찾을 수 없습니다. 다시 로그인해 주세요.');
+      setTimeout(()=>resetStudentLogin(), 1500);
+      return;
+    }
+    if (pin === pw) { enterStudent(); }
     else { showErr('epw-err','비밀번호가 틀렸습니다'); resetPad('epw-pad','epw-dots',4,handleStudentPin,'epw-err'); }
   }
   buildPad('epw-pad','epw-dots',4,handleStudentPin,'epw-err');
   goScreen('sc-enter-pw');
 }
 
+let _hwCardOpen = false;
+
 // ── 레슨생 대시보드 ────────────────────────────────────────
 function enterStudent() {
+  _hwCardOpen = false;
   const s=loadStudents().find(x=>x.id==curStudent.id);
   if(!s){ goScreen('sc-main'); return; }
   const months=calcMonths(s.startDate);
@@ -1207,17 +1317,7 @@ function enterStudent() {
   const weekPct=Math.round((week/4)*100);
   const pending=s.homework.filter(h=>!h.done);
   const done=s.homework.filter(h=>h.done).length;
-  const hwInner=pending.length>0
-    ? `<div class="row mb12"><p class="section-title" style="margin:0;">${week}주차 숙제</p><span class="small gold">${done}/${s.homework.length}</span></div>${pending.map((h,_realIdx)=>{
-        const realIdx=s.homework.indexOf(h);
-        return `<div class="hw-item">
-          <div class="hw-check${h.done?' done':''}" onclick="toggleStudentHw(${s.id},${realIdx})"></div>
-          <div class="hw-meta"><p class="hw-text${h.done?' done':''}">${h.text}</p>${h.week?`<p class="hw-week">${h.week}주차</p>`:''}</div>
-        </div>`;}).join('')}`
-    : s.homework.length>0
-    ? `<div style="text-align:center;padding:8px 0;"><p style="font-size:22px;margin-bottom:8px;">✓</p><p class="bold">${week}주차 숙제 모두 완료!</p><p class="small muted mt4">다음 레슨이 기대돼요</p></div>`
-    : `<p class="muted small" style="text-align:center;">아직 숙제가 없어요</p>`;
-  const hwSection=`<div class="card s-hw-card" id="s-home-hw">${hwInner}</div>`;
+  const hwSection=`<div class="card s-hw-card" id="s-home-hw" onclick="toggleStudentHwCard()" style="cursor:pointer;"></div>`;
   const nextCard=`<div class="card"><p class="section-title" style="color:var(--text2);">다음 주 수업 내용 — ${week+1}주차</p><p style="font-size:13px;line-height:1.6;${s.nextLesson?'':'color:var(--text3);'}">${s.nextLesson||'아직 입력되지 않았습니다'}</p></div>`;
   document.getElementById('s-home').innerHTML=`
     <div class="card s-progress-card" id="s-progress-card" onclick="toggleProgressCard()">
@@ -1233,13 +1333,37 @@ function enterStudent() {
     </div>
     ${hwSection}
     ${nextCard}
-    <div class="card"><p class="section-title gold">현재 배울 수 있는 곡 리스트 <span class="muted" style="font-weight:400;">${s.songs.canLearn.length}곡</span></p>
-    ${s.songs.canLearn.length?s.songs.canLearn.map(g=>`<div class="song-item"><div class="dot dot-gold"></div><p class="song-name" onclick="openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p></div>`).join(''):'<p class="small muted" style="padding:8px 0;text-align:center;">곡 목록을 기다리는 중</p>'}</div>
-    <div class="card"><p class="section-title muted">연습이 필요한 곡</p>
-    ${s.songs.notYet.length?s.songs.notYet.map(g=>`<div class="song-item"><div class="dot dot-dim"></div><p class="song-name muted" onclick="openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p></div>`).join(''):'<p class="small muted" style="padding:8px 0;text-align:center;">없습니다</p>'}</div>`;
+    <div class="card" style="margin-top:20px;"><p class="section-title gold">현재 배울 수 있는 곡 <span class="muted" style="font-weight:400;">${s.songs.canLearn.length}곡</span></p>
+    ${(()=>{
+      const wantSet=new Set((s.songs.wantToLearn||[]).map(g=>g.trim().toLowerCase()));
+      return s.songs.canLearn.length
+        ? s.songs.canLearn.map(g=>{const matched=wantSet.has(g.trim().toLowerCase());return `<div class="song-item"><div class="dot dot-gold"></div><p class="${matched?'song-name song-match':'song-name'}" onclick="openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p></div>`;}).join('')
+        : '<p class="small muted" style="padding:8px 0;text-align:center;">곡 목록을 기다리는 중</p>';
+    })()}</div>
+    <div class="card" id="s-home-want-card"></div>
+    ${(s.songs.learned||[]).length?`<div class="card"><p class="section-title" style="color:var(--green);">지금까지 배운 곡 <span class="muted" style="font-weight:400;">${s.songs.learned.length}곡</span></p>${s.songs.learned.map(g=>`<div class="song-item"><div class="dot dot-green"></div><p class="song-name" onclick="openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p></div>`).join('')}</div>`:''}`;
   renderStudentHwTab(s);
+  renderStudentHomeHw(s);
+  renderStudentHomeWant(s);
   renderStudentSongsTab(s);
   goScreen('sc-student');
+}
+function toggleStudentHwCard() {
+  _hwCardOpen = !_hwCardOpen;
+  const body  = document.getElementById('s-home-hw-body');
+  const arrow = document.getElementById('s-hw-arrow');
+  const badge = document.getElementById('s-hw-badge');
+  if (body)  body.classList.toggle('open', _hwCardOpen);
+  if (arrow) arrow.style.transform = _hwCardOpen ? 'rotate(90deg)' : 'rotate(0deg)';
+  if (badge) {
+    const s = loadStudents().find(x => x.id === curStudent.id);
+    if (s) {
+      const pending = s.homework.filter(h => !h.done);
+      const done    = s.homework.filter(h => h.done).length;
+      badge.textContent  = `${done}/${s.homework.length}`;
+      badge.style.display = (_hwCardOpen && pending.length > 0) ? '' : 'none';
+    }
+  }
 }
 let _progAnimating = false;
 function toggleProgressCard() {
@@ -1325,7 +1449,30 @@ function toggleStudentHw(sid,idx) {
   const students=loadStudents(); const s=students.find(x=>x.id===sid);
   s.homework[idx].done=!s.homework[idx].done; saveStudents(students);
   renderStudentHwTab(s);
-  renderStudentHomeHw(s);
+  _renderHwCardBody(s);
+}
+function _renderHwCardBody(s) {
+  const bodyEl = document.getElementById('s-home-hw-body');
+  const badge  = document.getElementById('s-hw-badge');
+  if (!bodyEl) return;
+  const pending  = s.homework.filter(h=>!h.done);
+  const done     = s.homework.filter(h=>h.done).length;
+  let bodyHtml   = '';
+  if (pending.length > 0) {
+    bodyHtml = pending.map(h => {
+      const realIdx = s.homework.indexOf(h);
+      return `<div class="hw-item"><div class="hw-check${h.done?' done':''}" onclick="event.stopPropagation();toggleStudentHw(${s.id},${realIdx})"></div><div class="hw-meta"><p class="hw-text${h.done?' done':''}">${h.text}</p>${h.week?`<p class="hw-week">${h.week}주차</p>`:''}</div></div>`;
+    }).join('');
+  } else if (s.homework.length > 0) {
+    bodyHtml = `<div style="text-align:center;padding:8px 0;"><p style="font-size:22px;margin-bottom:8px;">✓</p><p class="bold">이번 주 숙제 모두 완료!</p><p class="small muted mt4">다음 레슨이 기대돼요</p></div>`;
+  } else {
+    bodyHtml = `<p class="muted small" style="text-align:center;">아직 숙제가 없어요</p>`;
+  }
+  bodyEl.innerHTML = bodyHtml;
+  if (badge) {
+    badge.textContent   = `${done}/${s.homework.length}`;
+    badge.style.display = (_hwCardOpen && pending.length > 0) ? '' : 'none';
+  }
 }
 function renderStudentHwTab(s) {
   const done=s.homework.filter(h=>h.done).length;
@@ -1339,11 +1486,43 @@ function renderStudentHwTab(s) {
   </div>`;
 }
 function renderStudentSongsTab(s) {
+  const wantSet = new Set((s.songs.wantToLearn||[]).map(g=>g.trim().toLowerCase()));
+  const canSet  = new Set((s.songs.canLearn||[]).map(g=>g.trim().toLowerCase()));
+  const canRows = s.songs.canLearn.length
+    ? s.songs.canLearn.map(g=>{
+        const matched = wantSet.has(g.trim().toLowerCase());
+        return `<div class="song-item"><div class="dot dot-gold"></div><p class="${matched?'song-name song-match':'song-name'}" onclick="openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p></div>`;
+      }).join('')
+    : '<p class="small muted" style="padding:12px 0;text-align:center;">곡 목록을 기다리는 중</p>';
+  const notRows = s.songs.notYet.length
+    ? s.songs.notYet.map(g=>`<div class="song-item"><div class="dot dot-dim"></div><p class="song-name muted" onclick="openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p></div>`).join('')
+    : '<p class="small muted" style="padding:12px 0;text-align:center;">도전 예정 곡이 없습니다</p>';
+  const learnedRows = (s.songs.learned||[]).length
+    ? s.songs.learned.map(g=>`<div class="song-item"><div class="dot dot-green"></div><p class="song-name" onclick="openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p></div>`).join('')
+    : '<p class="small muted" style="padding:12px 0;text-align:center;">아직 없습니다</p>';
+  const wantRows = (s.songs.wantToLearn||[]).length
+    ? s.songs.wantToLearn.map((g,i)=>{
+        const matched = canSet.has(g.trim().toLowerCase());
+        const dotCls = matched ? 'dot-gold' : 'dot-dim';
+        const nameCls = matched ? 'song-name song-match' : 'song-name muted';
+        return `<div class="song-item"><div class="dot ${dotCls}"></div><p class="${nameCls}" style="flex:1;" onclick="openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p><button class="btn-red" onclick="deleteStudentWantSong(${i})">×</button></div>`;
+      }).join('')
+    : '<p class="small muted" style="padding:12px 0;text-align:center;">아직 없어요</p>';
   document.getElementById('s-songs').innerHTML=`
-    <div class="card"><p class="section-title gold">지금 배울 수 있는 곡</p>
-    ${s.songs.canLearn.length?s.songs.canLearn.map(g=>`<div class="song-item"><div class="dot dot-gold"></div><p class="song-name" onclick="openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p></div>`).join(''):'<p class="small muted" style="padding:12px 0;text-align:center;">곡 목록을 기다리는 중</p>'}</div>
-    <div class="card"><p class="section-title muted">연습이 필요한 곡</p>
-    ${s.songs.notYet.length?s.songs.notYet.map(g=>`<div class="song-item"><div class="dot dot-dim"></div><p class="song-name muted" onclick="openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p></div>`).join(''):'<p class="small muted" style="padding:12px 0;text-align:center;">도전 예정 곡이 없습니다</p>'}</div>`;
+    <div class="card"><p class="section-title gold">지금 배울 수 있는 곡</p>${canRows}</div>
+    <div class="card"><p class="section-title muted">배우고 싶은 곡</p>
+      <div id="s-tab-want-list">${wantRows}</div>
+      <div class="add-panel hidden" id="s-tab-want-panel">
+        <div class="form-group"><textarea id="s-tab-want-input" rows="1" placeholder="예: 아이유 - 밤편지"></textarea></div>
+        <div class="panel-actions">
+          <button class="panel-btn panel-btn-cancel" onclick="toggleStudentWantPanelTab()">취소</button>
+          <button class="panel-btn panel-btn-submit" onclick="submitStudentWantSongTab()">추가</button>
+        </div>
+      </div>
+      <button class="add-trigger" onclick="toggleStudentWantPanelTab()">+ 배우고 싶은 곡 추가</button>
+    </div>
+    <div class="card"><p class="section-title muted">연습이 필요한 곡</p>${notRows}</div>
+    <div class="card"><p class="section-title" style="color:var(--green);">지금까지 배운 곡 <span class="muted" style="font-weight:400;">${(s.songs.learned||[]).length}곡</span></p>${learnedRows}</div>`;
 }
 function switchStudentTab(tab,btn) {
   document.querySelectorAll('#sc-student .tab').forEach(t=>t.classList.remove('active'));
@@ -1381,22 +1560,54 @@ function updateHwPct(s) {
   const el=document.getElementById('d-hw-pct');
   if (el) el.innerHTML=`${pct}<span>%</span>`;
 }
+function renderStudentHomeWant(s) {
+  const card = document.getElementById('s-home-want-card');
+  if (!card) return;
+  const canSet = new Set((s.songs.canLearn||[]).map(g=>g.trim().toLowerCase()));
+  const rows = (s.songs.wantToLearn||[]).map((g,i)=>{
+    const matched = canSet.has(g.trim().toLowerCase());
+    const dotCls = matched ? 'dot-gold' : 'dot-dim';
+    const nameCls = matched ? 'song-name song-match' : 'song-name muted';
+    return `<div class="song-item"><div class="dot ${dotCls}"></div><p class="${nameCls}" style="flex:1;" onclick="openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p><button class="btn-red" onclick="deleteStudentWantSong(${i})">×</button></div>`;
+  }).join('') || '<p class="small muted" style="padding:4px 0;text-align:center;">아직 없어요</p>';
+  card.innerHTML = `
+    <p class="section-title muted">배우고 싶은 곡</p>
+    <div id="s-home-want-list">${rows}</div>
+    <div class="add-panel hidden" id="s-want-panel">
+      <div class="form-group"><textarea id="s-want-input" rows="1" placeholder="예: 아이유 - 밤편지"></textarea></div>
+      <div class="panel-actions">
+        <button class="panel-btn panel-btn-cancel" onclick="toggleStudentWantPanel()">취소</button>
+        <button class="panel-btn panel-btn-submit" onclick="submitStudentWantSong()">추가</button>
+      </div>
+    </div>
+    <button class="add-trigger" onclick="toggleStudentWantPanel()">+ 배우고 싶은 곡 추가</button>`;
+}
 function renderStudentHomeHw(s) {
-  const pending=s.homework.filter(h=>!h.done);
-  const done=s.homework.filter(h=>h.done).length;
   const hwEl=document.getElementById('s-home-hw');
   if (!hwEl) return;
+  const pending=s.homework.filter(h=>!h.done);
+  const done=s.homework.filter(h=>h.done).length;
+  const _w2=(loadStudents().find(x=>x.id===s.id)||{}).currentWeek||1;
+  let bodyHtml='';
   if (pending.length>0) {
-    const _w2=(loadStudents().find(x=>x.id===s.id)||{}).currentWeek||1;
-    hwEl.innerHTML=`<div class="row mb12"><p class="section-title" style="margin:0;">${_w2}주차 숙제</p><span class="small gold">${done}/${s.homework.length}</span></div>`+pending.map(h=>{
+    bodyHtml=pending.map(h=>{
       const realIdx=s.homework.indexOf(h);
-      return `<div class="hw-item"><div class="hw-check${h.done?' done':''}" onclick="toggleStudentHw(${s.id},${realIdx})"></div><div class="hw-meta"><p class="hw-text${h.done?' done':''}">${h.text}</p>${h.week?`<p class="hw-week">${h.week}주차</p>`:''}</div></div>`;
+      return `<div class="hw-item"><div class="hw-check${h.done?' done':''}" onclick="event.stopPropagation();toggleStudentHw(${s.id},${realIdx})"></div><div class="hw-meta"><p class="hw-text${h.done?' done':''}">${h.text}</p>${h.week?`<p class="hw-week">${h.week}주차</p>`:''}</div></div>`;
     }).join('');
   } else if (s.homework.length>0) {
-    hwEl.innerHTML=`<div style="text-align:center;padding:8px 0;"><p style="font-size:22px;margin-bottom:8px;">✓</p><p class="bold">이번 주 숙제 모두 완료!</p><p class="small muted mt4">다음 레슨이 기대돼요</p></div>`;
+    bodyHtml=`<div style="text-align:center;padding:8px 0;"><p style="font-size:22px;margin-bottom:8px;">✓</p><p class="bold">이번 주 숙제 모두 완료!</p><p class="small muted mt4">다음 레슨이 기대돼요</p></div>`;
   } else {
-    hwEl.innerHTML=`<p class="muted small" style="text-align:center;">아직 숙제가 없어요</p>`;
+    bodyHtml=`<p class="muted small" style="text-align:center;">아직 숙제가 없어요</p>`;
   }
+  hwEl.innerHTML=`
+    <div class="row" style="user-select:none;">
+      <p class="section-title" style="margin:0;">${_w2}주차 숙제</p>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span id="s-hw-badge" class="small gold" style="display:${(_hwCardOpen&&pending.length>0)?'':'none'};">${done}/${s.homework.length}</span>
+        <span id="s-hw-arrow" style="font-size:14px;color:var(--text3);transition:transform 0.3s;transform:${_hwCardOpen?'rotate(90deg)':'rotate(0deg)'};">›</span>
+      </div>
+    </div>
+    <div class="hw-body-drawer${_hwCardOpen?' open':''}" id="s-home-hw-body">${bodyHtml}</div>`;
 }
 function exportData() {
   const data = {
