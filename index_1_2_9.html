@@ -1,0 +1,1687 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="HEUM">
+<link rel="apple-touch-icon" href="heum_icon_512.png">
+<link rel="manifest" href="manifest.json">
+<title>HEUM</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/image/sw.js');
+  }
+</script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; background: #111; color: #e8e2d6; min-height: 100vh; }
+  :root {
+    --gold: #C9A84C; --gold-dim: #8a7035;
+    --surface: #1a1a1a; --surface2: #222; --surface3: #2a2a2a;
+    --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.13);
+    --text: #e8e2d6; --text2: #9a9080; --text3: #5a5448;
+    --red: #c45c4a; --green: #5a9a6a;
+  }
+  button { cursor: pointer; font-family: inherit; font-size: 13px; }
+  input, select, textarea { font-family: inherit; background: var(--surface3); border: 0.5px solid var(--border2); border-radius: 12px; color: var(--text); font-size: 15px; padding: 13px 16px; width: 100%; outline: none; transition: border-color 0.15s; }
+  input:focus, select:focus, textarea:focus { border-color: var(--gold); }
+  input::placeholder, textarea::placeholder { color: var(--text3); }
+  select option { background: #222; }
+  input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.6); }
+  input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.6); }
+  textarea { resize: none; line-height: 1.5; }
+
+  .screen { max-width: 480px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 20px 20px 16px; flex-shrink: 0; }
+  .content { padding: 0 16px 80px; }
+  .hidden { display: none !important; }
+  .row { display: flex; align-items: center; justify-content: space-between; }
+  .col { display: flex; flex-direction: column; gap: 2px; }
+  .mt4{margin-top:4px;} .mt8{margin-top:8px;} .mt12{margin-top:12px;} .mb8{margin-bottom:8px;} .mb12{margin-bottom:12px;}
+  .gold{color:var(--gold);} .muted{color:var(--text2);} .small{font-size:12px;} .bold{font-weight:500;}
+  .section-title { font-size:13px; font-weight:500; margin-bottom:14px; }
+
+  /* Auth */
+  .auth-wrap { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:40px 28px; }
+  .logo-mark { font-size:11px; letter-spacing:0.3em; color:var(--text3); margin-bottom:8px; }
+  .logo-main { font-size:36px; letter-spacing:0.2em; font-weight:300; margin-bottom:4px; }
+  .logo-sub { font-size:12px; color:var(--text3); letter-spacing:0.05em; margin-bottom:48px; }
+  .auth-box { width:100%; max-width:300px; display:flex; flex-direction:column; gap:10px; }
+  .login-btn { padding:16px; border-radius:14px; font-size:14px; letter-spacing:0.05em; width:100%; }
+  .btn-primary { background:var(--gold); border:none; color:#111; font-weight:500; border-radius:14px; }
+  .btn-primary:hover { background:#d4b05c; }
+  .btn { background:transparent; border:0.5px solid var(--border2); border-radius:10px; color:var(--text2); padding:8px 14px; transition:all 0.15s; }
+  .btn:hover { background:var(--surface3); color:var(--text); }
+  .btn-ghost { border:none; background:transparent; color:var(--text2); padding:4px 8px; }
+  .btn-red { background:transparent; border:none; color:var(--text3); padding:4px 8px; font-size:18px; line-height:1; transition:color 0.12s; flex-shrink:0; }
+  .btn-red:hover { color:var(--red); }
+  .btn-del-sm { background:transparent; border:0.5px solid rgba(196,92,74,0.3); border-radius:7px; color:var(--red); padding:4px 10px; font-size:11px; transition:all 0.12s; flex-shrink:0; }
+  .btn-del-sm:hover { background:rgba(196,92,74,0.1); }
+  .auth-title { font-size:18px; font-weight:500; text-align:center; margin-bottom:6px; }
+  .auth-sub { font-size:12px; color:var(--text2); text-align:center; margin-bottom:28px; line-height:1.6; }
+  .err-msg { font-size:12px; color:var(--red); text-align:center; min-height:18px; }
+  .ok-msg { font-size:12px; color:var(--green); text-align:center; }
+  .pw-dots { display:flex; gap:14px; justify-content:center; margin:20px 0 28px; }
+  .pw-dot { width:13px; height:13px; border-radius:50%; border:1.5px solid var(--border2); transition:all 0.15s; }
+  .pw-dot.filled { background:var(--gold); border-color:var(--gold); }
+  .numpad { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; width:100%; max-width:280px; margin:0 auto; }
+  .num-btn { padding:18px 0; font-size:20px; font-weight:300; background:var(--surface2); border:0.5px solid var(--border); border-radius:14px; color:var(--text); transition:all 0.12s; }
+  .num-btn:hover { background:var(--surface3); }
+  .num-btn:active { transform:scale(0.95); }
+  .num-btn.del { font-size:15px; color:var(--text2); }
+  .num-btn.empty { background:transparent; border:none; cursor:default; }
+
+  /* Teacher dashboard */
+  .teacher-body { flex:1; display:flex; flex-direction:column; justify-content:center; padding:0 16px 40px; gap:10px; }
+  .menu-section { background:var(--surface); border:0.5px solid var(--border); border-radius:16px; overflow:hidden; }
+  .menu-header { display:flex; align-items:center; justify-content:center; gap:10px; padding:22px 18px; cursor:pointer; transition:background 0.15s; user-select:none; }
+  .menu-header:hover { background:var(--surface2); }
+  .menu-label { font-size:15px; font-weight:500; text-align:center; }
+  .menu-arrow { font-size:14px; color:var(--text3); transition:transform 0.2s; }
+  .menu-arrow.open { transform:rotate(90deg); }
+  .menu-body { border-top:0.5px solid var(--border); }
+  .menu-item { display:flex; align-items:center; justify-content:space-between; padding:15px 18px; cursor:pointer; transition:background 0.12s; border-bottom:0.5px solid var(--border); }
+  .menu-item:last-child { border-bottom:none; }
+  .menu-item:hover { background:var(--surface2); }
+  .item-left { display:flex; align-items:center; gap:12px; }
+  .item-dot { width:8px; height:8px; border-radius:50%; background:var(--gold); flex-shrink:0; }
+  .item-dot-gray { background:var(--text3); }
+  .item-label { font-size:14px; }
+  .item-right { display:flex; align-items:center; gap:8px; }
+  .item-badge { font-size:10px; padding:2px 8px; border-radius:20px; background:var(--surface3); color:var(--text3); }
+  .item-arrow { font-size:13px; color:var(--text3); }
+
+  /* Detail */
+  .tabs { display:flex; border-bottom:0.5px solid var(--border); margin:0 16px 20px; }
+  .tab { padding:10px 16px; font-size:13px; color:var(--text2); background:transparent; border:none; border-bottom:2px solid transparent; transition:all 0.15s; }
+  .tab.active { color:var(--gold); border-bottom-color:var(--gold); }
+  .card { background:var(--surface); border:0.5px solid var(--border); border-radius:16px; padding:16px; margin-bottom:10px; }
+  .card-label { font-size:11px; color:var(--text2); letter-spacing:0.04em; margin-bottom:8px; }
+  .progress-track { height:5px; background:var(--surface3); border-radius:3px; overflow:hidden; }
+  .progress-fill { height:100%; background:var(--gold); border-radius:3px; }
+  .metrics { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+  .metric { background:var(--surface); border:0.5px solid var(--border); border-radius:14px; padding:14px; }
+  .metric-label { font-size:11px; color:var(--text2); margin-bottom:6px; }
+  .metric-val { font-size:26px; font-weight:300; }
+  .metric-val span { font-size:13px; color:var(--text2); margin-left:2px; }
+
+  /* Homework */
+  .hw-item { display:flex; gap:10px; align-items:center; padding:11px 0; border-bottom:0.5px solid var(--border); }
+  .hw-item:last-child { border-bottom:none; padding-bottom:0; }
+  .hw-check { width:20px; height:20px; border-radius:50%; border:1.5px solid var(--border2); flex-shrink:0; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.15s; }
+  .hw-check:hover { border-color:var(--gold); }
+  .hw-check.done { background:var(--gold); border-color:var(--gold); }
+  .hw-check.done::after { content:''; width:8px; height:5px; border-left:1.5px solid #111; border-bottom:1.5px solid #111; transform:rotate(-45deg) translate(1px,-1px); display:block; }
+  .hw-meta { display:flex; flex-direction:column; gap:2px; flex:1; min-width:0; }
+  .hw-text { font-size:13px; line-height:1.5; }
+  .hw-text.done { color:var(--text3); text-decoration:line-through; }
+  .hw-week { font-size:10px; color:var(--text3); }
+
+  /* Songs */
+  .song-item { display:flex; gap:8px; align-items:center; padding:9px 0; border-bottom:0.5px solid var(--border); }
+  .song-item:last-child { border-bottom:none; }
+  .dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+  .dot-gold { background:var(--gold); }
+  .dot-green { background:var(--green); }
+  .dot-dim { background:var(--surface3); border:1px solid var(--border2); }
+  .song-name { font-size:13px; flex:1; cursor:pointer; transition:color 0.12s; }
+  .song-name:hover { color:var(--gold); }
+
+  /* Add panels */
+  .add-panel { background:var(--surface2); border:0.5px solid var(--border2); border-radius:14px; padding:14px; margin-top:10px; }
+  .add-panel-title { font-size:12px; color:var(--text2); margin-bottom:10px; font-weight:500; }
+  .form-group { display:flex; flex-direction:column; gap:6px; margin-bottom:10px; }
+  .form-label { font-size:11px; color:var(--text3); }
+  .week-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+  .week-chip { padding:8px 0; font-size:12px; background:var(--surface3); border:0.5px solid var(--border); border-radius:8px; color:var(--text2); transition:all 0.12s; text-align:center; }
+  .week-chip.selected { background:rgba(201,168,76,0.15); border-color:var(--gold); color:var(--gold); }
+  .panel-actions { display:flex; gap:8px; margin-top:2px; }
+  .panel-btn { flex:1; padding:11px; border-radius:10px; font-size:13px; font-weight:500; transition:all 0.15s; }
+  .panel-btn-cancel { background:transparent; border:0.5px solid var(--border2); color:var(--text2); }
+  .panel-btn-cancel:hover { background:var(--surface3); }
+  .panel-btn-submit { background:var(--gold); border:none; color:#111; }
+  .panel-btn-submit:hover { background:#d4b05c; }
+  .add-trigger { width:100%; padding:12px; background:transparent; border:0.5px dashed var(--border2); border-radius:12px; color:var(--text3); font-size:13px; margin-top:8px; transition:all 0.15s; }
+  .add-trigger:hover { border-color:var(--gold-dim); color:var(--gold); }
+
+  /* Calendar */
+  .cal-wrap { background:var(--surface); border:0.5px solid var(--border); border-radius:16px; padding:16px; margin-bottom:10px; }
+  .cal-nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .cal-title { font-size:14px; font-weight:500; }
+  .cal-nav-btn { background:transparent; border:none; color:var(--text2); font-size:18px; padding:4px 8px; border-radius:8px; transition:background 0.12s; }
+  .cal-nav-btn:hover { background:var(--surface3); }
+  .cal-plus { background:rgba(201,168,76,0.15); border:none; color:var(--gold); font-size:16px; width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; transition:background 0.12s; }
+  .cal-plus:hover { background:rgba(201,168,76,0.25); }
+  .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+  .cal-dow { font-size:10px; color:var(--text3); text-align:center; padding:4px 0; }
+  .cal-day { text-align:center; padding:6px 2px; font-size:13px; border-radius:8px; cursor:pointer; transition:background 0.12s; display:flex; flex-direction:column; align-items:center; gap:3px; min-height:36px; }
+  .cal-day:hover { background:var(--surface3); }
+  .cal-day.empty { cursor:default; }
+  .cal-day.empty:hover { background:transparent; }
+  .cal-day.today .cal-num { background:var(--red); color:#fff; border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-size:12px; }
+  .cal-day.has-event .cal-dot { width:5px; height:5px; border-radius:50%; background:var(--gold); }
+  .cal-day.selected { background:var(--surface3); }
+  .cal-num { font-size:13px; line-height:22px; }
+  .cal-dot { display:none; }
+  .cal-day.has-event .cal-dot { display:block; }
+  .event-detail { background:var(--surface2); border:0.5px solid var(--border2); border-radius:12px; padding:14px; margin-top:10px; }
+  .event-detail-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .event-item { padding:10px 0; border-bottom:0.5px solid var(--border); display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+  .event-item:last-child { border-bottom:none; }
+  .event-info { display:flex; flex-direction:column; gap:3px; flex:1; }
+  .event-time { font-size:13px; color:var(--gold); font-weight:500; }
+  .event-week { font-size:11px; color:var(--text3); }
+  .event-memo { font-size:12px; color:var(--text2); margin-top:2px; }
+
+  /* Info screen */
+  .info-row { display:flex; align-items:center; gap:10px; padding:12px 0; border-bottom:0.5px solid var(--border); }
+  .info-row:last-child { border-bottom:none; }
+  .info-name { font-size:14px; font-weight:500; min-width:56px; }
+  .save-btn { background:var(--gold); border:none; color:#111; font-size:12px; font-weight:500; padding:8px 14px; border-radius:8px; flex-shrink:0; }
+  .badge-warn { font-size:10px; padding:3px 8px; border-radius:20px; background:rgba(196,92,74,0.15); color:var(--red); }
+  .badge-ok  { font-size:10px; padding:3px 8px; border-radius:20px; background:rgba(90,154,106,0.15); color:var(--green); }
+  .info-student-block { border-bottom:0.5px solid var(--border); }
+  .info-student-block:last-child { border-bottom:none; }
+  /* Horizontal student info grid */
+  .stu-info-grid { display:grid; grid-template-columns:1fr 1.1fr 1fr 0.7fr; gap:4px; padding:10px 2px; }
+  .stu-info-col { display:flex; flex-direction:column; gap:5px; min-width:0; }
+  .stu-info-key { font-size:10px; color:var(--text3); letter-spacing:0.03em; padding-left:6px; }
+  .stu-info-val { font-size:13px; color:var(--text); cursor:pointer; padding:5px 7px; border-radius:7px; transition:background 0.12s,color 0.12s; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .stu-info-val:hover { background:var(--surface3); color:var(--gold); }
+  .stu-info-val.placeholder { color:var(--text3); font-size:12px; }
+  .stu-info-input { font-size:13px; color:var(--text); background:var(--surface3); border:0.5px solid var(--gold); border-radius:7px; padding:5px 7px; width:100%; outline:none; border-radius:7px; }
+  .stu-info-select { font-size:13px; color:var(--text); background:var(--surface3); border:0.5px solid var(--gold); border-radius:7px; padding:5px 6px; width:100%; outline:none; }
+  /* Student progress card - FLIP animation */
+  .s-progress-card { cursor: pointer; }
+  .s-prog-header { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 12px; }
+  .s-prog-pre, .s-prog-post { font-size: 13px; color: var(--text2); }
+  .s-prog-week { font-size: 20px; font-weight: 500; color: var(--text); }
+  .s-progress-card.open .s-prog-pre { order: 1; color: var(--text3); }
+  .s-progress-card.open .s-prog-post { order: 2; color: var(--text3); }
+  .s-progress-card.open .s-prog-week { order: 3; flex-basis: 100%; margin-top: 4px; }
+  .s-prog-extra { overflow: hidden; max-height: 0; }
+  .s-progress-card.open .s-prog-extra { max-height: 40px; }
+  /* Student homework card gold tint */
+  .s-hw-card { border-color: rgba(201,168,76,0.28) !important; background: rgba(201,168,76,0.04) !important; }
+  /* Homework drawer animation */
+  .hw-body-drawer { overflow: hidden; max-height: 0; margin-top: 0; transition: max-height 0.38s cubic-bezier(0.4,0,0.2,1), margin-top 0.28s ease; }
+  .hw-body-drawer.open { max-height: 800px; margin-top: 12px; }
+  /* Gold glow for matched songs */
+  @keyframes goldGlow {
+    0%, 100% { color: var(--gold); text-shadow: 0 0 6px rgba(201,168,76,0.55); }
+    50% { color: #f0c96a; text-shadow: 0 0 14px rgba(201,168,76,0.9), 0 0 28px rgba(201,168,76,0.4); }
+  }
+  .song-match { animation: goldGlow 2.2s ease-in-out infinite; font-weight: 500; }
+  @media (hover: none) {
+    .btn-primary:hover { background:var(--gold); }
+    .btn:hover { background:transparent; color:var(--text2); }
+    .btn-red:hover { color:var(--text3); }
+    .btn-del-sm:hover { background:transparent; }
+    .num-btn:hover { background:var(--surface2); }
+    .menu-header:hover { background:transparent; }
+    .menu-item:hover { background:transparent; }
+    .hw-check:hover { border-color:var(--border2); }
+    .song-name:hover { color:inherit; }
+    .panel-btn-cancel:hover { background:var(--surface2); }
+    .panel-btn-submit:hover { background:var(--gold); }
+    .add-trigger:hover { border-color:var(--border); color:var(--text2); }
+    .cal-nav-btn:hover { background:transparent; }
+    .cal-plus:hover { background:transparent; }
+    .cal-day:hover { background:transparent; }
+    .cal-day.empty:hover { background:transparent; }
+    .save-btn:hover { background:var(--gold); }
+  }
+</style>
+</head>
+<body>
+
+<!-- 로딩 오버레이 -->
+<div id="loading-overlay" style="display:flex;position:fixed;inset:0;background:#111;z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:20px;">
+  <p style="font-size:28px;letter-spacing:0.25em;font-weight:300;color:#e8e2d6;">HEUM</p>
+  <div style="width:28px;height:28px;border:1.5px solid #333;border-top-color:#C9A84C;border-radius:50%;animation:_spin 0.8s linear infinite;"></div>
+</div>
+<style>@keyframes _spin{to{transform:rotate(360deg);}}</style>
+
+<!-- 메인 -->
+<div id="sc-main" class="auth-wrap">
+  <p class="logo-mark">SINCE 2025</p>
+  <p class="logo-main">HEUM</p>
+  <p class="logo-sub">Guitar Lesson Manager</p>
+  <div class="auth-box">
+    <button class="login-btn btn-primary" style="padding:20px;font-size:17px;letter-spacing:0.08em;" onclick="goScreen('sc-student-select')">레슨생으로 입장</button>
+    <button class="login-btn btn" style="padding:11px;font-size:12px;color:var(--text3);border-color:var(--border);" onclick="goScreen('sc-teacher-pw')">강사로 입장</button>
+  </div>
+</div>
+
+<!-- 강사 PIN -->
+<div id="sc-teacher-pw" class="auth-wrap hidden">
+  <p class="auth-title">강사 입장</p>
+  <p class="auth-sub" id="tpw-sub">비밀번호를 입력하세요</p>
+  <div class="pw-dots" id="tpw-dots"></div>
+  <div class="numpad" id="tpw-pad"></div>
+  <p class="err-msg mt12" id="tpw-err"></p>
+  <button class="btn-ghost mt12 small" onclick="goScreen('sc-main')">← 돌아가기</button>
+</div>
+
+<!-- 강사 대시보드 -->
+<div id="sc-teacher" class="hidden">
+  <div class="screen">
+    <div class="topbar">
+      <div class="col">
+        <p style="font-size:20px;letter-spacing:0.12em;font-weight:300;">HEUM</p>
+        <p class="small muted">강사 메뉴</p>
+      </div>
+      <button class="btn" onclick="logout()">로그아웃</button>
+    </div>
+    <div class="teacher-body">
+      <div class="menu-section">
+        <div class="menu-header" onclick="toggleMenu('menu-students','arrow-students')">
+          <p class="menu-label">레슨생 리스트</p>
+          <span class="menu-arrow" id="arrow-students">›</span>
+        </div>
+        <div class="menu-body hidden" id="menu-students"></div>
+      </div>
+      <div class="menu-section">
+        <div class="menu-header" onclick="toggleMenu('menu-settings','arrow-settings')">
+          <p class="menu-label">환경설정</p>
+          <span class="menu-arrow" id="arrow-settings">›</span>
+        </div>
+        <div class="menu-body hidden" id="menu-settings">
+          <div class="menu-item" onclick="goScreen('sc-info')">
+            <div class="item-left"><div class="item-dot item-dot-gray"></div><p class="item-label">레슨생 정보 관리</p></div>
+            <span class="item-arrow">›</span>
+          </div>
+          <div class="menu-item" onclick="goScreen('sc-change-pw')">
+            <div class="item-left"><div class="item-dot item-dot-gray"></div><p class="item-label">비밀번호 변경</p></div>
+            <span class="item-arrow">›</span>
+          </div>
+          <div class="menu-item" onclick="exportData()">
+            <div class="item-left"><div class="item-dot item-dot-gray"></div><p class="item-label">데이터 내보내기</p></div>
+            <span class="item-arrow">↓</span>
+          </div>
+          <div class="menu-item" onclick="openImportModal()">
+            <div class="item-left"><div class="item-dot item-dot-gray"></div><p class="item-label">데이터 가져오기</p></div>
+            <span class="item-arrow">↑</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 비밀번호 변경 -->
+<div id="sc-change-pw" class="auth-wrap hidden">
+  <p class="auth-title">비밀번호 변경</p>
+  <p class="auth-sub" id="cpw-sub">현재 비밀번호를 입력하세요</p>
+  <div class="pw-dots" id="cpw-dots"></div>
+  <div class="numpad" id="cpw-pad"></div>
+  <p class="err-msg mt12" id="cpw-err"></p>
+  <p class="ok-msg mt12 hidden" id="cpw-ok">비밀번호가 변경됐습니다</p>
+  <button class="btn-ghost mt12 small" onclick="goScreen('sc-teacher')">← 돌아가기</button>
+</div>
+
+<!-- 레슨생 정보 관리 -->
+<div id="sc-info" class="hidden">
+  <div class="screen">
+    <div class="topbar">
+      <button class="btn-ghost" onclick="goScreen('sc-teacher')">← 돌아가기</button>
+      <p class="bold">레슨생 정보 관리</p>
+      <div style="width:60px;"></div>
+    </div>
+    <div class="content">
+      <div class="card"><p class="section-title">레슨생 정보</p><div id="info-student-list"></div></div>
+      <div class="card mt8">
+        <p class="section-title">레슨생 추가</p>
+        <div class="form-group"><p class="form-label">이름</p><input type="text" id="add-name" placeholder="이름 입력"></div>
+        <div class="form-group"><p class="form-label">레벨</p><select id="add-level"><option value="초급">초급</option><option value="중급">중급</option><option value="고급">고급</option></select></div>
+        <div class="form-group"><p class="form-label">생년월일 (YYMMDD)</p><input type="tel" id="add-birth" maxlength="6" placeholder="예: 991201" oninput="this.value=this.value.replace(/\D/g,'')"></div>
+        <div class="form-group"><p class="form-label">수업 시작일</p><input type="date" id="add-start"></div>
+        <p class="err-msg" id="add-err" style="text-align:left;margin-bottom:8px;"></p>
+        <button class="btn-primary" style="width:100%;padding:14px;font-size:14px;" onclick="addStudent()">추가하기</button>
+      </div>
+      <div class="card mt8"><p class="section-title">레슨생 삭제</p><div id="info-delete-list"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- 학생 상세 (강사) -->
+<div id="sc-detail" class="hidden">
+  <div class="screen">
+    <div class="topbar">
+      <button class="btn-ghost" onclick="goScreen('sc-teacher')">← 목록</button>
+      <div class="col" style="align-items:flex-end"><p class="bold" id="d-name"></p><p class="small muted" id="d-meta"></p></div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchDTab('progress',this)">진도</button>
+      <button class="tab" onclick="switchDTab('homework',this)">숙제</button>
+      <button class="tab" onclick="switchDTab('songs',this)">곡 목록</button>
+    </div>
+    <div class="content">
+      <div id="d-progress"></div>
+      <div id="d-homework" class="hidden"></div>
+      <div id="d-songs" class="hidden"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 레슨생 선택 -->
+<div id="sc-student-select" class="auth-wrap hidden">
+  <p class="auth-title" style="margin-bottom:6px;">레슨생 로그인</p>
+  <p class="auth-sub">이름과 생년월일을 입력하세요</p>
+  <div style="width:100%;max-width:300px;display:flex;flex-direction:column;gap:10px;">
+    <input type="text" id="sl-name" placeholder="이름" autocomplete="name">
+    <input type="tel" id="sl-birth" maxlength="6" placeholder="생년월일 (YYMMDD)" oninput="this.value=this.value.replace(/\D/g,'')">
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);cursor:pointer;padding:2px 0;">
+      <input type="checkbox" id="sl-autologin" style="width:16px;height:16px;padding:0;background:var(--surface3);border-radius:4px;accent-color:var(--gold);">
+      자동로그인
+    </label>
+    <p class="err-msg" id="sl-err" style="text-align:left;"></p>
+    <button class="btn-primary" style="padding:15px;font-size:14px;" onclick="submitStudentLogin()">확인</button>
+  </div>
+  <button class="btn-ghost mt12 small" onclick="goScreen('sc-main')">← 돌아가기</button>
+</div>
+
+<!-- 생년월일 인증 -->
+<div id="sc-birthdate" class="auth-wrap hidden">
+  <p class="auth-title" id="bd-name"></p>
+  <p class="auth-sub">생년월일 8자리를 입력하세요<br><span style="font-size:11px;color:var(--text3);">예: 19990315</span></p>
+  <div style="width:100%;max-width:300px;margin:0 0 16px;">
+    <input type="tel" id="bd-input" maxlength="8" placeholder="YYYYMMDD" oninput="this.value=this.value.replace(/\D/g,'')">
+  </div>
+  <button class="btn-primary" style="width:100%;max-width:300px;padding:15px;font-size:14px;" onclick="verifyBd()">확인</button>
+  <p class="err-msg mt12" id="bd-err"></p>
+  <button class="btn-ghost mt12 small" onclick="goScreen('sc-student-select')">← 돌아가기</button>
+</div>
+
+<!-- 비밀번호 설정 -->
+<div id="sc-set-pw" class="auth-wrap hidden">
+  <p class="auth-title" id="spw-title"></p>
+  <p class="auth-sub" id="spw-sub">사용할 비밀번호를 입력하세요<br><span style="font-size:11px;color:var(--text3);">숫자 4자리</span></p>
+  <div class="pw-dots" id="spw-dots"></div>
+  <div class="numpad" id="spw-pad"></div>
+  <p class="err-msg mt12" id="spw-err"></p>
+  <button class="btn-ghost mt12 small" onclick="goScreen('sc-student-select')">← 돌아가기</button>
+</div>
+
+<!-- 비밀번호 입력 -->
+<div id="sc-enter-pw" class="auth-wrap hidden">
+  <p style="font-size:22px;font-weight:500;text-align:center;margin-bottom:4px;" id="epw-name"></p>
+  <p class="auth-sub">비밀번호를 입력하세요</p>
+  <div class="pw-dots" id="epw-dots"></div>
+  <div class="numpad" id="epw-pad"></div>
+  <p class="err-msg mt12" id="epw-err"></p>
+  <button class="btn-ghost mt12 small" onclick="resetStudentLogin()">다른 사람으로 로그인</button>
+</div>
+
+<!-- 레슨생 홈 -->
+<div id="sc-student" class="hidden">
+  <div class="screen">
+    <div class="topbar">
+      <div class="col"><p class="bold" id="s-name" style="font-size:17px;"></p><p class="small muted" id="s-meta"></p></div>
+      <button class="btn" onclick="logout()">나가기</button>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchStudentTab('home',this)">홈</button>
+      <button class="tab" onclick="switchStudentTab('homework',this)">숙제</button>
+      <button class="tab" onclick="switchStudentTab('songs',this)">곡 목록</button>
+    </div>
+    <div class="content">
+      <div id="s-home"></div>
+      <div id="s-homework" class="hidden"></div>
+      <div id="s-songs" class="hidden"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Firebase 설정 ────────────────────────────────────────────
+// 아래 값을 본인의 Firebase 프로젝트 설정으로 교체하세요
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDMOVRBNURel5X_vOTGRQ8asiyTsREaLtc",
+  authDomain: "guitar-lasson-app.firebaseapp.com",
+  databaseURL: "https://guitar-lasson-app-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "guitar-lasson-app",
+  storageBucket: "guitar-lasson-app.firebasestorage.app",
+  messagingSenderId: "865808961682",
+  appId: "1:865808961682:web:fafbe0225a6d120c07164b"
+};
+firebase.initializeApp(FIREBASE_CONFIG);
+const _db = firebase.database();
+
+// ── 데이터 캐시 ───────────────────────────────────────────────
+let _studentsCache = null;
+let _teacherPwCache = null;
+let _studentPwCache = {};
+
+// 학생 비밀번호 헬퍼 (Firebase + localStorage 이중 저장)
+function getStudentPw(id) {
+  return _studentPwCache[id] || localStorage.getItem(`heum_pw_${id}`) || null;
+}
+function saveStudentPw(id, pw) {
+  _studentPwCache[id] = pw;
+  localStorage.setItem(`heum_pw_${id}`, pw);
+  _db.ref('heum/student_pw/' + id).set(pw).catch(e=>console.error('학생 PW 저장 오류:', e));
+}
+function deleteStudentPw(id) {
+  delete _studentPwCache[id];
+  localStorage.removeItem(`heum_pw_${id}`);
+  _db.ref('heum/student_pw/' + id).remove().catch(e=>console.error('학생 PW 삭제 오류:', e));
+}
+
+// ── 데이터 ─────────────────────────────────────────────────
+const STUDENTS_DEFAULT = [
+  { id:1, name:"임슬찬", level:"초급", birthdate:"00000000", startDate:null, progress:0, module:"수업 준비 중", currentWeek:1, nextLesson:"", homework:[], songs:{canLearn:[],notYet:[],wantToLearn:[],learned:[]}, events:[] },
+  { id:2, name:"인영",   level:"초급", birthdate:"00000000", startDate:null, progress:0, module:"수업 준비 중", currentWeek:1, nextLesson:"", homework:[], songs:{canLearn:[],notYet:[],wantToLearn:[],learned:[]}, events:[] }
+];
+const TEACHER_PW_DEFAULT = "0912";
+
+function getTeacherPw() { return _teacherPwCache || TEACHER_PW_DEFAULT; }
+function saveTeacherPw(pw) {
+  _teacherPwCache = pw;
+  _db.ref('heum/config/teacher_pw').set(pw).catch(e=>console.error('강사 PW 저장 오류:', e));
+}
+function loadStudents() {
+  if (_studentsCache) return JSON.parse(JSON.stringify(_studentsCache));
+  return JSON.parse(JSON.stringify(STUDENTS_DEFAULT));
+}
+function saveStudents(arr) {
+  _studentsCache = JSON.parse(JSON.stringify(arr));
+  const obj = {};
+  arr.forEach(s => { obj[s.id] = s; });
+  _db.ref('heum/students').set(obj).catch(e=>console.error('학생 데이터 저장 오류:', e));
+}
+function calcMonths(startDate) {
+  if (!startDate) return 0;
+  return Math.max(0, Math.floor((Date.now() - new Date(startDate).getTime()) / (1000*60*60*24*30.44)));
+}
+function nextId(arr) { return arr.length ? Math.max(...arr.map(s=>s.id))+1 : 1; }
+
+// ── Firebase 초기화 및 실시간 동기화 ─────────────────────────
+function showLoading(v){document.getElementById('loading-overlay').style.display=v?'flex':'none';}
+function _toArr(v){
+  if(!v) return [];
+  if(Array.isArray(v)) return v;
+  return Object.values(v);
+}
+function _fixStudent(st){
+  st.events   = _toArr(st.events);
+  st.homework = _toArr(st.homework);
+  if(!st.currentWeek)st.currentWeek=1;
+  if(st.nextLesson===undefined)st.nextLesson='';
+  if(!st.songs){ st.songs={canLearn:[],notYet:[],wantToLearn:[],learned:[]}; }
+  else{
+    st.songs.canLearn    = _toArr(st.songs.canLearn);
+    st.songs.notYet      = _toArr(st.songs.notYet);
+    st.songs.wantToLearn = _toArr(st.songs.wantToLearn);
+    st.songs.learned     = _toArr(st.songs.learned);
+  }
+}
+
+window.addEventListener('DOMContentLoaded', async ()=>{
+  try {
+    const _timeout = new Promise((_,reject) => setTimeout(()=>reject(new Error('timeout')), 5000));
+    const [sSnap, pwSnap, spwSnap] = await Promise.race([
+      Promise.all([
+        _db.ref('heum/students').get(),
+        _db.ref('heum/config/teacher_pw').get(),
+        _db.ref('heum/student_pw').get()
+      ]),
+      _timeout
+    ]);
+
+    if (sSnap.exists()) {
+      const obj = sSnap.val();
+      _studentsCache = Object.values(obj).sort((a,b)=>a.id-b.id);
+      _studentsCache.forEach(_fixStudent);
+    } else {
+      // 최초 실행: 기본 학생 데이터를 Firebase에 저장
+      _studentsCache = JSON.parse(JSON.stringify(STUDENTS_DEFAULT));
+      saveStudents(_studentsCache);
+    }
+
+    _teacherPwCache = pwSnap.exists() ? pwSnap.val() : TEACHER_PW_DEFAULT;
+    if (!pwSnap.exists()) saveTeacherPw(TEACHER_PW_DEFAULT);
+
+    _studentPwCache = spwSnap.exists() ? (spwSnap.val() || {}) : {};
+
+    // 실시간 리스너: 강사가 데이터를 수정하면 학생 앱에도 즉시 반영
+    _db.ref('heum/students').on('value', snap=>{
+      if(!snap.exists())return;
+      const arr = Object.values(snap.val()).sort((a,b)=>a.id-b.id);
+      arr.forEach(_fixStudent);
+      _studentsCache = arr;
+    });
+    _db.ref('heum/config/teacher_pw').on('value', snap=>{
+      if(snap.exists()) _teacherPwCache = snap.val();
+    });
+    _db.ref('heum/student_pw').on('value', snap=>{
+      _studentPwCache = snap.exists() ? (snap.val() || {}) : {};
+    });
+
+  } catch(e) {
+    console.error('Firebase 초기화 오류:', e);
+    _studentsCache = JSON.parse(JSON.stringify(STUDENTS_DEFAULT));
+    _teacherPwCache = TEACHER_PW_DEFAULT;
+    _studentPwCache = {};
+    alert('서버 연결에 실패했습니다. Firebase 설정을 확인해주세요.');
+  }
+
+  showLoading(false);
+
+  // 자동로그인 확인
+  try {
+    const autoId = localStorage.getItem('heum_autologin_id');
+    if (autoId) {
+      const s = loadStudents().find(x=>x.id===parseInt(autoId));
+      if (s) {
+        curStudent=s;
+        const savedPw = getStudentPw(s.id);
+        startEnterPw(savedPw);
+        return;
+      }
+    }
+  } catch(e){}
+});
+
+let curStudent = null;
+let curDetailId = null;
+let setPwStep = 1, setPwFirst = '';
+let changePwStep = 1, changePwFirst = '';
+let selectedWeek = null;
+let calYear, calMonth, calSelectedDate;
+let eventWeekSel = null;
+
+// ── 화면 전환 ──────────────────────────────────────────────
+function goScreen(id) {
+  document.querySelectorAll('[id^="sc-"]').forEach(el => el.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+  document.body.style.pointerEvents = 'none';
+  requestAnimationFrame(() => { document.body.style.pointerEvents = ''; });
+  if (id === 'sc-teacher-pw') initTeacherPw();
+  if (id === 'sc-student-select') initStudentLoginForm();
+  if (id === 'sc-teacher') renderTeacherMenu();
+  if (id === 'sc-info') renderInfoScreen();
+  if (id === 'sc-change-pw') initChangePw();
+}
+function logout() { goScreen('sc-main'); }
+function toggleMenu(bodyId, arrowId) {
+  const body = document.getElementById(bodyId);
+  const arrow = document.getElementById(arrowId);
+  const isOpen = !body.classList.contains('hidden');
+  body.classList.toggle('hidden', isOpen);
+  arrow.classList.toggle('open', !isOpen);
+}
+
+// ── 강사 PIN ──────────────────────────────────────────────
+function initTeacherPw() {
+  document.getElementById('tpw-err').textContent = '';
+  function handleTeacherPin(pin) {
+    if (pin === getTeacherPw()) { goScreen('sc-teacher'); }
+    else { showErr('tpw-err','비밀번호가 틀렸습니다'); resetPad('tpw-pad','tpw-dots',4,handleTeacherPin,'tpw-err'); }
+  }
+  buildPad('tpw-pad','tpw-dots',4,handleTeacherPin,'tpw-err');
+}
+
+// ── 비밀번호 변경 ─────────────────────────────────────────
+function initChangePw() {
+  changePwStep=1; changePwFirst='';
+  document.getElementById('cpw-err').textContent='';
+  document.getElementById('cpw-ok').classList.add('hidden');
+  document.getElementById('cpw-sub').textContent='현재 비밀번호를 입력하세요';
+  buildPad('cpw-pad','cpw-dots',4,onChangePw,'cpw-err');
+}
+function onChangePw(pin) {
+  if (changePwStep===1) {
+    if (pin!==getTeacherPw()) { showErr('cpw-err','현재 비밀번호가 틀렸습니다'); resetPad('cpw-pad','cpw-dots',4,onChangePw,'cpw-err'); return; }
+    changePwStep=2; document.getElementById('cpw-sub').textContent='새 비밀번호를 입력하세요'; document.getElementById('cpw-err').textContent='';
+    buildPad('cpw-pad','cpw-dots',4,onChangePw,'cpw-err');
+  } else if (changePwStep===2) {
+    changePwFirst=pin; changePwStep=3; document.getElementById('cpw-sub').textContent='새 비밀번호를 한 번 더 입력하세요'; document.getElementById('cpw-err').textContent='';
+    buildPad('cpw-pad','cpw-dots',4,onChangePw,'cpw-err');
+  } else {
+    if (pin!==changePwFirst) {
+      showErr('cpw-err','새 비밀번호가 일치하지 않습니다. 다시 진행하세요.'); changePwStep=1; changePwFirst='';
+      document.getElementById('cpw-sub').textContent='현재 비밀번호를 입력하세요';
+      buildPad('cpw-pad','cpw-dots',4,onChangePw,'cpw-err');
+    } else {
+      saveTeacherPw(pin);
+      document.getElementById('cpw-ok').classList.remove('hidden');
+      document.getElementById('cpw-sub').textContent='';
+      document.getElementById('cpw-err').textContent='';
+      document.getElementById('cpw-dots').innerHTML='';
+      document.getElementById('cpw-pad').innerHTML='';
+    }
+  }
+}
+
+// ── 강사 메뉴 ─────────────────────────────────────────────
+function renderTeacherMenu() {
+  const students = loadStudents();
+  ['menu-students','menu-settings'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['arrow-students','arrow-settings'].forEach(id=>document.getElementById(id).classList.remove('open'));
+  document.getElementById('menu-students').innerHTML = students.map(s => {
+    const pend = s.homework.filter(h=>!h.done).length;
+    const badge = pend>0 ? `<span class="badge-warn">${pend}개 미완</span>` : '';
+    return `<div class="menu-item" onclick="openDetail(${s.id})">
+      <div class="item-left"><div class="item-dot"></div><p class="item-label">${s.name}</p></div>
+      <div class="item-right">${badge}<span class="item-badge">${s.level}</span><span class="item-arrow">›</span></div>
+    </div>`;
+  }).join('') || '<div style="padding:14px 18px;"><p class="small muted">등록된 레슨생이 없습니다</p></div>';
+}
+
+// ── 레슨생 정보 관리 ─────────────────────────────────────
+function normBd(bd) {
+  if (!bd) return '';
+  const s = String(bd);
+  if (s === '00000000') return '000000';
+  if (s.length === 8) return s.slice(2); // YYYYMMDD → YYMMDD
+  return s;
+}
+function fmtStartDate(d) {
+  if (!d) return '';
+  const p = d.split('-');
+  return p.length === 3 ? p[0].slice(2) + '.' + p[1] + '.' + p[2] : d;
+}
+function renderInfoScreen() {
+  const students = loadStudents();
+  document.getElementById('info-student-list').innerHTML = students.length ? students.map(s => {
+    const bd = normBd(s.birthdate);
+    const sd = fmtStartDate(s.startDate);
+    return `<div class="info-student-block">
+      <div class="stu-info-grid">
+        <div class="stu-info-col">
+          <p class="stu-info-key">이름</p>
+          <p class="stu-info-val" onclick="inlineEdit(${s.id},'name',this)">${s.name}</p>
+        </div>
+        <div class="stu-info-col">
+          <p class="stu-info-key">시작일</p>
+          <p class="stu-info-val${!sd?' placeholder':''}" onclick="inlineEdit(${s.id},'startDate',this)">${sd||'미설정'}</p>
+        </div>
+        <div class="stu-info-col">
+          <p class="stu-info-key">생년월일</p>
+          <p class="stu-info-val${!bd?' placeholder':''}" onclick="inlineEdit(${s.id},'birthdate',this)">${bd||'미입력'}</p>
+        </div>
+        <div class="stu-info-col">
+          <p class="stu-info-key">등급</p>
+          <p class="stu-info-val" onclick="inlineEdit(${s.id},'level',this)">${s.level}</p>
+        </div>
+      </div>
+    </div>`;
+  }).join('') : '<p class="small muted">등록된 레슨생이 없습니다</p>';
+  document.getElementById('info-delete-list').innerHTML = students.map(s =>
+    `<div class="info-row" id="del-row-${s.id}"><p class="info-name" style="flex:1;">${s.name}</p><span class="item-badge" style="margin-right:8px;">${s.level}</span><button class="btn-del-sm" onclick="confirmDelete(${s.id},'${s.name}')">삭제</button></div>`
+  ).join('') || '<p class="small muted">등록된 레슨생이 없습니다</p>';
+}
+function inlineEdit(id, field, el) {
+  const s = loadStudents().find(x => x.id === id);
+  if (!s) return;
+  if (field === 'name') {
+    const inp = document.createElement('input');
+    inp.type = 'text'; inp.className = 'stu-info-input'; inp.value = s.name;
+    el.replaceWith(inp); inp.focus(); inp.select();
+    let committed = false;
+    function commit() {
+      if (committed) return; committed = true;
+      const v = inp.value.trim();
+      if (v && v !== s.name) { const arr=loadStudents(); arr.find(x=>x.id===id).name=v; saveStudents(arr); }
+      renderInfoScreen();
+    }
+    inp.addEventListener('blur', commit);
+    inp.addEventListener('keydown', e => { if(e.key==='Enter') inp.blur(); if(e.key==='Escape'){committed=true;renderInfoScreen();} });
+  } else if (field === 'startDate') {
+    const inp = document.createElement('input');
+    inp.type = 'date'; inp.className = 'stu-info-input'; inp.value = s.startDate || '';
+    el.replaceWith(inp); inp.focus();
+    let committed = false;
+    function commit() {
+      if (committed) return; committed = true;
+      const v = inp.value;
+      if (v) { const arr=loadStudents(); arr.find(x=>x.id===id).startDate=v; saveStudents(arr); }
+      renderInfoScreen();
+    }
+    inp.addEventListener('blur', commit);
+    inp.addEventListener('keydown', e => { if(e.key==='Enter') inp.blur(); if(e.key==='Escape'){committed=true;renderInfoScreen();} });
+  } else if (field === 'birthdate') {
+    const inp = document.createElement('input');
+    inp.type = 'tel'; inp.className = 'stu-info-input'; inp.maxLength = 6;
+    inp.placeholder = 'YYMMDD'; inp.value = normBd(s.birthdate);
+    inp.oninput = () => { inp.value = inp.value.replace(/\D/g,''); };
+    el.replaceWith(inp); inp.focus(); inp.select();
+    let committed = false;
+    function commit() {
+      if (committed) return; committed = true;
+      const v = inp.value.trim();
+      if (v && v.length === 6) { const arr=loadStudents(); arr.find(x=>x.id===id).birthdate=v; saveStudents(arr); }
+      else if (v && v.length !== 6) { alert('생년월일 6자리를 입력하세요 (예: 991201)'); }
+      renderInfoScreen();
+    }
+    inp.addEventListener('blur', commit);
+    inp.addEventListener('keydown', e => { if(e.key==='Enter') inp.blur(); if(e.key==='Escape'){committed=true;renderInfoScreen();} });
+  } else if (field === 'level') {
+    const sel = document.createElement('select');
+    sel.className = 'stu-info-select';
+    ['초급','중급','고급'].forEach(lv => {
+      const opt = document.createElement('option');
+      opt.value = lv; opt.textContent = lv; if(s.level===lv) opt.selected=true;
+      sel.appendChild(opt);
+    });
+    el.replaceWith(sel); sel.focus();
+    let committed = false;
+    function commit() {
+      if (committed) return; committed = true;
+      const arr=loadStudents(); arr.find(x=>x.id===id).level=sel.value; saveStudents(arr);
+      renderInfoScreen();
+    }
+    sel.addEventListener('change', () => { committed=false; commit(); });
+    sel.addEventListener('blur', () => { if(!committed) commit(); });
+  }
+}
+function addStudent() {
+  const name=document.getElementById('add-name').value.trim();
+  const level=document.getElementById('add-level').value;
+  const birth=document.getElementById('add-birth').value.trim();
+  const start=document.getElementById('add-start').value;
+  const err=document.getElementById('add-err');
+  if (!name) { err.textContent='이름을 입력하세요'; return; }
+  if (birth.length!==6) { err.textContent='생년월일 6자리를 입력하세요 (예: 991201)'; return; }
+  err.textContent='';
+  const students=loadStudents();
+  students.push({ id:nextId(students),name,level,birthdate:birth,startDate:start||null,progress:0,module:"수업 준비 중",currentWeek:1,nextLesson:'',homework:[],songs:{canLearn:[],notYet:[],wantToLearn:[],learned:[]},events:[] });
+  saveStudents(students);
+  document.getElementById('add-name').value=''; document.getElementById('add-birth').value=''; document.getElementById('add-start').value='';
+  renderInfoScreen(); alert(`${name} 레슨생이 추가됐습니다`);
+}
+function confirmDelete(id,name) {
+  const row=document.getElementById(`del-row-${id}`);
+  if (!row) return;
+  row.innerHTML=`
+    <p class="info-name" style="flex:1;color:var(--red);font-size:13px;">${name} 삭제할까요?</p>
+    <button class="btn-del-sm" style="margin-right:6px;" onclick="deleteStudent(${id},'${name}')">확인</button>
+    <button class="btn-del-sm" style="border-color:var(--border2);color:var(--text2);" onclick="renderInfoScreen()">취소</button>`;
+}
+function deleteStudent(id,name) {
+  saveStudents(loadStudents().filter(s=>s.id!==id));
+  deleteStudentPw(id); renderInfoScreen();
+}
+
+// ── 학생 상세 (강사) ─────────────────────────────────────
+function openDetail(id) {
+  curDetailId=id;
+  const now=new Date(); calYear=now.getFullYear(); calMonth=now.getMonth(); calSelectedDate=null;
+  renderDetailAll(id);
+  ['progress','homework','songs'].forEach((t,i)=>document.getElementById('d-'+t).classList.toggle('hidden',i!==0));
+  document.querySelectorAll('#sc-detail .tab').forEach((t,i)=>t.classList.toggle('active',i===0));
+  goScreen('sc-detail');
+}
+function renderDetailAll(id) {
+  const students=loadStudents(); const s=students.find(x=>x.id===id);
+  const months=calcMonths(s.startDate);
+  const done=s.homework.filter(h=>h.done).length;
+  const pct=s.homework.length?Math.round((done/s.homework.length)*100):0;
+  document.getElementById('d-name').textContent=s.name;
+  document.getElementById('d-meta').textContent=`${s.level} · ${months>0?months+'개월차':'시작일 미설정'}`;
+  renderProgressTab(s,months,pct);
+  renderHomeworkTab(s,done);
+  renderSongsTab(s);
+}
+function renderProgressTab(s,months,pct) {
+  const week=s.currentWeek||1;
+  document.getElementById('d-progress').innerHTML = `
+    <div class="card">
+      <p class="card-label">현재 주차 설정</p>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <div class="week-grid" style="flex:1;" id="d-week-grid"></div>
+      </div>
+      <p class="card-label" style="margin-top:10px;">다음 주 수업 내용 — ${week+1}주차</p>
+      <textarea id="d-next-lesson" rows="2" style="font-size:13px;padding:10px 12px;" placeholder="다음 수업에서 배울 내용을 입력하세요">${s.nextLesson||''}</textarea>
+      <button class="save-btn" style="margin-top:8px;width:100%;padding:10px;" onclick="saveProgressSettings(${s.id})">저장</button>
+    </div>
+    <div class="metrics">
+      <div class="metric"><p class="metric-label">수강 기간</p><p class="metric-val">${months}<span>개월</span></p></div>
+      <div class="metric"><p class="metric-label">숙제 완료율</p><p class="metric-val" id="d-hw-pct">${pct}<span>%</span></p></div>
+    </div>
+    <div class="metrics">
+      <div class="metric"><p class="metric-label">배울 수 있는 곡</p><p class="metric-val">${s.songs.canLearn.length}<span>곡</span></p></div>
+      <div class="metric"><p class="metric-label">연습 필요한 곡</p><p class="metric-val">${s.songs.notYet.length}<span>곡</span></p></div>
+    </div>
+    <div id="cal-container"></div>`;
+  buildDWeekGrid(week);
+  renderCalendar(s);
+}
+function buildDWeekGrid(curWeek) {
+  const g=document.getElementById('d-week-grid'); if(!g) return;
+  g.innerHTML=Array.from({length:4},(_,i)=>i+1).map(w=>
+    `<button class="week-chip${curWeek===w?' selected':''}" onclick="selectDWeek(${w})">${w}주차</button>`
+  ).join('');
+}
+function selectDWeek(w) {
+  document.querySelectorAll('#d-week-grid .week-chip').forEach((el,i)=>el.classList.toggle('selected',i+1===w));
+}
+function saveProgressSettings(sid) {
+  const students=loadStudents(); const s=students.find(x=>x.id===sid);
+  const selChip=document.querySelector('#d-week-grid .week-chip.selected');
+  if (selChip) s.currentWeek=parseInt(selChip.textContent);
+  s.nextLesson=document.getElementById('d-next-lesson').value.trim();
+  saveStudents(students);
+  alert('저장됐습니다');
+}
+
+// ── 캘린더 ────────────────────────────────────────────────
+function renderCalendar(s) {
+  const container = document.getElementById('cal-container');
+  if (!container) return;
+  const today = new Date();
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const monthNames = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  const dowLabels = ['일','월','화','수','목','금','토'];
+
+  const eventDates = new Set((s.events||[]).map(e=>e.date));
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+
+  let cells = '';
+  dowLabels.forEach(d => { cells += `<div class="cal-dow">${d}</div>`; });
+  for (let i=0;i<firstDay;i++) cells += `<div class="cal-day empty"></div>`;
+  for (let d=1;d<=daysInMonth;d++) {
+    const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = dateStr===todayStr;
+    const hasEvent = eventDates.has(dateStr);
+    const isSel = dateStr===calSelectedDate;
+    cells += `<div class="cal-day${isToday?' today':''}${hasEvent?' has-event':''}${isSel?' selected':''}" onclick="calDayClick('${dateStr}')">
+      <span class="cal-num">${d}</span>
+      <span class="cal-dot"></span>
+    </div>`;
+  }
+
+  const eventsOnDate = calSelectedDate ? (s.events||[]).filter(e=>e.date===calSelectedDate) : [];
+  const eventDetailHtml = calSelectedDate ? `
+    <div class="event-detail">
+      <div class="event-detail-header">
+        <p class="small bold">${calSelectedDate}</p>
+        <button class="btn-ghost small" onclick="calSelectedDate=null;renderCalendar(loadStudents().find(x=>x.id===curDetailId))">닫기</button>
+      </div>
+      ${eventsOnDate.length ? eventsOnDate.map((ev,i)=>`
+        <div class="event-item">
+          <div class="event-info">
+            <p class="event-time">${ev.time||'시간 미정'}</p>
+            ${ev.week?`<p class="event-week">${ev.week}주차</p>`:''}
+            ${ev.memo?`<p class="event-memo">${ev.memo}</p>`:''}
+          </div>
+          <button class="btn-red" onclick="deleteEvent('${calSelectedDate}',${i})">×</button>
+        </div>`).join('') : '<p class="small muted" style="padding:8px 0;">이 날의 일정이 없습니다</p>'}
+    </div>` : '';
+
+  container.innerHTML = `
+    <div class="cal-wrap">
+      <div class="cal-nav">
+        <button class="cal-nav-btn" onclick="calMove(-1)">‹</button>
+        <p class="cal-title">${calYear}년 ${monthNames[calMonth]}</p>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <button class="cal-plus" onclick="showAddEvent()">+</button>
+          <button class="cal-nav-btn" onclick="calMove(1)">›</button>
+        </div>
+      </div>
+      <div class="cal-grid">${cells}</div>
+      ${eventDetailHtml}
+    </div>
+    <div class="add-panel hidden" id="event-add-panel">
+      <p class="add-panel-title">일정 추가</p>
+      <div class="form-group"><p class="form-label">날짜</p><input type="date" id="ev-date" value="${calSelectedDate||todayStr}"></div>
+      <div class="form-group">
+        <p class="form-label">주차 선택</p>
+        <div class="week-grid" id="ev-week-grid"></div>
+      </div>
+      <div class="form-group"><p class="form-label">시간</p><input type="time" id="ev-time"></div>
+      <div class="form-group"><p class="form-label">메모</p><textarea id="ev-memo" rows="2" placeholder="수업 내용이나 메모를 입력하세요"></textarea></div>
+      <div class="panel-actions">
+        <button class="panel-btn panel-btn-cancel" onclick="document.getElementById('event-add-panel').classList.add('hidden')">취소</button>
+        <button class="panel-btn panel-btn-submit" onclick="submitEvent()">추가</button>
+      </div>
+    </div>`;
+  buildEventWeekGrid();
+}
+function calMove(dir) {
+  calMonth += dir;
+  if (calMonth<0) { calMonth=11; calYear--; }
+  if (calMonth>11) { calMonth=0; calYear++; }
+  calSelectedDate=null;
+  renderCalendar(loadStudents().find(x=>x.id===curDetailId));
+}
+function calDayClick(dateStr) {
+  calSelectedDate = (calSelectedDate===dateStr) ? null : dateStr;
+  renderCalendar(loadStudents().find(x=>x.id===curDetailId));
+}
+function showAddEvent() {
+  const panel = document.getElementById('event-add-panel');
+  panel.classList.toggle('hidden');
+  if (!panel.classList.contains('hidden')) {
+    const today=new Date();
+    const todayStr=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+    document.getElementById('ev-date').value=calSelectedDate||todayStr;
+    document.getElementById('ev-time').value='';
+    document.getElementById('ev-memo').value='';
+    eventWeekSel=null;
+    buildEventWeekGrid();
+  }
+}
+function buildEventWeekGrid() {
+  const g=document.getElementById('ev-week-grid'); if(!g) return;
+  g.innerHTML=Array.from({length:8},(_,i)=>i+1).map(w=>
+    `<button class="week-chip${eventWeekSel===w?' selected':''}" onclick="selectEventWeek(${w})">${w}주차</button>`
+  ).join('');
+}
+function selectEventWeek(w) {
+  eventWeekSel=w;
+  document.querySelectorAll('#ev-week-grid .week-chip').forEach((el,i)=>el.classList.toggle('selected',i+1===w));
+}
+function submitEvent() {
+  const date=document.getElementById('ev-date').value;
+  const time=document.getElementById('ev-time').value;
+  const memo=document.getElementById('ev-memo').value.trim();
+  if (!date) { alert('날짜를 선택하세요'); return; }
+  const students=loadStudents(); const s=students.find(x=>x.id===curDetailId);
+  if (!s.events) s.events=[];
+  s.events.push({ date, week:eventWeekSel, time, memo });
+  saveStudents(students);
+  document.getElementById('event-add-panel').classList.add('hidden');
+  calSelectedDate=date;
+  renderCalendar(s);
+}
+function deleteEvent(date, idx) {
+  if (!confirm('이 일정을 삭제하시겠습니까?')) return;
+  const students=loadStudents(); const s=students.find(x=>x.id===curDetailId);
+  const dateEvents=s.events.filter(e=>e.date===date);
+  const toDelete=dateEvents[idx];
+  s.events.splice(s.events.indexOf(toDelete),1);
+  saveStudents(students);
+  renderCalendar(s);
+}
+
+// ── 숙제 탭 (강사) ────────────────────────────────────────
+function renderHomeworkTab(s,done) {
+  const hwItems = s.homework.length
+    ? s.homework.map((h,i)=>`
+      <div class="hw-item">
+        <div class="hw-check${h.done?' done':''}" onclick="toggleHw(${s.id},${i})"></div>
+        <div class="hw-meta">
+          <p class="hw-text${h.done?' done':''}">${h.text}</p>
+          ${h.week?`<p class="hw-week">${h.week}주차</p>`:''}
+        </div>
+        <button class="btn-red" onclick="deleteHw(${s.id},${i})">×</button>
+      </div>`).join('')
+    : '<p class="small muted" style="padding:12px 0;text-align:center;">아직 숙제가 없습니다</p>';
+  document.getElementById('d-homework').innerHTML = `
+    <div class="card">
+      <div class="row mb12"><p class="section-title" style="margin:0;">이번 주 숙제</p><span class="small gold">${done}/${s.homework.length}</span></div>
+      ${hwItems}
+    </div>
+    <button class="add-trigger" onclick="toggleHwPanel()">+ 숙제 추가</button>
+    <div class="add-panel hidden" id="hw-add-panel">
+      <p class="add-panel-title">숙제 추가</p>
+      <div class="form-group"><p class="form-label">숙제 내용</p><textarea id="hw-input" rows="2" placeholder="예: Am-G-C-F 코드 진행 10분 연습"></textarea></div>
+      <div class="form-group"><p class="form-label">주차 선택</p><div class="week-grid" id="week-grid"></div></div>
+      <div class="panel-actions">
+        <button class="panel-btn panel-btn-cancel" onclick="toggleHwPanel()">취소</button>
+        <button class="panel-btn panel-btn-submit" onclick="submitHomework()">추가</button>
+      </div>
+    </div>`;
+  buildWeekGrid();
+}
+function toggleHw(sid, idx) {
+  const students=loadStudents(); const s=students.find(x=>x.id===sid);
+  s.homework[idx].done = !s.homework[idx].done;
+  saveStudents(students);
+  const done=s.homework.filter(h=>h.done).length;
+  renderHomeworkTab(s,done);
+  updateHwPct(s);
+}
+function deleteHw(sid, idx) {
+  if (!confirm('이 숙제를 삭제하시겠습니까?')) return;
+  const students=loadStudents(); const s=students.find(x=>x.id===sid);
+  s.homework.splice(idx,1); saveStudents(students);
+  const done=s.homework.filter(h=>h.done).length;
+  renderHomeworkTab(s,done);
+  updateHwPct(s);
+}
+function toggleHwPanel() {
+  const p=document.getElementById('hw-add-panel');
+  const wasHidden=p.classList.contains('hidden');
+  p.classList.toggle('hidden',!wasHidden);
+  if (wasHidden) { document.getElementById('hw-input').value=''; buildWeekGrid(); }
+}
+function buildWeekGrid() {
+  selectedWeek=null;
+  const g=document.getElementById('week-grid'); if(!g) return;
+  g.innerHTML=Array.from({length:8},(_,i)=>i+1).map(w=>
+    `<button class="week-chip" id="wk-${w}" onclick="selectWeek(${w})">${w}주차</button>`).join('');
+}
+function selectWeek(w) {
+  document.querySelectorAll('#week-grid .week-chip').forEach(el=>el.classList.remove('selected'));
+  const el=document.getElementById(`wk-${w}`); if(el) el.classList.add('selected');
+  selectedWeek=w;
+}
+function submitHomework() {
+  const text=document.getElementById('hw-input').value.trim();
+  if (!text) { alert('숙제 내용을 입력하세요'); return; }
+  const students=loadStudents(); const s=students.find(x=>x.id===curDetailId);
+  s.homework.push({text,week:selectedWeek,done:false}); saveStudents(students);
+  const done=s.homework.filter(h=>h.done).length;
+  renderHomeworkTab(s,done);
+}
+
+// ── 곡 탭 (강사) ─────────────────────────────────────────
+function renderSongsTab(s) {
+  function songRow(g, type, idx) {
+    const dotCls = type==='canLearn'?'dot-gold':type==='learned'?'dot-green':'dot-dim';
+    const nameCls = (type==='canLearn'||type==='learned')?'':'muted';
+    return `<div class="song-item">
+      <div class="dot ${dotCls}"></div>
+      <p class="song-name ${nameCls}" style="flex:1;" onclick="openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p>
+      <button class="btn-red" onclick="deleteSong(${s.id},'${type}',${idx})">×</button>
+    </div>`;
+  }
+  const canItems = s.songs.canLearn.length ? s.songs.canLearn.map((g,i)=>songRow(g,'canLearn',i)).join('') : '<p class="small muted" style="padding:10px 0;text-align:center;">곡을 추가해주세요</p>';
+  const notItems = s.songs.notYet.length ? s.songs.notYet.map((g,i)=>songRow(g,'notYet',i)).join('') : '<p class="small muted" style="padding:10px 0;text-align:center;">곡을 추가해주세요</p>';
+  const learnedItems = (s.songs.learned||[]).length ? s.songs.learned.map((g,i)=>songRow(g,'learned',i)).join('') : '<p class="small muted" style="padding:10px 0;text-align:center;">곡을 추가해주세요</p>';
+  const wantItems = (s.songs.wantToLearn||[]).length
+    ? s.songs.wantToLearn.map(g=>`<div class="song-item"><div class="dot dot-dim"></div><p class="song-name muted" style="flex:1;">${g}</p></div>`).join('')
+    : '<p class="small muted" style="padding:10px 0;text-align:center;">레슨생이 아직 없음</p>';
+  document.getElementById('d-songs').innerHTML = `
+    <div class="card">
+      <p class="section-title gold">지금 배울 수 있는 곡</p>
+      ${canItems}
+      <button class="add-trigger" style="margin-top:10px;" onclick="toggleSongPanel('canLearn')">+ 곡 추가</button>
+      <div class="add-panel hidden" id="song-panel-canLearn">
+        <p class="add-panel-title">배울 수 있는 곡 추가</p>
+        <div class="form-group"><textarea id="song-input-canLearn" rows="1" placeholder="예: 아이유 - 좋은 날"></textarea></div>
+        <div class="panel-actions">
+          <button class="panel-btn panel-btn-cancel" onclick="toggleSongPanel('canLearn')">취소</button>
+          <button class="panel-btn panel-btn-submit" onclick="submitSong('canLearn')">추가</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <p class="section-title muted">배우고 싶은 곡 <span style="font-size:10px;color:var(--text3);font-weight:400;">(레슨생 입력)</span></p>
+      ${wantItems}
+    </div>
+    <div class="card">
+      <p class="section-title muted">연습이 필요한 곡</p>
+      ${notItems}
+      <button class="add-trigger" style="margin-top:10px;" onclick="toggleSongPanel('notYet')">+ 곡 추가</button>
+      <div class="add-panel hidden" id="song-panel-notYet">
+        <p class="add-panel-title">연습이 필요한 곡 추가</p>
+        <div class="form-group"><textarea id="song-input-notYet" rows="1" placeholder="예: Tommy Emmanuel - Classical Gas"></textarea></div>
+        <div class="panel-actions">
+          <button class="panel-btn panel-btn-cancel" onclick="toggleSongPanel('notYet')">취소</button>
+          <button class="panel-btn panel-btn-submit" onclick="submitSong('notYet')">추가</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <p class="section-title" style="color:var(--green);">지금까지 배운 곡</p>
+      ${learnedItems}
+      <button class="add-trigger" style="margin-top:10px;" onclick="toggleSongPanel('learned')">+ 곡 추가</button>
+      <div class="add-panel hidden" id="song-panel-learned">
+        <p class="add-panel-title">배운 곡 추가</p>
+        <div class="form-group"><textarea id="song-input-learned" rows="1" placeholder="예: 버스커버스커 - 여수 밤바다"></textarea></div>
+        <div class="panel-actions">
+          <button class="panel-btn panel-btn-cancel" onclick="toggleSongPanel('learned')">취소</button>
+          <button class="panel-btn panel-btn-submit" onclick="submitSong('learned')">추가</button>
+        </div>
+      </div>
+    </div>`;
+}
+function deleteSong(sid,type,idx) {
+  if (!confirm('이 곡을 삭제하시겠습니까?')) return;
+  const students=loadStudents(); const s=students.find(x=>x.id===sid);
+  s.songs[type].splice(idx,1); saveStudents(students); renderSongsTab(s);
+}
+function toggleSongPanel(type) {
+  const p=document.getElementById(`song-panel-${type}`);
+  const wasHidden=p.classList.contains('hidden');
+  p.classList.toggle('hidden',!wasHidden);
+  if (wasHidden) document.getElementById(`song-input-${type}`).value='';
+}
+function submitSong(type) {
+  const text=document.getElementById(`song-input-${type}`).value.trim();
+  if (!text) { alert('곡 이름을 입력하세요'); return; }
+  const students=loadStudents(); const s=students.find(x=>x.id===curDetailId);
+  s.songs[type].push(text); saveStudents(students); renderSongsTab(s);
+}
+function openYoutube(name) {
+  window.open('https://www.youtube.com/results?search_query='+encodeURIComponent(name),'_blank');
+}
+// ── 레슨생 '배우고 싶은 곡' ─────────────────────────────
+function _refreshWantLists(s) {
+  const canSet = new Set((s.songs.canLearn||[]).map(g=>g.trim().toLowerCase()));
+  const rows = (s.songs.wantToLearn||[]).map((g,i)=>{
+    const matched = canSet.has(g.trim().toLowerCase());
+    const dotCls = matched ? 'dot-gold' : 'dot-dim';
+    const nameCls = matched ? 'song-name song-match' : 'song-name muted';
+    return `<div class="song-item"><div class="dot ${dotCls}"></div><p class="${nameCls}" style="flex:1;" onclick="openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p><button class="btn-red" onclick="deleteStudentWantSong(${i})">×</button></div>`;
+  }).join('') || '<p class="small muted" style="padding:4px 0;text-align:center;">아직 없어요</p>';
+  const h = document.getElementById('s-home-want-list');
+  const t = document.getElementById('s-tab-want-list');
+  if (h) h.innerHTML = rows;
+  if (t) t.innerHTML = rows;
+}
+function toggleStudentWantPanel() {
+  const p = document.getElementById('s-want-panel');
+  if (!p) return;
+  const hide = !p.classList.contains('hidden');
+  p.classList.toggle('hidden', hide);
+  if (!hide) { const i=document.getElementById('s-want-input'); if(i) i.value=''; }
+}
+function toggleStudentWantPanelTab() {
+  const p = document.getElementById('s-tab-want-panel');
+  if (!p) return;
+  const hide = !p.classList.contains('hidden');
+  p.classList.toggle('hidden', hide);
+  if (!hide) { const i=document.getElementById('s-tab-want-input'); if(i) i.value=''; }
+}
+function submitStudentWantSong() {
+  const inp = document.getElementById('s-want-input');
+  const text = inp ? inp.value.trim() : '';
+  if (!text) { alert('곡 이름을 입력하세요'); return; }
+  const students=loadStudents(); const s=students.find(x=>x.id===curStudent.id);
+  if (!s) return;
+  if (!s.songs.wantToLearn) s.songs.wantToLearn=[];
+  s.songs.wantToLearn.push(text); saveStudents(students);
+  if (inp) inp.value='';
+  document.getElementById('s-want-panel').classList.add('hidden');
+  _refreshWantLists(s);
+}
+function submitStudentWantSongTab() {
+  const inp = document.getElementById('s-tab-want-input');
+  const text = inp ? inp.value.trim() : '';
+  if (!text) { alert('곡 이름을 입력하세요'); return; }
+  const students=loadStudents(); const s=students.find(x=>x.id===curStudent.id);
+  if (!s) return;
+  if (!s.songs.wantToLearn) s.songs.wantToLearn=[];
+  s.songs.wantToLearn.push(text); saveStudents(students);
+  if (inp) inp.value='';
+  document.getElementById('s-tab-want-panel').classList.add('hidden');
+  _refreshWantLists(s);
+}
+function deleteStudentWantSong(idx) {
+  if (!confirm('이 곡을 삭제하시겠습니까?')) return;
+  const students=loadStudents(); const s=students.find(x=>x.id===curStudent.id);
+  if (!s || !s.songs.wantToLearn) return;
+  s.songs.wantToLearn.splice(idx,1); saveStudents(students);
+  _refreshWantLists(s);
+}
+
+function switchDTab(tab,btn) {
+  document.querySelectorAll('#sc-detail .tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  ['progress','homework','songs'].forEach(t=>document.getElementById('d-'+t).classList.toggle('hidden',t!==tab));
+}
+
+// ── 레슨생 로그인 ─────────────────────────────────────────
+function initStudentLoginForm() {
+  try {
+    const autoId = localStorage.getItem('heum_autologin_id');
+    if (autoId) {
+      const students = loadStudents();
+      const s = students.find(x=>x.id===parseInt(autoId));
+      if (s) { curStudent=s; startEnterPw(getStudentPw(s.id)); return; }
+    }
+    document.getElementById('sl-name').value = localStorage.getItem('heum_saved_name')||'';
+    document.getElementById('sl-birth').value = localStorage.getItem('heum_saved_birth')||'';
+  } catch(e) {}
+  document.getElementById('sl-err').textContent='';
+}
+function submitStudentLogin() {
+  const name = document.getElementById('sl-name').value.trim();
+  const birth = document.getElementById('sl-birth').value.trim();
+  const autoLogin = document.getElementById('sl-autologin').checked;
+  if (!name) { showErr('sl-err','이름을 입력하세요'); return; }
+  if (birth.length!==6) { showErr('sl-err','생년월일 6자리를 입력하세요 (예: 991201)'); return; }
+  const students = loadStudents();
+  const s = students.find(x=>x.name===name && normBd(x.birthdate)===birth);
+  if (!s) { showErr('sl-err','이름 또는 생년월일이 일치하지 않습니다'); return; }
+  document.getElementById('sl-err').textContent='';
+  try {
+    localStorage.setItem('heum_saved_name', name);
+    localStorage.setItem('heum_saved_birth', birth);
+    if (autoLogin) { localStorage.setItem('heum_autologin_id', s.id); }
+    else { localStorage.removeItem('heum_autologin_id'); }
+  } catch(e) {}
+  curStudent = s;
+  const saved = getStudentPw(s.id);
+  if (!saved) { startSetPw(); } else { startEnterPw(saved); }
+}
+function resetStudentLogin() {
+  localStorage.removeItem('heum_autologin_id');
+  curStudent = null;
+  goScreen('sc-student-select');
+}
+function initStudentSelect() {}
+function selectStudent(id) {}
+function verifyBd() {}
+function startSetPw() {
+  setPwStep=1; setPwFirst='';
+  document.getElementById('spw-title').textContent=curStudent.name;
+  document.getElementById('spw-sub').innerHTML='사용할 비밀번호를 입력하세요<br><span style="font-size:11px;color:var(--text3);">숫자 4자리</span>';
+  document.getElementById('spw-err').textContent='';
+  buildPad('spw-pad','spw-dots',4,onSetPw,'spw-err');
+  goScreen('sc-set-pw');
+}
+function onSetPw(pin) {
+  if (setPwStep===1) {
+    setPwFirst=pin; setPwStep=2;
+    document.getElementById('spw-sub').innerHTML='한 번 더 입력하세요<br><span style="font-size:11px;color:var(--text3);">확인용</span>';
+    document.getElementById('spw-err').textContent='';
+    buildPad('spw-pad','spw-dots',4,onSetPw,'spw-err');
+  } else {
+    if (pin!==setPwFirst) {
+      showErr('spw-err','비밀번호가 일치하지 않습니다. 처음부터 다시 설정하세요.'); setPwStep=1; setPwFirst='';
+      document.getElementById('spw-sub').innerHTML='사용할 비밀번호를 입력하세요<br><span style="font-size:11px;color:var(--text3);">숫자 4자리</span>';
+      buildPad('spw-pad','spw-dots',4,onSetPw,'spw-err');
+    } else { saveStudentPw(curStudent.id, pin); enterStudent(); }
+  }
+}
+function startEnterPw(cachedPw) {
+  document.getElementById('epw-name').textContent=curStudent.name+' 레슨생';
+  document.getElementById('epw-err').textContent='';
+  function handleStudentPin(pin) {
+    // cachedPw가 있으면 우선 사용, 없으면 현재 캐시에서 조회 (Firebase 리스너 타이밍 문제 방지)
+    const pw = (cachedPw != null) ? String(cachedPw) : String(getStudentPw(curStudent.id) || '');
+    if (!pw) {
+      showErr('epw-err','비밀번호를 찾을 수 없습니다. 다시 로그인해 주세요.');
+      setTimeout(()=>resetStudentLogin(), 1500);
+      return;
+    }
+    if (pin === pw) { enterStudent(); }
+    else { showErr('epw-err','비밀번호가 틀렸습니다'); resetPad('epw-pad','epw-dots',4,handleStudentPin,'epw-err'); }
+  }
+  buildPad('epw-pad','epw-dots',4,handleStudentPin,'epw-err');
+  goScreen('sc-enter-pw');
+}
+
+let _hwCardOpen = false;
+
+// ── 레슨생 대시보드 ────────────────────────────────────────
+function enterStudent() {
+  _hwCardOpen = false;
+  const s=loadStudents().find(x=>x.id==curStudent.id);
+  if(!s){ goScreen('sc-main'); return; }
+  const months=calcMonths(s.startDate);
+  document.getElementById('s-name').textContent=s.name;
+  document.getElementById('s-meta').textContent=`${s.level} · ${months>0?months+'개월차':'수업 시작 전'}`;
+  const week=s.currentWeek||1;
+  const weekPct=Math.round((week/4)*100);
+  const pending=s.homework.filter(h=>!h.done);
+  const done=s.homework.filter(h=>h.done).length;
+  const hwSection=`<div class="card s-hw-card" id="s-home-hw" onclick="toggleStudentHwCard()" style="cursor:pointer;"></div>`;
+  const nextCard=`<div class="card"><p class="section-title" style="color:var(--text2);">다음 주 수업 내용 — ${week+1}주차</p><p style="font-size:13px;line-height:1.6;${s.nextLesson?'':'color:var(--text3);'}">${s.nextLesson||'아직 입력되지 않았습니다'}</p></div>`;
+  document.getElementById('s-home').innerHTML=`
+    <div class="card s-progress-card" id="s-progress-card" onclick="toggleProgressCard()">
+      <div class="s-prog-header">
+        <span class="s-prog-pre" id="s-prog-pre">현재</span>
+        <strong class="s-prog-week" id="s-prog-week">${week}주차</strong>
+        <span class="s-prog-post" id="s-prog-post">진행중</span>
+      </div>
+      <div class="progress-track" id="s-prog-bar"><div class="progress-fill" style="width:${weekPct}%"></div></div>
+      <div class="s-prog-extra">
+        <div class="row mt8"><span class="small muted">4주 기준</span><span class="small gold">${week} / 4주차</span></div>
+      </div>
+    </div>
+    ${hwSection}
+    ${nextCard}
+    <div class="card" style="margin-top:20px;"><p class="section-title gold">현재 배울 수 있는 곡 <span class="muted" style="font-weight:400;">${s.songs.canLearn.length}곡</span></p>
+    ${(()=>{
+      const wantSet=new Set((s.songs.wantToLearn||[]).map(g=>g.trim().toLowerCase()));
+      return s.songs.canLearn.length
+        ? s.songs.canLearn.map(g=>{const matched=wantSet.has(g.trim().toLowerCase());return `<div class="song-item"><div class="dot dot-gold"></div><p class="${matched?'song-name song-match':'song-name'}" onclick="openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p></div>`;}).join('')
+        : '<p class="small muted" style="padding:8px 0;text-align:center;">곡 목록을 기다리는 중</p>';
+    })()}</div>
+    <div class="card" id="s-home-want-card"></div>
+    ${(s.songs.learned||[]).length?`<div class="card"><p class="section-title" style="color:var(--green);">지금까지 배운 곡 <span class="muted" style="font-weight:400;">${s.songs.learned.length}곡</span></p>${s.songs.learned.map(g=>`<div class="song-item"><div class="dot dot-green"></div><p class="song-name" onclick="openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p></div>`).join('')}</div>`:''}`;
+  renderStudentHwTab(s);
+  renderStudentHomeHw(s);
+  renderStudentHomeWant(s);
+  renderStudentSongsTab(s);
+  goScreen('sc-student');
+}
+function toggleStudentHwCard() {
+  _hwCardOpen = !_hwCardOpen;
+  const body  = document.getElementById('s-home-hw-body');
+  const arrow = document.getElementById('s-hw-arrow');
+  const badge = document.getElementById('s-hw-badge');
+  if (body)  body.classList.toggle('open', _hwCardOpen);
+  if (arrow) arrow.style.transform = _hwCardOpen ? 'rotate(90deg)' : 'rotate(0deg)';
+  if (badge) {
+    const s = loadStudents().find(x => x.id === curStudent.id);
+    if (s) {
+      const pending = s.homework.filter(h => !h.done);
+      const done    = s.homework.filter(h => h.done).length;
+      badge.textContent  = `${done}/${s.homework.length}`;
+      badge.style.display = (_hwCardOpen && pending.length > 0) ? '' : 'none';
+    }
+  }
+}
+let _progAnimating = false;
+function toggleProgressCard() {
+  if (_progAnimating) return;
+  const card  = document.getElementById('s-progress-card');
+  const pre   = document.getElementById('s-prog-pre');
+  const week  = document.getElementById('s-prog-week');
+  const post  = document.getElementById('s-prog-post');
+  const bar   = document.getElementById('s-prog-bar');
+  const extra = card ? card.querySelector('.s-prog-extra') : null;
+  if (!card || !pre || !week || !post || !bar || !extra) return;
+
+  _progAnimating = true;
+
+  // FIRST — capture current positions & height
+  const r1 = {
+    pre:  pre.getBoundingClientRect(),
+    week: week.getBoundingClientRect(),
+    post: post.getBoundingClientRect(),
+    bar:  bar.getBoundingClientRect()
+  };
+  const h1 = card.offsetHeight;
+
+  // Snap extra instantly so h2 measurement is exact (no CSS transition lag)
+  extra.style.transition = 'none';
+
+  // LAST — apply layout change
+  card.classList.toggle('open');
+
+  // Force layout: h2 now correctly reflects the true final height including/excluding extra
+  const r2 = {
+    pre:  pre.getBoundingClientRect(),
+    week: week.getBoundingClientRect(),
+    post: post.getBoundingClientRect(),
+    bar:  bar.getBoundingClientRect()
+  };
+  const h2 = card.offsetHeight;
+
+  // INVERT — freeze card, kill transitions, apply inverse transforms
+  card.style.transition = 'none';
+  card.style.overflow   = 'hidden';
+  card.style.height     = h1 + 'px';
+  [pre, week, post, bar].forEach(el => { el.style.transition = 'none'; });
+
+  pre.style.transform  = `translate(${r1.pre.left  - r2.pre.left}px, ${r1.pre.top  - r2.pre.top}px)`;
+  week.style.transform = `translate(${r1.week.left - r2.week.left}px, ${r1.week.top - r2.week.top}px)`;
+  post.style.transform = `translate(${r1.post.left - r2.post.left}px, ${r1.post.top - r2.post.top}px)`;
+  bar.style.transform  = `translateY(${r1.bar.top  - r2.bar.top}px)`;
+
+  // PLAY — animate everything to final positions
+  // extra is already at its final state (snapped) — card height expansion will reveal it naturally
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      const ease = '0.44s cubic-bezier(0.4,0,0.2,1)';
+      pre.style.transition  = `transform ${ease}, color 0.35s ease`;
+      week.style.transition = `transform ${ease}`;
+      post.style.transition = `transform ${ease}, color 0.35s ease`;
+      bar.style.transition  = `transform ${ease}`;
+      card.style.transition = `height ${ease}`;
+
+      pre.style.transform  = '';
+      week.style.transform = '';
+      post.style.transform = '';
+      bar.style.transform  = '';
+      card.style.height    = h2 + 'px'; // exact final height — no jump
+    });
+  });
+
+  // Clean up
+  setTimeout(() => {
+    card.style.height     = '';
+    card.style.overflow   = '';
+    card.style.transition = '';
+    extra.style.transition = '';
+    [pre, week, post, bar].forEach(el => {
+      el.style.transition = '';
+      el.style.transform  = '';
+    });
+    _progAnimating = false;
+  }, 480);
+}
+function toggleStudentHw(sid,idx) {
+  const students=loadStudents(); const s=students.find(x=>x.id===sid);
+  s.homework[idx].done=!s.homework[idx].done; saveStudents(students);
+  renderStudentHwTab(s);
+  _renderHwCardBody(s);
+}
+function _renderHwCardBody(s) {
+  const bodyEl = document.getElementById('s-home-hw-body');
+  const badge  = document.getElementById('s-hw-badge');
+  if (!bodyEl) return;
+  const pending  = s.homework.filter(h=>!h.done);
+  const done     = s.homework.filter(h=>h.done).length;
+  let bodyHtml   = '';
+  if (pending.length > 0) {
+    bodyHtml = pending.map(h => {
+      const realIdx = s.homework.indexOf(h);
+      return `<div class="hw-item"><div class="hw-check${h.done?' done':''}" onclick="event.stopPropagation();toggleStudentHw(${s.id},${realIdx})"></div><div class="hw-meta"><p class="hw-text${h.done?' done':''}">${h.text}</p>${h.week?`<p class="hw-week">${h.week}주차</p>`:''}</div></div>`;
+    }).join('');
+  } else if (s.homework.length > 0) {
+    bodyHtml = `<div style="text-align:center;padding:8px 0;"><p style="font-size:22px;margin-bottom:8px;">✓</p><p class="bold">이번 주 숙제 모두 완료!</p><p class="small muted mt4">다음 레슨이 기대돼요</p></div>`;
+  } else {
+    bodyHtml = `<p class="muted small" style="text-align:center;">아직 숙제가 없어요</p>`;
+  }
+  bodyEl.innerHTML = bodyHtml;
+  if (badge) {
+    badge.textContent   = `${done}/${s.homework.length}`;
+    badge.style.display = (_hwCardOpen && pending.length > 0) ? '' : 'none';
+  }
+}
+function renderStudentHwTab(s) {
+  const done=s.homework.filter(h=>h.done).length;
+  document.getElementById('s-homework').innerHTML=`<div class="card">
+    <div class="row mb12"><p class="section-title" style="margin:0;">이번 주 숙제</p><span class="small gold">${done}/${s.homework.length}</span></div>
+    ${s.homework.length?s.homework.map((h,i)=>`
+      <div class="hw-item">
+        <div class="hw-check${h.done?' done':''}" onclick="toggleStudentHw(${s.id},${i})"></div>
+        <div class="hw-meta"><p class="hw-text${h.done?' done':''}">${h.text}</p>${h.week?`<p class="hw-week">${h.week}주차</p>`:''}</div>
+      </div>`).join(''):'<p class="small muted" style="padding:12px 0;text-align:center;">아직 숙제가 없습니다</p>'}
+  </div>`;
+}
+function renderStudentSongsTab(s) {
+  const wantSet = new Set((s.songs.wantToLearn||[]).map(g=>g.trim().toLowerCase()));
+  const canSet  = new Set((s.songs.canLearn||[]).map(g=>g.trim().toLowerCase()));
+  const canRows = s.songs.canLearn.length
+    ? s.songs.canLearn.map(g=>{
+        const matched = wantSet.has(g.trim().toLowerCase());
+        return `<div class="song-item"><div class="dot dot-gold"></div><p class="${matched?'song-name song-match':'song-name'}" onclick="openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p></div>`;
+      }).join('')
+    : '<p class="small muted" style="padding:12px 0;text-align:center;">곡 목록을 기다리는 중</p>';
+  const notRows = s.songs.notYet.length
+    ? s.songs.notYet.map(g=>`<div class="song-item"><div class="dot dot-dim"></div><p class="song-name muted" onclick="openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p></div>`).join('')
+    : '<p class="small muted" style="padding:12px 0;text-align:center;">도전 예정 곡이 없습니다</p>';
+  const learnedRows = (s.songs.learned||[]).length
+    ? s.songs.learned.map(g=>`<div class="song-item"><div class="dot dot-green"></div><p class="song-name" onclick="openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p></div>`).join('')
+    : '<p class="small muted" style="padding:12px 0;text-align:center;">아직 없습니다</p>';
+  const wantRows = (s.songs.wantToLearn||[]).length
+    ? s.songs.wantToLearn.map((g,i)=>{
+        const matched = canSet.has(g.trim().toLowerCase());
+        const dotCls = matched ? 'dot-gold' : 'dot-dim';
+        const nameCls = matched ? 'song-name song-match' : 'song-name muted';
+        return `<div class="song-item"><div class="dot ${dotCls}"></div><p class="${nameCls}" style="flex:1;" onclick="openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p><button class="btn-red" onclick="deleteStudentWantSong(${i})">×</button></div>`;
+      }).join('')
+    : '<p class="small muted" style="padding:12px 0;text-align:center;">아직 없어요</p>';
+  document.getElementById('s-songs').innerHTML=`
+    <div class="card"><p class="section-title gold">지금 배울 수 있는 곡</p>${canRows}</div>
+    <div class="card"><p class="section-title muted">배우고 싶은 곡</p>
+      <div id="s-tab-want-list">${wantRows}</div>
+      <div class="add-panel hidden" id="s-tab-want-panel">
+        <div class="form-group"><textarea id="s-tab-want-input" rows="1" placeholder="예: 아이유 - 밤편지"></textarea></div>
+        <div class="panel-actions">
+          <button class="panel-btn panel-btn-cancel" onclick="toggleStudentWantPanelTab()">취소</button>
+          <button class="panel-btn panel-btn-submit" onclick="submitStudentWantSongTab()">추가</button>
+        </div>
+      </div>
+      <button class="add-trigger" onclick="toggleStudentWantPanelTab()">+ 배우고 싶은 곡 추가</button>
+    </div>
+    <div class="card"><p class="section-title muted">연습이 필요한 곡</p>${notRows}</div>
+    <div class="card"><p class="section-title" style="color:var(--green);">지금까지 배운 곡 <span class="muted" style="font-weight:400;">${(s.songs.learned||[]).length}곡</span></p>${learnedRows}</div>`;
+}
+function switchStudentTab(tab,btn) {
+  document.querySelectorAll('#sc-student .tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  ['home','homework','songs'].forEach(t=>document.getElementById('s-'+t).classList.toggle('hidden',t!==tab));
+}
+
+// ── 숫자 패드 ──────────────────────────────────────────────
+function buildPad(padId,dotsId,len,onDone,errId) {
+  let buf='';
+  const dotsEl=document.getElementById(dotsId);
+  dotsEl.innerHTML=Array(len).fill('<div class="pw-dot"></div>').join('');
+  const dots=dotsEl.querySelectorAll('.pw-dot');
+  function upd(){dots.forEach((d,i)=>d.classList.toggle('filled',i<buf.length));}
+  function press(v){
+    if(errId) document.getElementById(errId).textContent='';
+    if(v==='del'){buf=buf.slice(0,-1);upd();return;}
+    if(buf.length>=len)return;
+    buf+=v;upd();
+    if(buf.length===len){const c=buf;buf='';upd();setTimeout(()=>onDone(c),150);}
+  }
+  const fn=`_p_${padId.replace(/-/g,'_')}`;
+  const keys=['1','2','3','4','5','6','7','8','9','','0','del'];
+  document.getElementById(padId).innerHTML=keys.map(k=>{
+    if(k==='') return `<button class="num-btn empty" disabled></button>`;
+    if(k==='del') return `<button class="num-btn del" onclick="${fn}('del')">⌫</button>`;
+    return `<button class="num-btn" onclick="${fn}('${k}')">${k}</button>`;
+  }).join('');
+  window[fn]=press;
+}
+function resetPad(padId,dotsId,len,onDone,errId){setTimeout(()=>buildPad(padId,dotsId,len,onDone,errId),400);}
+function updateHwPct(s) {
+  const done=s.homework.filter(h=>h.done).length;
+  const pct=s.homework.length?Math.round((done/s.homework.length)*100):0;
+  const el=document.getElementById('d-hw-pct');
+  if (el) el.innerHTML=`${pct}<span>%</span>`;
+}
+function renderStudentHomeWant(s) {
+  const card = document.getElementById('s-home-want-card');
+  if (!card) return;
+  const canSet = new Set((s.songs.canLearn||[]).map(g=>g.trim().toLowerCase()));
+  const rows = (s.songs.wantToLearn||[]).map((g,i)=>{
+    const matched = canSet.has(g.trim().toLowerCase());
+    const dotCls = matched ? 'dot-gold' : 'dot-dim';
+    const nameCls = matched ? 'song-name song-match' : 'song-name muted';
+    return `<div class="song-item"><div class="dot ${dotCls}"></div><p class="${nameCls}" style="flex:1;" onclick="openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p><button class="btn-red" onclick="deleteStudentWantSong(${i})">×</button></div>`;
+  }).join('') || '<p class="small muted" style="padding:4px 0;text-align:center;">아직 없어요</p>';
+  card.innerHTML = `
+    <p class="section-title muted">배우고 싶은 곡</p>
+    <div id="s-home-want-list">${rows}</div>
+    <div class="add-panel hidden" id="s-want-panel">
+      <div class="form-group"><textarea id="s-want-input" rows="1" placeholder="예: 아이유 - 밤편지"></textarea></div>
+      <div class="panel-actions">
+        <button class="panel-btn panel-btn-cancel" onclick="toggleStudentWantPanel()">취소</button>
+        <button class="panel-btn panel-btn-submit" onclick="submitStudentWantSong()">추가</button>
+      </div>
+    </div>
+    <button class="add-trigger" onclick="toggleStudentWantPanel()">+ 배우고 싶은 곡 추가</button>`;
+}
+function renderStudentHomeHw(s) {
+  const hwEl=document.getElementById('s-home-hw');
+  if (!hwEl) return;
+  const pending=s.homework.filter(h=>!h.done);
+  const done=s.homework.filter(h=>h.done).length;
+  const _w2=(loadStudents().find(x=>x.id===s.id)||{}).currentWeek||1;
+  let bodyHtml='';
+  if (pending.length>0) {
+    bodyHtml=pending.map(h=>{
+      const realIdx=s.homework.indexOf(h);
+      return `<div class="hw-item"><div class="hw-check${h.done?' done':''}" onclick="event.stopPropagation();toggleStudentHw(${s.id},${realIdx})"></div><div class="hw-meta"><p class="hw-text${h.done?' done':''}">${h.text}</p>${h.week?`<p class="hw-week">${h.week}주차</p>`:''}</div></div>`;
+    }).join('');
+  } else if (s.homework.length>0) {
+    bodyHtml=`<div style="text-align:center;padding:8px 0;"><p style="font-size:22px;margin-bottom:8px;">✓</p><p class="bold">이번 주 숙제 모두 완료!</p><p class="small muted mt4">다음 레슨이 기대돼요</p></div>`;
+  } else {
+    bodyHtml=`<p class="muted small" style="text-align:center;">아직 숙제가 없어요</p>`;
+  }
+  hwEl.innerHTML=`
+    <div class="row" style="user-select:none;">
+      <p class="section-title" style="margin:0;">${_w2}주차 숙제</p>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span id="s-hw-badge" class="small gold" style="display:${(_hwCardOpen&&pending.length>0)?'':'none'};">${done}/${s.homework.length}</span>
+        <span id="s-hw-arrow" style="font-size:14px;color:var(--text3);transition:transform 0.3s;transform:${_hwCardOpen?'rotate(90deg)':'rotate(0deg)'};">›</span>
+      </div>
+    </div>
+    <div class="hw-body-drawer${_hwCardOpen?' open':''}" id="s-home-hw-body">${bodyHtml}</div>`;
+}
+function exportData() {
+  const data = {
+    students: loadStudents(),
+    pw_teacher: getTeacherPw(),
+    exported_at: new Date().toISOString()
+  };
+  loadStudents().forEach(s => {
+    const pw = _studentPwCache[s.id] || localStorage.getItem(`heum_pw_${s.id}`);
+    if (pw) data[`pw_${s.id}`] = pw;
+  });
+  document.getElementById('export-text').value = JSON.stringify(data, null, 2);
+  document.getElementById('copy-btn').textContent = '전체 복사';
+  document.getElementById('export-modal').style.display = 'block';
+}
+function copyExportText() {
+  const el = document.getElementById('export-text');
+  el.select();
+  el.setSelectionRange(0, 99999);
+  try {
+    navigator.clipboard.writeText(el.value).then(()=>{
+      document.getElementById('copy-btn').textContent = '복사됨 ✓';
+    }).catch(()=>{ document.execCommand('copy'); document.getElementById('copy-btn').textContent = '복사됨 ✓'; });
+  } catch { document.execCommand('copy'); document.getElementById('copy-btn').textContent = '복사됨 ✓'; }
+}
+function openImportModal() {
+  document.getElementById('import-text').value = '';
+  document.getElementById('import-err').textContent = '';
+  document.getElementById('import-modal').style.display = 'block';
+}
+function submitImportText() {
+  const raw = document.getElementById('import-text').value.trim();
+  if (!raw) { document.getElementById('import-err').textContent = '내용을 붙여넣어 주세요'; return; }
+  try {
+    const data = JSON.parse(raw);
+    if (!data.students || !Array.isArray(data.students)) { document.getElementById('import-err').textContent = '올바른 데이터가 아닙니다'; return; }
+    saveStudents(data.students);
+    if (data.pw_teacher) saveTeacherPw(data.pw_teacher);
+    data.students.forEach(s => {
+      if (data[`pw_${s.id}`]) saveStudentPw(s.id, data[`pw_${s.id}`]);
+    });
+    document.getElementById('import-modal').style.display = 'none';
+    alert('데이터를 성공적으로 가져왔습니다');
+    renderTeacherMenu();
+  } catch { document.getElementById('import-err').textContent = '형식이 올바르지 않습니다. 다시 확인해주세요'; }
+}
+function showErr(id,msg){document.getElementById(id).textContent=msg;}
+</script>
+<!-- 데이터 내보내기 모달 -->
+<div id="export-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:999;padding:24px;box-sizing:border-box;overflow-y:auto;">
+  <div style="max-width:480px;margin:0 auto;background:var(--surface);border:0.5px solid var(--border2);border-radius:18px;padding:20px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <p style="font-size:15px;font-weight:500;">데이터 내보내기</p>
+      <button onclick="document.getElementById('export-modal').style.display='none'" style="background:transparent;border:none;color:var(--text2);font-size:20px;line-height:1;cursor:pointer;">×</button>
+    </div>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6;">아래 내용을 전체 선택 후 복사하세요.<br>다른 기기에서 <b style="color:var(--text);">데이터 가져오기</b>를 눌러 붙여넣으면 복원됩니다.</p>
+    <textarea id="export-text" readonly style="width:100%;height:180px;font-size:11px;font-family:monospace;background:var(--surface3);border:0.5px solid var(--border2);border-radius:10px;color:var(--text2);padding:10px;resize:none;line-height:1.4;"></textarea>
+    <button onclick="copyExportText()" id="copy-btn" style="margin-top:10px;width:100%;padding:13px;background:var(--gold);border:none;border-radius:12px;color:#111;font-size:14px;font-weight:500;cursor:pointer;">전체 복사</button>
+  </div>
+</div>
+
+<!-- 데이터 가져오기 모달 -->
+<div id="import-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:999;padding:24px;box-sizing:border-box;overflow-y:auto;">
+  <div style="max-width:480px;margin:0 auto;background:var(--surface);border:0.5px solid var(--border2);border-radius:18px;padding:20px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <p style="font-size:15px;font-weight:500;">데이터 가져오기</p>
+      <button onclick="document.getElementById('import-modal').style.display='none'" style="background:transparent;border:none;color:var(--text2);font-size:20px;line-height:1;cursor:pointer;">×</button>
+    </div>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6;">내보내기에서 복사한 내용을 아래에 붙여넣으세요.</p>
+    <textarea id="import-text" style="width:100%;height:180px;font-size:11px;font-family:monospace;background:var(--surface3);border:0.5px solid var(--border2);border-radius:10px;color:var(--text);padding:10px;resize:none;line-height:1.4;" placeholder="여기에 붙여넣기..."></textarea>
+    <p class="err-msg" id="import-err" style="text-align:left;margin-top:6px;min-height:16px;"></p>
+    <button onclick="submitImportText()" style="margin-top:6px;width:100%;padding:13px;background:var(--gold);border:none;border-radius:12px;color:#111;font-size:14px;font-weight:500;cursor:pointer;">복원하기</button>
+  </div>
+</div>
+
+</body>
+</html>
