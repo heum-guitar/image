@@ -1344,12 +1344,14 @@ function startEnterPw(cachedPw) {
 }
 
 let _hwCardOpen = false;
+let _learnedOpen = false;
 let _notYetLevel = null;
 let _notYetDrawerOpen = false;
 
 // ── 레슨생 대시보드 ────────────────────────────────────────
 function enterStudent() {
   _hwCardOpen = false;
+  _learnedOpen = false;
   const s=loadStudents().find(x=>x.id==curStudent.id);
   if(!s){ goScreen('sc-main'); return; }
   const months=calcMonths(s.startDate);
@@ -1383,7 +1385,15 @@ function enterStudent() {
         : '<p class="small muted" style="padding:8px 0;text-align:center;">곡 목록을 기다리는 중</p>';
     })()}</div>
     <div class="card" id="s-home-want-card"></div>
-    ${(s.songs.learned||[]).length?`<div class="card"><p class="section-title" style="color:var(--green);">지금까지 배운 곡 <span class="muted" style="font-weight:400;">${s.songs.learned.length}곡</span></p>${s.songs.learned.map(g=>`<div class="song-item"><div class="dot dot-green"></div><p class="song-name" onclick="openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p></div>`).join('')}</div>`:''}`;
+    ${(s.songs.learned||[]).length?`<div class="card" id="s-home-learned-card" onclick="toggleLearnedCard()" style="cursor:pointer;">
+      <div class="row" style="user-select:none;">
+        <p class="section-title" style="color:var(--green);margin:0;">지금까지 배운 곡 <span class="muted" style="font-weight:400;">${s.songs.learned.length}곡</span></p>
+        <span id="s-learned-arrow" style="font-size:14px;color:var(--text3);transition:transform 0.3s;transform:${_learnedOpen?'rotate(90deg)':'rotate(0deg)'};">›</span>
+      </div>
+      <div class="hw-body-drawer${_learnedOpen?' open':''}" id="s-home-learned-body">
+        ${s.songs.learned.map(g=>`<div class="song-item"><div class="dot dot-green"></div><p class="song-name" onclick="event.stopPropagation();openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p></div>`).join('')}
+      </div>
+    </div>`:''}`;
   renderStudentHwTab(s);
   renderStudentHomeHw(s);
   renderStudentHomeWant(s);
@@ -1406,6 +1416,13 @@ function toggleStudentHwCard() {
       badge.style.display = (_hwCardOpen && pending.length > 0) ? '' : 'none';
     }
   }
+}
+function toggleLearnedCard() {
+  _learnedOpen = !_learnedOpen;
+  const body  = document.getElementById('s-home-learned-body');
+  const arrow = document.getElementById('s-learned-arrow');
+  if (body)  body.classList.toggle('open', _learnedOpen);
+  if (arrow) arrow.style.transform = _learnedOpen ? 'rotate(90deg)' : 'rotate(0deg)';
 }
 let _progAnimating = false;
 function toggleProgressCard() {
