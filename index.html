@@ -328,7 +328,7 @@
         <p class="section-title">레슨생 추가</p>
         <div class="form-group"><p class="form-label">이름</p><input type="text" id="add-name" placeholder="이름 입력"></div>
         <div class="form-group"><p class="form-label">레벨</p><select id="add-level"><option value="초급">초급</option><option value="중급">중급</option><option value="고급">고급</option></select></div>
-        <div class="form-group"><p class="form-label">생년월일 (YYMMDD)</p><input type="tel" id="add-birth" maxlength="6" placeholder="예: 991124" oninput="this.value=this.value.replace(/\D/g,'')"></div>
+        <div class="form-group"><p class="form-label">생년월일 (YYMMDD)</p><input type="tel" id="add-birth" maxlength="6" placeholder="예: 991201" oninput="this.value=this.value.replace(/\D/g,'')"></div>
         <div class="form-group"><p class="form-label">수업 시작일</p><input type="date" id="add-start"></div>
         <p class="err-msg" id="add-err" style="text-align:left;margin-bottom:8px;"></p>
         <button class="btn-primary" style="width:100%;padding:14px;font-size:14px;" onclick="addStudent()">추가하기</button>
@@ -733,7 +733,7 @@ function inlineEdit(id, field, el) {
       if (committed) return; committed = true;
       const v = inp.value.trim();
       if (v && v.length === 6) { const arr=loadStudents(); arr.find(x=>x.id===id).birthdate=v; saveStudents(arr); }
-      else if (v && v.length !== 6) { alert('생년월일 6자리를 입력하세요 (예: 991124)'); }
+      else if (v && v.length !== 6) { alert('생년월일 6자리를 입력하세요 (예: 991201)'); }
       renderInfoScreen();
     }
     inp.addEventListener('blur', commit);
@@ -764,7 +764,7 @@ function addStudent() {
   const start=document.getElementById('add-start').value;
   const err=document.getElementById('add-err');
   if (!name) { err.textContent='이름을 입력하세요'; return; }
-  if (birth.length!==6) { err.textContent='생년월일 6자리를 입력하세요 (예: 991124)'; return; }
+  if (birth.length!==6) { err.textContent='생년월일 6자리를 입력하세요 (예: 991201)'; return; }
   err.textContent='';
   const students=loadStudents();
   students.push({ id:nextId(students),name,level,birthdate:birth,startDate:start||null,progress:0,module:"수업 준비 중",homework:[],songs:{canLearn:[],notYet:[]},events:[] });
@@ -1140,7 +1140,7 @@ function submitStudentLogin() {
   const birth = document.getElementById('sl-birth').value.trim();
   const autoLogin = document.getElementById('sl-autologin').checked;
   if (!name) { showErr('sl-err','이름을 입력하세요'); return; }
-  if (birth.length!==6) { showErr('sl-err','생년월일 6자리를 입력하세요 (예: 991124)'); return; }
+  if (birth.length!==6) { showErr('sl-err','생년월일 6자리를 입력하세요 (예: 991201)'); return; }
   const students = loadStudents();
   const s = students.find(x=>x.name===name && normBd(x.birthdate)===birth);
   if (!s) { showErr('sl-err','이름 또는 생년월일이 일치하지 않습니다'); return; }
