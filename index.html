@@ -194,6 +194,18 @@
   .stu-info-val.placeholder { color:var(--text3); font-size:12px; }
   .stu-info-input { font-size:13px; color:var(--text); background:var(--surface3); border:0.5px solid var(--gold); border-radius:7px; padding:5px 7px; width:100%; outline:none; border-radius:7px; }
   .stu-info-select { font-size:13px; color:var(--text); background:var(--surface3); border:0.5px solid var(--gold); border-radius:7px; padding:5px 6px; width:100%; outline:none; }
+  /* Student progress card - FLIP animation */
+  .s-progress-card { cursor: pointer; }
+  .s-prog-header { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 12px; }
+  .s-prog-pre, .s-prog-post { font-size: 13px; color: var(--text2); }
+  .s-prog-week { font-size: 20px; font-weight: 500; color: var(--text); }
+  .s-progress-card.open .s-prog-pre { order: 1; color: var(--text3); }
+  .s-progress-card.open .s-prog-post { order: 2; color: var(--text3); }
+  .s-progress-card.open .s-prog-week { order: 3; flex-basis: 100%; margin-top: 4px; }
+  .s-prog-extra { overflow: hidden; max-height: 0; }
+  .s-progress-card.open .s-prog-extra { max-height: 40px; }
+  /* Student homework card gold tint */
+  .s-hw-card { border-color: rgba(201,168,76,0.28) !important; background: rgba(201,168,76,0.04) !important; }
   @media (hover: none) {
     .btn-primary:hover { background:var(--gold); }
     .btn:hover { background:transparent; color:var(--text2); }
@@ -1205,14 +1217,19 @@ function enterStudent() {
     : s.homework.length>0
     ? `<div style="text-align:center;padding:8px 0;"><p style="font-size:22px;margin-bottom:8px;">✓</p><p class="bold">${week}주차 숙제 모두 완료!</p><p class="small muted mt4">다음 레슨이 기대돼요</p></div>`
     : `<p class="muted small" style="text-align:center;">아직 숙제가 없어요</p>`;
-  const hwSection=`<div class="card" id="s-home-hw">${hwInner}</div>`;
+  const hwSection=`<div class="card s-hw-card" id="s-home-hw">${hwInner}</div>`;
   const nextCard=`<div class="card"><p class="section-title" style="color:var(--text2);">다음 주 수업 내용 — ${week+1}주차</p><p style="font-size:13px;line-height:1.6;${s.nextLesson?'':'color:var(--text3);'}">${s.nextLesson||'아직 입력되지 않았습니다'}</p></div>`;
   document.getElementById('s-home').innerHTML=`
-    <div class="card">
-      <p class="card-label">현재 진행중</p>
-      <p class="bold" style="font-size:20px;margin-bottom:14px;">${week}주차</p>
-      <div class="progress-track"><div class="progress-fill" style="width:${weekPct}%"></div></div>
-      <div class="row mt8"><span class="small muted">4주 기준</span><span class="small gold">${week} / 4주차</span></div>
+    <div class="card s-progress-card" id="s-progress-card" onclick="toggleProgressCard()">
+      <div class="s-prog-header">
+        <span class="s-prog-pre" id="s-prog-pre">현재</span>
+        <strong class="s-prog-week" id="s-prog-week">${week}주차</strong>
+        <span class="s-prog-post" id="s-prog-post">진행중</span>
+      </div>
+      <div class="progress-track" id="s-prog-bar"><div class="progress-fill" style="width:${weekPct}%"></div></div>
+      <div class="s-prog-extra">
+        <div class="row mt8"><span class="small muted">4주 기준</span><span class="small gold">${week} / 4주차</span></div>
+      </div>
     </div>
     ${hwSection}
     ${nextCard}
@@ -1223,6 +1240,86 @@ function enterStudent() {
   renderStudentHwTab(s);
   renderStudentSongsTab(s);
   goScreen('sc-student');
+}
+let _progAnimating = false;
+function toggleProgressCard() {
+  if (_progAnimating) return;
+  const card  = document.getElementById('s-progress-card');
+  const pre   = document.getElementById('s-prog-pre');
+  const week  = document.getElementById('s-prog-week');
+  const post  = document.getElementById('s-prog-post');
+  const bar   = document.getElementById('s-prog-bar');
+  const extra = card ? card.querySelector('.s-prog-extra') : null;
+  if (!card || !pre || !week || !post || !bar || !extra) return;
+
+  _progAnimating = true;
+
+  // FIRST — capture current positions & height
+  const r1 = {
+    pre:  pre.getBoundingClientRect(),
+    week: week.getBoundingClientRect(),
+    post: post.getBoundingClientRect(),
+    bar:  bar.getBoundingClientRect()
+  };
+  const h1 = card.offsetHeight;
+
+  // Snap extra instantly so h2 measurement is exact (no CSS transition lag)
+  extra.style.transition = 'none';
+
+  // LAST — apply layout change
+  card.classList.toggle('open');
+
+  // Force layout: h2 now correctly reflects the true final height including/excluding extra
+  const r2 = {
+    pre:  pre.getBoundingClientRect(),
+    week: week.getBoundingClientRect(),
+    post: post.getBoundingClientRect(),
+    bar:  bar.getBoundingClientRect()
+  };
+  const h2 = card.offsetHeight;
+
+  // INVERT — freeze card, kill transitions, apply inverse transforms
+  card.style.transition = 'none';
+  card.style.overflow   = 'hidden';
+  card.style.height     = h1 + 'px';
+  [pre, week, post, bar].forEach(el => { el.style.transition = 'none'; });
+
+  pre.style.transform  = `translate(${r1.pre.left  - r2.pre.left}px, ${r1.pre.top  - r2.pre.top}px)`;
+  week.style.transform = `translate(${r1.week.left - r2.week.left}px, ${r1.week.top - r2.week.top}px)`;
+  post.style.transform = `translate(${r1.post.left - r2.post.left}px, ${r1.post.top - r2.post.top}px)`;
+  bar.style.transform  = `translateY(${r1.bar.top  - r2.bar.top}px)`;
+
+  // PLAY — animate everything to final positions
+  // extra is already at its final state (snapped) — card height expansion will reveal it naturally
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      const ease = '0.44s cubic-bezier(0.4,0,0.2,1)';
+      pre.style.transition  = `transform ${ease}, color 0.35s ease`;
+      week.style.transition = `transform ${ease}`;
+      post.style.transition = `transform ${ease}, color 0.35s ease`;
+      bar.style.transition  = `transform ${ease}`;
+      card.style.transition = `height ${ease}`;
+
+      pre.style.transform  = '';
+      week.style.transform = '';
+      post.style.transform = '';
+      bar.style.transform  = '';
+      card.style.height    = h2 + 'px'; // exact final height — no jump
+    });
+  });
+
+  // Clean up
+  setTimeout(() => {
+    card.style.height     = '';
+    card.style.overflow   = '';
+    card.style.transition = '';
+    extra.style.transition = '';
+    [pre, week, post, bar].forEach(el => {
+      el.style.transition = '';
+      el.style.transform  = '';
+    });
+    _progAnimating = false;
+  }, 480);
 }
 function toggleStudentHw(sid,idx) {
   const students=loadStudents(); const s=students.find(x=>x.id===sid);
