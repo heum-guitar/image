@@ -210,6 +210,12 @@
   /* Homework drawer animation */
   .hw-body-drawer { overflow: hidden; max-height: 0; margin-top: 0; transition: max-height 0.38s cubic-bezier(0.4,0,0.2,1), margin-top 0.28s ease; }
   .hw-body-drawer.open { max-height: 800px; margin-top: 12px; }
+  /* Not-yet level drawer */
+  .not-yet-drawer { overflow: hidden; max-height: 0; margin-top: 0; transition: max-height 0.38s cubic-bezier(0.4,0,0.2,1), margin-top 0.28s ease; }
+  .not-yet-drawer.open { max-height: 180px; margin-top: 10px; }
+  .level-item { display:flex; align-items:center; justify-content:space-between; padding:13px 14px; background:var(--surface2); border:0.5px solid var(--border2); border-radius:12px; cursor:pointer; transition:background 0.15s; margin-bottom:8px; }
+  .level-item:last-child { margin-bottom:0; }
+  .level-item:active { background:var(--surface3); }
   /* Gold glow for matched songs */
   @keyframes goldGlow {
     0%, 100% { color: var(--gold); text-shadow: 0 0 6px rgba(201,168,76,0.55); }
@@ -474,8 +480,8 @@ function deleteStudentPw(id) {
 
 // ── 데이터 ─────────────────────────────────────────────────
 const STUDENTS_DEFAULT = [
-  { id:1, name:"임슬찬", level:"초급", birthdate:"00000000", startDate:null, progress:0, module:"수업 준비 중", currentWeek:1, nextLesson:"", homework:[], songs:{canLearn:[],notYet:[],wantToLearn:[],learned:[]}, events:[] },
-  { id:2, name:"인영",   level:"초급", birthdate:"00000000", startDate:null, progress:0, module:"수업 준비 중", currentWeek:1, nextLesson:"", homework:[], songs:{canLearn:[],notYet:[],wantToLearn:[],learned:[]}, events:[] }
+  { id:1, name:"임슬찬", level:"초급", birthdate:"00000000", startDate:null, progress:0, module:"수업 준비 중", currentWeek:1, nextLesson:"", homework:[], songs:{canLearn:[],notYetBeginner:[],notYetIntermediate:[],wantToLearn:[],learned:[]}, events:[] },
+  { id:2, name:"인영",   level:"초급", birthdate:"00000000", startDate:null, progress:0, module:"수업 준비 중", currentWeek:1, nextLesson:"", homework:[], songs:{canLearn:[],notYetBeginner:[],notYetIntermediate:[],wantToLearn:[],learned:[]}, events:[] }
 ];
 const TEACHER_PW_DEFAULT = "0912";
 
@@ -512,12 +518,19 @@ function _fixStudent(st){
   st.homework = _toArr(st.homework);
   if(!st.currentWeek)st.currentWeek=1;
   if(st.nextLesson===undefined)st.nextLesson='';
-  if(!st.songs){ st.songs={canLearn:[],notYet:[],wantToLearn:[],learned:[]}; }
+  if(!st.songs){ st.songs={canLearn:[],notYetBeginner:[],notYetIntermediate:[],wantToLearn:[],learned:[]}; }
   else{
-    st.songs.canLearn    = _toArr(st.songs.canLearn);
-    st.songs.notYet      = _toArr(st.songs.notYet);
-    st.songs.wantToLearn = _toArr(st.songs.wantToLearn);
-    st.songs.learned     = _toArr(st.songs.learned);
+    st.songs.canLearn         = _toArr(st.songs.canLearn);
+    st.songs.wantToLearn      = _toArr(st.songs.wantToLearn);
+    st.songs.learned          = _toArr(st.songs.learned);
+    // 레거시 notYet → notYetBeginner 마이그레이션
+    const legacy              = _toArr(st.songs.notYet);
+    st.songs.notYetBeginner   = _toArr(st.songs.notYetBeginner);
+    st.songs.notYetIntermediate = _toArr(st.songs.notYetIntermediate);
+    if (legacy.length && !st.songs.notYetBeginner.length && !st.songs.notYetIntermediate.length) {
+      st.songs.notYetBeginner = legacy;
+    }
+    delete st.songs.notYet;
   }
 }
 
@@ -1084,10 +1097,11 @@ function renderSongsTab(s) {
       <button class="btn-red" onclick="deleteSong(${s.id},'${type}',${idx})">×</button>
     </div>`;
   }
-  const canItems = s.songs.canLearn.length ? s.songs.canLearn.map((g,i)=>songRow(g,'canLearn',i)).join('') : '<p class="small muted" style="padding:10px 0;text-align:center;">곡을 추가해주세요</p>';
-  const notItems = s.songs.notYet.length ? s.songs.notYet.map((g,i)=>songRow(g,'notYet',i)).join('') : '<p class="small muted" style="padding:10px 0;text-align:center;">곡을 추가해주세요</p>';
+  const canItems     = s.songs.canLearn.length ? s.songs.canLearn.map((g,i)=>songRow(g,'canLearn',i)).join('') : '<p class="small muted" style="padding:10px 0;text-align:center;">곡을 추가해주세요</p>';
+  const beginItems   = (s.songs.notYetBeginner||[]).length ? s.songs.notYetBeginner.map((g,i)=>songRow(g,'notYetBeginner',i)).join('') : '<p class="small muted" style="padding:10px 0;text-align:center;">곡을 추가해주세요</p>';
+  const interItems   = (s.songs.notYetIntermediate||[]).length ? s.songs.notYetIntermediate.map((g,i)=>songRow(g,'notYetIntermediate',i)).join('') : '<p class="small muted" style="padding:10px 0;text-align:center;">곡을 추가해주세요</p>';
   const learnedItems = (s.songs.learned||[]).length ? s.songs.learned.map((g,i)=>songRow(g,'learned',i)).join('') : '<p class="small muted" style="padding:10px 0;text-align:center;">곡을 추가해주세요</p>';
-  const wantItems = (s.songs.wantToLearn||[]).length
+  const wantItems    = (s.songs.wantToLearn||[]).length
     ? s.songs.wantToLearn.map(g=>`<div class="song-item"><div class="dot dot-dim"></div><p class="song-name muted" style="flex:1;">${g}</p></div>`).join('')
     : '<p class="small muted" style="padding:10px 0;text-align:center;">레슨생이 아직 없음</p>';
   document.getElementById('d-songs').innerHTML = `
@@ -1109,15 +1123,28 @@ function renderSongsTab(s) {
       ${wantItems}
     </div>
     <div class="card">
-      <p class="section-title muted">연습이 필요한 곡</p>
-      ${notItems}
-      <button class="add-trigger" style="margin-top:10px;" onclick="toggleSongPanel('notYet')">+ 곡 추가</button>
-      <div class="add-panel hidden" id="song-panel-notYet">
-        <p class="add-panel-title">연습이 필요한 곡 추가</p>
-        <div class="form-group"><textarea id="song-input-notYet" rows="1" placeholder="예: Tommy Emmanuel - Classical Gas"></textarea></div>
+      <p class="section-title muted">연습이 필요한 곡 — <span style="color:var(--text);">초급</span></p>
+      ${beginItems}
+      <button class="add-trigger" style="margin-top:10px;" onclick="toggleSongPanel('notYetBeginner')">+ 곡 추가</button>
+      <div class="add-panel hidden" id="song-panel-notYetBeginner">
+        <p class="add-panel-title">초급 곡 추가</p>
+        <div class="form-group"><textarea id="song-input-notYetBeginner" rows="1" placeholder="예: 버스커버스커 - 여수 밤바다"></textarea></div>
         <div class="panel-actions">
-          <button class="panel-btn panel-btn-cancel" onclick="toggleSongPanel('notYet')">취소</button>
-          <button class="panel-btn panel-btn-submit" onclick="submitSong('notYet')">추가</button>
+          <button class="panel-btn panel-btn-cancel" onclick="toggleSongPanel('notYetBeginner')">취소</button>
+          <button class="panel-btn panel-btn-submit" onclick="submitSong('notYetBeginner')">추가</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <p class="section-title muted">연습이 필요한 곡 — <span style="color:var(--text);">중급</span></p>
+      ${interItems}
+      <button class="add-trigger" style="margin-top:10px;" onclick="toggleSongPanel('notYetIntermediate')">+ 곡 추가</button>
+      <div class="add-panel hidden" id="song-panel-notYetIntermediate">
+        <p class="add-panel-title">중급 곡 추가</p>
+        <div class="form-group"><textarea id="song-input-notYetIntermediate" rows="1" placeholder="예: Tommy Emmanuel - Classical Gas"></textarea></div>
+        <div class="panel-actions">
+          <button class="panel-btn panel-btn-cancel" onclick="toggleSongPanel('notYetIntermediate')">취소</button>
+          <button class="panel-btn panel-btn-submit" onclick="submitSong('notYetIntermediate')">추가</button>
         </div>
       </div>
     </div>
@@ -1304,6 +1331,8 @@ function startEnterPw(cachedPw) {
 }
 
 let _hwCardOpen = false;
+let _notYetLevel = null;
+let _notYetDrawerOpen = false;
 
 // ── 레슨생 대시보드 ────────────────────────────────────────
 function enterStudent() {
@@ -1494,9 +1523,6 @@ function renderStudentSongsTab(s) {
         return `<div class="song-item"><div class="dot dot-gold"></div><p class="${matched?'song-name song-match':'song-name'}" onclick="openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p></div>`;
       }).join('')
     : '<p class="small muted" style="padding:12px 0;text-align:center;">곡 목록을 기다리는 중</p>';
-  const notRows = s.songs.notYet.length
-    ? s.songs.notYet.map(g=>`<div class="song-item"><div class="dot dot-dim"></div><p class="song-name muted" onclick="openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p></div>`).join('')
-    : '<p class="small muted" style="padding:12px 0;text-align:center;">도전 예정 곡이 없습니다</p>';
   const learnedRows = (s.songs.learned||[]).length
     ? s.songs.learned.map(g=>`<div class="song-item"><div class="dot dot-green"></div><p class="song-name" onclick="openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p></div>`).join('')
     : '<p class="small muted" style="padding:12px 0;text-align:center;">아직 없습니다</p>';
@@ -1508,6 +1534,8 @@ function renderStudentSongsTab(s) {
         return `<div class="song-item"><div class="dot ${dotCls}"></div><p class="${nameCls}" style="flex:1;" onclick="openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p><button class="btn-red" onclick="deleteStudentWantSong(${i})">×</button></div>`;
       }).join('')
     : '<p class="small muted" style="padding:12px 0;text-align:center;">아직 없어요</p>';
+  const bCnt = (s.songs.notYetBeginner||[]).length;
+  const iCnt = (s.songs.notYetIntermediate||[]).length;
   document.getElementById('s-songs').innerHTML=`
     <div class="card"><p class="section-title gold">지금 배울 수 있는 곡</p>${canRows}</div>
     <div class="card"><p class="section-title muted">배우고 싶은 곡</p>
@@ -1521,13 +1549,77 @@ function renderStudentSongsTab(s) {
       </div>
       <button class="add-trigger" onclick="toggleStudentWantPanelTab()">+ 배우고 싶은 곡 추가</button>
     </div>
-    <div class="card"><p class="section-title muted">연습이 필요한 곡</p>${notRows}</div>
+    <div class="card" style="cursor:pointer;" onclick="toggleNotYetDrawer()">
+      <div class="row" style="user-select:none;">
+        <p class="section-title" style="margin:0;">연습이 필요한 곡</p>
+        <span id="not-yet-arrow" style="font-size:14px;color:var(--text3);transition:transform 0.3s;">›</span>
+      </div>
+      <div class="not-yet-drawer" id="not-yet-drawer">
+        <div class="level-item" onclick="event.stopPropagation();goNotYetLevel('beginner')">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="dot dot-dim"></div>
+            <span style="font-size:14px;">초급</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            ${bCnt>0?`<span class="small muted">${bCnt}곡</span>`:''}
+            <span style="font-size:13px;color:var(--text3);">›</span>
+          </div>
+        </div>
+        <div class="level-item" onclick="event.stopPropagation();goNotYetLevel('intermediate')">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="dot dot-dim"></div>
+            <span style="font-size:14px;">중급</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            ${iCnt>0?`<span class="small muted">${iCnt}곡</span>`:''}
+            <span style="font-size:13px;color:var(--text3);">›</span>
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="card"><p class="section-title" style="color:var(--green);">지금까지 배운 곡 <span class="muted" style="font-weight:400;">${(s.songs.learned||[]).length}곡</span></p>${learnedRows}</div>`;
+  // 서랍 상태 복원
+  if (_notYetDrawerOpen) {
+    const drawer = document.getElementById('not-yet-drawer');
+    const arrow  = document.getElementById('not-yet-arrow');
+    if (drawer) drawer.classList.add('open');
+    if (arrow)  arrow.style.transform = 'rotate(90deg)';
+  }
 }
 function switchStudentTab(tab,btn) {
   document.querySelectorAll('#sc-student .tab').forEach(t=>t.classList.remove('active'));
   btn.classList.add('active');
   ['home','homework','songs'].forEach(t=>document.getElementById('s-'+t).classList.toggle('hidden',t!==tab));
+}
+function toggleNotYetDrawer() {
+  _notYetDrawerOpen = !_notYetDrawerOpen;
+  const drawer = document.getElementById('not-yet-drawer');
+  const arrow  = document.getElementById('not-yet-arrow');
+  if (drawer) drawer.classList.toggle('open', _notYetDrawerOpen);
+  if (arrow)  arrow.style.transform = _notYetDrawerOpen ? 'rotate(90deg)' : 'rotate(0deg)';
+}
+function goNotYetLevel(level) {
+  _notYetLevel = level;
+  const s = loadStudents().find(x => x.id === curStudent.id);
+  if (!s) return;
+  renderNotYetLevelScreen(s);
+  document.querySelectorAll('[id^="sc-"]').forEach(el => el.classList.add('hidden'));
+  document.getElementById('sc-not-yet-level').classList.remove('hidden');
+}
+function goBackFromNotYet() {
+  document.querySelectorAll('[id^="sc-"]').forEach(el => el.classList.add('hidden'));
+  document.getElementById('sc-student').classList.remove('hidden');
+}
+function renderNotYetLevelScreen(s) {
+  const isBegin = _notYetLevel === 'beginner';
+  const label   = isBegin ? '초급' : '중급';
+  const key     = isBegin ? 'notYetBeginner' : 'notYetIntermediate';
+  const songs   = s.songs[key] || [];
+  document.getElementById('not-yet-level-title').textContent = `연습이 필요한 곡 — ${label}`;
+  const rows = songs.length
+    ? songs.map(g => `<div class="song-item"><div class="dot dot-dim"></div><p class="song-name muted" onclick="openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p></div>`).join('')
+    : '<p class="small muted" style="padding:28px 0;text-align:center;">아직 곡이 없습니다</p>';
+  document.getElementById('not-yet-level-content').innerHTML = `<div class="card">${rows}</div>`;
 }
 
 // ── 숫자 패드 ──────────────────────────────────────────────
@@ -1656,6 +1748,18 @@ function submitImportText() {
 }
 function showErr(id,msg){document.getElementById(id).textContent=msg;}
 </script>
+<!-- 연습이 필요한 곡 — 레벨별 페이지 -->
+<div id="sc-not-yet-level" class="hidden">
+  <div class="screen">
+    <div class="topbar">
+      <button class="btn-ghost" onclick="goBackFromNotYet()">← 돌아가기</button>
+      <p class="bold" id="not-yet-level-title"></p>
+      <div style="width:60px;"></div>
+    </div>
+    <div class="content" id="not-yet-level-content"></div>
+  </div>
+</div>
+
 <!-- 데이터 내보내기 모달 -->
 <div id="export-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:999;padding:24px;box-sizing:border-box;overflow-y:auto;">
   <div style="max-width:480px;margin:0 auto;background:var(--surface);border:0.5px solid var(--border2);border-radius:18px;padding:20px;">
