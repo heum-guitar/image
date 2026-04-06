@@ -83,7 +83,8 @@
   .menu-label { font-size:15px; font-weight:500; text-align:center; }
   .menu-arrow { font-size:14px; color:var(--text3); transition:transform 0.2s; }
   .menu-arrow.open { transform:rotate(90deg); }
-  .menu-body { border-top:0.5px solid var(--border); }
+  .menu-body { border-top:0.5px solid var(--border); overflow:hidden; max-height:0; transition:max-height 0.38s cubic-bezier(0.4,0,0.2,1); }
+  .menu-body.open { max-height:600px; }
   .menu-item { display:flex; align-items:center; justify-content:space-between; padding:15px 18px; cursor:pointer; transition:background 0.12s; border-bottom:0.5px solid var(--border); }
   .menu-item:last-child { border-bottom:none; }
   .menu-item:hover { background:var(--surface2); }
@@ -289,14 +290,14 @@
           <p class="menu-label">레슨생 리스트</p>
           <span class="menu-arrow" id="arrow-students">›</span>
         </div>
-        <div class="menu-body hidden" id="menu-students"></div>
+        <div class="menu-body" id="menu-students"></div>
       </div>
       <div class="menu-section">
         <div class="menu-header" onclick="toggleMenu('menu-settings','arrow-settings')">
           <p class="menu-label">환경설정</p>
           <span class="menu-arrow" id="arrow-settings">›</span>
         </div>
-        <div class="menu-body hidden" id="menu-settings">
+        <div class="menu-body" id="menu-settings">
           <div class="menu-item" onclick="goScreen('sc-info')">
             <div class="item-left"><div class="item-dot item-dot-gray"></div><p class="item-label">레슨생 정보 관리</p></div>
             <span class="item-arrow">›</span>
@@ -622,10 +623,21 @@ function goScreen(id) {
 }
 function logout() { goScreen('sc-main'); }
 function toggleMenu(bodyId, arrowId) {
+  const menus = [
+    { bodyId:'menu-students', arrowId:'arrow-students' },
+    { bodyId:'menu-settings', arrowId:'arrow-settings' }
+  ];
   const body = document.getElementById(bodyId);
   const arrow = document.getElementById(arrowId);
-  const isOpen = !body.classList.contains('hidden');
-  body.classList.toggle('hidden', isOpen);
+  const isOpen = body.classList.contains('open');
+  // 다른 메뉴 닫기 + 대상 메뉴 토글을 동일 프레임에 처리
+  menus.forEach(m => {
+    if (m.bodyId !== bodyId) {
+      document.getElementById(m.bodyId).classList.remove('open');
+      document.getElementById(m.arrowId).classList.remove('open');
+    }
+  });
+  body.classList.toggle('open', !isOpen);
   arrow.classList.toggle('open', !isOpen);
 }
 
@@ -674,7 +686,7 @@ function onChangePw(pin) {
 // ── 강사 메뉴 ─────────────────────────────────────────────
 function renderTeacherMenu() {
   const students = loadStudents();
-  ['menu-students','menu-settings'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['menu-students','menu-settings'].forEach(id=>document.getElementById(id).classList.remove('open'));
   ['arrow-students','arrow-settings'].forEach(id=>document.getElementById(id).classList.remove('open'));
   document.getElementById('menu-students').innerHTML = students.map(s => {
     const pend = s.homework.filter(h=>!h.done).length;
@@ -756,6 +768,7 @@ function inlineEdit(id, field, el) {
       if (v) { const arr=loadStudents(); arr.find(x=>x.id===id).startDate=v; saveStudents(arr); }
       renderInfoScreen();
     }
+    inp.addEventListener('change', () => { if(!committed) commit(); });
     inp.addEventListener('blur', commit);
     inp.addEventListener('keydown', e => { if(e.key==='Enter') inp.blur(); if(e.key==='Escape'){committed=true;renderInfoScreen();} });
   } else if (field === 'birthdate') {
@@ -859,7 +872,7 @@ function renderProgressTab(s,months,pct) {
     </div>
     <div class="metrics">
       <div class="metric"><p class="metric-label">배울 수 있는 곡</p><p class="metric-val">${s.songs.canLearn.length}<span>곡</span></p></div>
-      <div class="metric"><p class="metric-label">연습 필요한 곡</p><p class="metric-val">${s.songs.notYet.length}<span>곡</span></p></div>
+      <div class="metric"><p class="metric-label">연습 필요한 곡</p><p class="metric-val">${(s.songs.notYetBeginner||[]).length+(s.songs.notYetIntermediate||[]).length}<span>곡</span></p></div>
     </div>
     <div id="cal-container"></div>`;
   buildDWeekGrid(week);
