@@ -23,25 +23,25 @@
   ],
   "screenshots": [
     {
-      "src": "cap 1.png",
+      "src": "cap1.png",
       "sizes": "1206x2451",
       "type": "image/png",
       "form_factor": "narrow"
     },
     {
-      "src": "cap 4.png",
+      "src": "cap4.png",
       "sizes": "1206x2475",
       "type": "image/png",
       "form_factor": "narrow"
     },
     {
-      "src": "cap 2.png",
+      "src": "cap2.png",
       "sizes": "1206x2481",
       "type": "image/png",
       "form_factor": "narrow"
     },
     {
-      "src": "cap 3.png",
+      "src": "cap3.png",
       "sizes": "1206x2436",
       "type": "image/png",
       "form_factor": "narrow"
