@@ -35,6 +35,7 @@
   select option { background: #222; }
   input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.6); }
   input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.6); }
+  input[type="date"], input[type="time"] { position: relative; z-index: 1; }
   textarea { resize: none; line-height: 1.5; }
 
   .screen { max-width: 480px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
@@ -152,7 +153,7 @@
   .add-trigger:hover { border-color:var(--gold-dim); color:var(--gold); }
 
   /* Calendar */
-  .cal-wrap { background:var(--surface); border:0.5px solid var(--border); border-radius:16px; padding:16px; margin-bottom:10px; }
+  .cal-wrap { background:var(--surface); border:0.5px solid var(--border); border-radius:16px; padding:16px; margin-bottom:10px; max-width:480px; }
   .cal-nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
   .cal-title { font-size:14px; font-weight:500; }
   .cal-nav-btn { background:transparent; border:none; color:var(--text2); font-size:18px; padding:4px 8px; border-radius:8px; transition:background 0.12s; }
@@ -161,7 +162,7 @@
   .cal-plus:hover { background:rgba(201,168,76,0.25); }
   .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
   .cal-dow { font-size:10px; color:var(--text3); text-align:center; padding:4px 0; }
-  .cal-day { text-align:center; padding:6px 2px; font-size:13px; border-radius:8px; cursor:pointer; transition:background 0.12s; display:flex; flex-direction:column; align-items:center; gap:3px; min-height:36px; }
+  .cal-day { text-align:center; padding:6px 2px; font-size:13px; border-radius:8px; cursor:pointer; transition:background 0.12s; display:flex; flex-direction:column; align-items:center; gap:3px; min-height:36px; aspect-ratio:1/1; justify-content:center; }
   .cal-day:hover { background:var(--surface3); }
   .cal-day.empty { cursor:default; }
   .cal-day.empty:hover { background:transparent; }
@@ -265,8 +266,8 @@
     .song-name { font-size: 15px; }
     .hw-item { padding: 14px 0; }
     .hw-text { font-size: 15px; }
-    .cal-wrap { padding: 22px; }
-    .cal-day { min-height: 46px; }
+    .cal-wrap { padding: 22px; margin-left: auto; margin-right: auto; }
+    .cal-day { min-height: auto; }
     .cal-num { font-size: 15px; }
     .cal-title { font-size: 16px; }
     .add-panel { padding: 18px; }
@@ -391,7 +392,7 @@
         <div class="form-group"><p class="form-label">이름</p><input type="text" id="add-name" placeholder="이름 입력"></div>
         <div class="form-group"><p class="form-label">레벨</p><select id="add-level"><option value="초급">초급</option><option value="중급">중급</option><option value="고급">고급</option></select></div>
         <div class="form-group"><p class="form-label">생년월일 (YYMMDD)</p><input type="tel" id="add-birth" maxlength="6" placeholder="예: 991201" oninput="this.value=this.value.replace(/\D/g,'')"></div>
-        <div class="form-group"><p class="form-label">수업 시작일</p><input type="date" id="add-start"></div>
+        <div class="form-group"><p class="form-label">수업 시작일</p><input type="date" id="add-start" onfocus="setTimeout(()=>this.scrollIntoView({block:'center',behavior:'smooth'}),300)"></div>
         <p class="err-msg" id="add-err" style="text-align:left;margin-bottom:8px;"></p>
         <button class="btn-primary" style="width:100%;padding:14px;font-size:14px;" onclick="addStudent()">추가하기</button>
       </div>
@@ -474,7 +475,10 @@
   <div class="screen">
     <div class="topbar">
       <div class="col"><p class="bold" id="s-name" style="font-size:17px;"></p><p class="small muted" id="s-meta"></p></div>
-      <button class="btn" onclick="logout()">나가기</button>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="btn-ghost" onclick="goScreen('sc-student-settings')" style="font-size:18px;padding:4px 6px;color:var(--text3);">⚙</button>
+        <button class="btn" onclick="logout()">나가기</button>
+      </div>
     </div>
     <div class="tabs">
       <button class="tab active" onclick="switchStudentTab('home',this)">홈</button>
@@ -665,6 +669,7 @@ function goScreen(id) {
   if (id === 'sc-teacher') renderTeacherMenu();
   if (id === 'sc-info') renderInfoScreen();
   if (id === 'sc-change-pw') initChangePw();
+  if (id === 'sc-student-settings') initStudentChangePw();
 }
 function logout() { goScreen('sc-main'); }
 function toggleMenu(bodyId, arrowId) {
@@ -805,6 +810,7 @@ function inlineEdit(id, field, el) {
   } else if (field === 'startDate') {
     const inp = document.createElement('input');
     inp.type = 'date'; inp.className = 'stu-info-input'; inp.value = s.startDate || '';
+    inp.addEventListener('focus', function(){ setTimeout(()=>this.scrollIntoView({block:'center',behavior:'smooth'}),300); });
     el.replaceWith(inp); inp.focus();
     let committed = false;
     function commit() {
@@ -1831,8 +1837,77 @@ function submitImportText() {
     renderTeacherMenu();
   } catch { document.getElementById('import-err').textContent = '형식이 올바르지 않습니다. 다시 확인해주세요'; }
 }
+// ── 레슨생 환경설정 ──────────────────────────────────────
+let sCpwStep = 1, sCpwFirst = '';
+function goBackToStudent() {
+  document.querySelectorAll('[id^="sc-"]').forEach(el => el.classList.add('hidden'));
+  document.getElementById('sc-student').classList.remove('hidden');
+}
+function initStudentChangePw() {
+  sCpwStep = 1; sCpwFirst = '';
+  document.getElementById('s-cpw-err').textContent = '';
+  document.getElementById('s-cpw-ok').classList.add('hidden');
+  document.getElementById('s-cpw-sub').textContent = '현재 비밀번호를 입력하세요';
+  buildPad('s-cpw-pad','s-cpw-dots', 4, onStudentChangePw, 's-cpw-err');
+}
+function onStudentChangePw(pin) {
+  if (sCpwStep === 1) {
+    const saved = getStudentPw(curStudent.id);
+    if (pin !== String(saved)) {
+      showErr('s-cpw-err','현재 비밀번호가 틀렸습니다');
+      resetPad('s-cpw-pad','s-cpw-dots', 4, onStudentChangePw, 's-cpw-err');
+      return;
+    }
+    sCpwStep = 2;
+    document.getElementById('s-cpw-sub').textContent = '새 비밀번호를 입력하세요';
+    document.getElementById('s-cpw-err').textContent = '';
+    buildPad('s-cpw-pad','s-cpw-dots', 4, onStudentChangePw, 's-cpw-err');
+  } else if (sCpwStep === 2) {
+    sCpwFirst = pin;
+    sCpwStep = 3;
+    document.getElementById('s-cpw-sub').textContent = '새 비밀번호를 한 번 더 입력하세요';
+    document.getElementById('s-cpw-err').textContent = '';
+    buildPad('s-cpw-pad','s-cpw-dots', 4, onStudentChangePw, 's-cpw-err');
+  } else {
+    if (pin !== sCpwFirst) {
+      showErr('s-cpw-err','새 비밀번호가 일치하지 않습니다. 다시 진행하세요.');
+      sCpwStep = 1; sCpwFirst = '';
+      document.getElementById('s-cpw-sub').textContent = '현재 비밀번호를 입력하세요';
+      buildPad('s-cpw-pad','s-cpw-dots', 4, onStudentChangePw, 's-cpw-err');
+    } else {
+      saveStudentPw(curStudent.id, pin);
+      document.getElementById('s-cpw-ok').classList.remove('hidden');
+      document.getElementById('s-cpw-sub').textContent = '';
+      document.getElementById('s-cpw-err').textContent = '';
+      document.getElementById('s-cpw-dots').innerHTML = '';
+      document.getElementById('s-cpw-pad').innerHTML = '';
+    }
+  }
+}
 function showErr(id,msg){document.getElementById(id).textContent=msg;}
 </script>
+
+<!-- 레슨생 환경설정 -->
+<div id="sc-student-settings" class="hidden">
+  <div class="screen">
+    <div class="topbar">
+      <button class="btn-ghost" onclick="goBackToStudent()">← 돌아가기</button>
+      <p class="bold">환경설정</p>
+      <div style="width:60px;"></div>
+    </div>
+    <div class="content">
+      <div class="card">
+        <p class="section-title">비밀번호 변경</p>
+        <p id="s-cpw-sub" style="font-size:12px;color:var(--text2);margin-bottom:16px;">현재 비밀번호를 입력하세요</p>
+        <div class="pw-dots" id="s-cpw-dots" style="justify-content:flex-start;margin:12px 0 16px;"></div>
+        <div class="numpad" id="s-cpw-pad" style="max-width:260px;"></div>
+        <p class="err-msg mt8" id="s-cpw-err" style="text-align:left;"></p>
+        <p class="ok-msg mt8 hidden" id="s-cpw-ok" style="text-align:left;">비밀번호가 변경됐습니다</p>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- 연습이 필요한 곡 — 레벨별 페이지 -->
 <div id="sc-not-yet-level" class="hidden">
   <div class="screen">
