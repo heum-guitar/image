@@ -18,7 +18,9 @@
 </script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; background: #111; color: #e8e2d6; min-height: 100vh; }
+  html { height: 100%; overflow: hidden; }
+  body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; background: #111; color: #e8e2d6; height: 100%; overflow: hidden; overscroll-behavior: none; }
+  [id^="sc-"] { height: 100vh; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
   :root {
     --gold: #C9A84C; --gold-dim: #8a7035;
     --surface: #1a1a1a; --surface2: #222; --surface3: #2a2a2a;
@@ -245,54 +247,45 @@
 
   /* ── 태블릿 · 아이패드 (600px ~) ── */
   @media (min-width: 600px) {
-    .screen { max-width: 88vw; }
-    .content { padding: 0 28px 80px; }
-    .topbar { padding: 24px 28px 18px; }
-    .teacher-body { padding: 0 28px 40px; }
-    .auth-box { max-width: 360px; }
-    .numpad { max-width: 320px; }
-    .num-btn { padding: 22px 0; font-size: 22px; }
-    .menu-header { padding: 24px 22px; }
-    .menu-label { font-size: 16px; }
-    .menu-item { padding: 18px 22px; }
-    .item-label { font-size: 15px; }
-    .card { padding: 20px; border-radius: 18px; }
+    .screen { max-width: 100%; }
+    .content { padding: 0 32px 80px; }
+    .topbar { padding: 24px 32px 18px; }
+    .teacher-body { padding: 0 32px 40px; }
+    .tabs { margin: 0 32px 20px; }
+    .menu-header { padding: 24px 24px; }
+    .menu-label { font-size: 17px; }
+    .menu-item { padding: 18px 24px; }
+    .item-label { font-size: 16px; }
+    .card { padding: 22px; }
     .metric { padding: 18px; }
     .metric-val { font-size: 30px; }
-    .tab { padding: 12px 20px; font-size: 14px; }
-    .tabs { margin: 0 28px 20px; }
-    .section-title { font-size: 14px; }
+    .section-title { font-size: 15px; }
+    .tab { padding: 12px 22px; font-size: 15px; }
     .song-item { padding: 12px 0; }
-    .song-name { font-size: 14px; }
-    .hw-item { padding: 13px 0; }
-    .hw-text { font-size: 14px; }
-    .cal-wrap { padding: 20px; }
-    .cal-day { min-height: 44px; }
-    .cal-num { font-size: 14px; }
+    .song-name { font-size: 15px; }
+    .hw-item { padding: 14px 0; }
+    .hw-text { font-size: 15px; }
+    .cal-wrap { padding: 22px; }
+    .cal-day { min-height: 46px; }
+    .cal-num { font-size: 15px; }
+    .cal-title { font-size: 16px; }
     .add-panel { padding: 18px; }
+    .num-btn { padding: 22px 0; font-size: 22px; }
     input, select, textarea { font-size: 16px; padding: 15px 18px; }
   }
 
   /* ── 노트북 · 데스크톱 (1024px ~) ── */
   @media (min-width: 1024px) {
-    .screen { max-width: 720px; }
-    .content { padding: 0 36px 80px; }
-    .topbar { padding: 28px 36px 20px; }
-    .teacher-body { padding: 0 36px 40px; }
-    .tabs { margin: 0 36px 24px; }
-    .menu-header { padding: 26px 24px; }
-    .menu-label { font-size: 17px; }
-    .menu-item { padding: 20px 24px; }
-    .item-label { font-size: 16px; }
-    .card { padding: 24px; }
-    .metric { padding: 20px; }
-    .metric-val { font-size: 32px; }
-    .section-title { font-size: 15px; }
-    .song-name { font-size: 15px; }
-    .hw-text { font-size: 15px; }
-    .cal-day { min-height: 48px; }
-    .cal-num { font-size: 15px; }
-    .cal-title { font-size: 16px; }
+    .content { padding: 0 48px 80px; }
+    .topbar { padding: 28px 48px 22px; }
+    .teacher-body { padding: 0 48px 40px; }
+    .tabs { margin: 0 48px 24px; }
+    .menu-header { padding: 28px 28px; }
+    .menu-item { padding: 22px 28px; }
+    .card { padding: 28px; }
+    .metric { padding: 22px; }
+    .metric-val { font-size: 34px; }
+    .metrics { gap: 14px; }
   }
 </style>
 </head>
@@ -1245,9 +1238,9 @@ function submitSong(type) {
   s.songs[type].push(text); saveStudents(students); renderSongsTab(s);
 }
 function openYoutube(name) {
-  const q = encodeURIComponent(name);
-  const webUrl = 'https://www.youtube.com/results?search_query=' + q;
-  const ua = navigator.userAgent || '';
+  var q = encodeURIComponent(name);
+  var webUrl = 'https://www.youtube.com/results?search_query=' + q;
+  var ua = navigator.userAgent || '';
   if (/android/i.test(ua)) {
     window.location.href = 'intent://www.youtube.com/results?search_query=' + q + '#Intent;scheme=https;package=com.google.android.youtube;end';
   } else if (/iphone|ipad|ipod/i.test(ua)) {
