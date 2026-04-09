@@ -245,6 +245,16 @@
     50% { color: #f0c96a; text-shadow: 0 0 14px rgba(201,168,76,0.9), 0 0 28px rgba(201,168,76,0.4); }
   }
   .song-match { animation: goldGlow 2.2s ease-in-out infinite; font-weight: 500; }
+  /* ── 화면 전환 슬라이드 + 페이드 애니메이션 ── */
+  @keyframes _siFwd  { from { transform:translateX(40%);  opacity:0; } to { transform:translateX(0);    opacity:1; } }
+  @keyframes _soFwd  { from { transform:translateX(0);    opacity:1; } to { transform:translateX(-12%); opacity:0; } }
+  @keyframes _siBwd  { from { transform:translateX(-40%); opacity:0; } to { transform:translateX(0);    opacity:1; } }
+  @keyframes _soBwd  { from { transform:translateX(0);    opacity:1; } to { transform:translateX(12%);  opacity:0; } }
+  .sc-in-fwd  { animation: _siFwd 0.3s cubic-bezier(0.4,0,0.2,1) both; }
+  .sc-out-fwd { animation: _soFwd 0.3s cubic-bezier(0.4,0,0.2,1) both; }
+  .sc-in-bwd  { animation: _siBwd 0.3s cubic-bezier(0.4,0,0.2,1) both; }
+  .sc-out-bwd { animation: _soBwd 0.3s cubic-bezier(0.4,0,0.2,1) both; }
+
   @media (hover: none) {
     .btn-primary:hover { background:var(--gold); }
     .btn:hover { background:transparent; color:var(--text2); }
@@ -336,7 +346,7 @@
   <div class="pw-dots" id="tpw-dots"></div>
   <div class="numpad" id="tpw-pad"></div>
   <p class="err-msg mt12" id="tpw-err"></p>
-  <button class="btn-ghost mt12 small" onclick="goScreen('sc-main')">← 돌아가기</button>
+  <button class="btn-ghost mt12 small" onclick="goBack()">← 돌아가기</button>
 </div>
 
 <!-- 강사 대시보드 -->
@@ -400,14 +410,14 @@
   <div class="numpad" id="cpw-pad"></div>
   <p class="err-msg mt12" id="cpw-err"></p>
   <p class="ok-msg mt12 hidden" id="cpw-ok">비밀번호가 변경됐습니다</p>
-  <button class="btn-ghost mt12 small" onclick="goScreen('sc-teacher')">← 돌아가기</button>
+  <button class="btn-ghost mt12 small" onclick="goBack()">← 돌아가기</button>
 </div>
 
 <!-- 레슨생 정보 관리 -->
 <div id="sc-info" class="hidden">
   <div class="screen">
     <div class="topbar">
-      <button class="btn-ghost" onclick="goScreen('sc-teacher')">← 돌아가기</button>
+      <button class="btn-ghost" onclick="goBack()">← 돌아가기</button>
       <p class="bold">레슨생 정보 관리</p>
       <div style="width:60px;"></div>
     </div>
@@ -431,7 +441,7 @@
 <div id="sc-detail" class="hidden">
   <div class="screen">
     <div class="topbar">
-      <button class="btn-ghost" onclick="goScreen('sc-teacher')">← 목록</button>
+      <button class="btn-ghost" onclick="goBack()">← 목록</button>
       <div class="col" style="align-items:flex-end"><p class="bold" id="d-name"></p><p class="small muted" id="d-meta"></p></div>
     </div>
     <div class="tabs">
@@ -461,7 +471,7 @@
     <p class="err-msg" id="sl-err" style="text-align:left;"></p>
     <button class="btn-primary" style="padding:15px;font-size:14px;" onclick="submitStudentLogin()">확인</button>
   </div>
-  <button class="btn-ghost mt12 small" onclick="goScreen('sc-main')">← 돌아가기</button>
+  <button class="btn-ghost mt12 small" onclick="goBack()">← 돌아가기</button>
 </div>
 
 <!-- 생년월일 인증 -->
@@ -473,7 +483,7 @@
   </div>
   <button class="btn-primary" style="width:100%;max-width:300px;padding:15px;font-size:14px;" onclick="verifyBd()">확인</button>
   <p class="err-msg mt12" id="bd-err"></p>
-  <button class="btn-ghost mt12 small" onclick="goScreen('sc-student-select')">← 돌아가기</button>
+  <button class="btn-ghost mt12 small" onclick="goBack()">← 돌아가기</button>
 </div>
 
 <!-- 비밀번호 설정 -->
@@ -483,7 +493,7 @@
   <div class="pw-dots" id="spw-dots"></div>
   <div class="numpad" id="spw-pad"></div>
   <p class="err-msg mt12" id="spw-err"></p>
-  <button class="btn-ghost mt12 small" onclick="goScreen('sc-student-select')">← 돌아가기</button>
+  <button class="btn-ghost mt12 small" onclick="goBack()">← 돌아가기</button>
 </div>
 
 <!-- 비밀번호 입력 -->
@@ -687,20 +697,66 @@ let calYear, calMonth, calSelectedDate;
 let eventWeekSel = null;
 
 // ── 화면 전환 ──────────────────────────────────────────────
-function goScreen(id) {
-  document.querySelectorAll('[id^="sc-"]').forEach(el => el.classList.add('hidden'));
-  document.getElementById(id).classList.remove('hidden');
-  document.body.style.pointerEvents = 'none';
-  requestAnimationFrame(() => { document.body.style.pointerEvents = ''; });
+const _navHistory = [];
+const _ANIM = 300;
+
+function _initScreen(id) {
   if (id === 'sc-teacher-pw') initTeacherPw();
   if (id === 'sc-student-select') initStudentLoginForm();
   if (id === 'sc-teacher') renderTeacherMenu();
   if (id === 'sc-info') renderInfoScreen();
   if (id === 'sc-change-pw') initChangePw();
-  if (id === 'sc-student-settings') { initStudentSettingsMenu(); }
+  if (id === 'sc-student-settings') initStudentSettingsMenu();
   if (id === 'sc-student-change-pw') initStudentChangePw();
 }
-function logout() { goScreen('sc-main'); }
+
+function goScreen(id, _back) {
+  const allSc = Array.from(document.querySelectorAll('[id^="sc-"]'));
+  const cur = allSc.find(el => !el.classList.contains('hidden'));
+  const next = document.getElementById(id);
+  if (!next || next === cur) return;
+
+  const isBack = !!_back;
+  _initScreen(id);
+  if (!isBack && cur) _navHistory.push(cur.id);
+
+  document.body.style.pointerEvents = 'none';
+
+  if (cur) {
+    /* Forward: next slides on top (201) over cur (199)
+       Back:    cur slides out on top (201), next emerges below (199) */
+    const zCur  = isBack ? 201 : 199;
+    const zNext = isBack ? 199 : 201;
+    cur.style.cssText  = `position:fixed;inset:0;z-index:${zCur};overflow-y:auto;-webkit-overflow-scrolling:touch;`;
+    next.style.cssText = `position:fixed;inset:0;z-index:${zNext};overflow-y:auto;-webkit-overflow-scrolling:touch;`;
+    cur.classList.add(isBack ? 'sc-out-bwd' : 'sc-out-fwd');
+  } else {
+    next.style.cssText = 'position:fixed;inset:0;z-index:201;overflow-y:auto;-webkit-overflow-scrolling:touch;';
+  }
+  next.classList.remove('hidden');
+  next.classList.add(isBack ? 'sc-in-bwd' : 'sc-in-fwd');
+
+  setTimeout(() => {
+    if (cur) {
+      cur.classList.add('hidden');
+      cur.classList.remove('sc-out-fwd', 'sc-out-bwd');
+      cur.removeAttribute('style');
+    }
+    next.classList.remove('sc-in-fwd', 'sc-in-bwd');
+    next.removeAttribute('style');
+    document.body.style.pointerEvents = '';
+  }, _ANIM);
+}
+
+function goBack() {
+  if (_navHistory.length === 0) return;
+  goScreen(_navHistory.pop(), true);
+}
+function logout() {
+  _navHistory.length = 0;
+  document.querySelectorAll('[id^="sc-"]').forEach(el => el.classList.add('hidden'));
+  document.getElementById('sc-main').classList.remove('hidden');
+}
 function toggleMenu(bodyId, arrowId) {
   const menus = [
     { bodyId:'menu-students', arrowId:'arrow-students' },
@@ -1726,13 +1782,9 @@ function goNotYetLevel(level) {
   const s = loadStudents().find(x => x.id === curStudent.id);
   if (!s) return;
   renderNotYetLevelScreen(s);
-  document.querySelectorAll('[id^="sc-"]').forEach(el => el.classList.add('hidden'));
-  document.getElementById('sc-not-yet-level').classList.remove('hidden');
+  goScreen('sc-not-yet-level');
 }
-function goBackFromNotYet() {
-  document.querySelectorAll('[id^="sc-"]').forEach(el => el.classList.add('hidden'));
-  document.getElementById('sc-student').classList.remove('hidden');
-}
+function goBackFromNotYet() { goBack(); }
 function renderNotYetLevelScreen(s) {
   const isBegin = _notYetLevel === 'beginner';
   const label   = isBegin ? '초급' : '중급';
@@ -1898,10 +1950,7 @@ function initStudentSettingsMenu() {
   const el = document.getElementById('s-theme-label');
   if (el) el.textContent = cur === 'light' ? '라이트' : '다크';
 }
-function goBackToStudent() {
-  document.querySelectorAll('[id^="sc-"]').forEach(el => el.classList.add('hidden'));
-  document.getElementById('sc-student').classList.remove('hidden');
-}
+function goBackToStudent() { goBack(); }
 let sCpwStep = 1, sCpwFirst = '';
 function initStudentChangePw() {
   sCpwStep = 1; sCpwFirst = '';
@@ -1977,7 +2026,7 @@ function showErr(id,msg){document.getElementById(id).textContent=msg;}
 <div id="sc-student-change-pw" class="hidden">
   <div class="screen">
     <div class="topbar">
-      <button class="btn-ghost" onclick="goScreen('sc-student-settings')">← 돌아가기</button>
+      <button class="btn-ghost" onclick="goBack()">← 돌아가기</button>
       <p class="bold">비밀번호 변경</p>
       <div style="width:60px;"></div>
     </div>
