@@ -28,6 +28,25 @@
     --text: #e8e2d6; --text2: #9a9080; --text3: #5a5448;
     --red: #c45c4a; --green: #5a9a6a;
   }
+  /* ── 브라이트 테마 ── */
+  body.light {
+    background: #f5f3ef;
+    color: #1a1814;
+    --gold: #B8922A; --gold-dim: #9a7820;
+    --surface: #ffffff; --surface2: #f0ede8; --surface3: #e8e4de;
+    --border: rgba(0,0,0,0.07); --border2: rgba(0,0,0,0.13);
+    --text: #1a1814; --text2: #6b6459; --text3: #a09888;
+    --red: #c0392b; --green: #27784a;
+  }
+  body.light input, body.light select, body.light textarea {
+    background: var(--surface3); color: var(--text); border-color: var(--border2);
+  }
+  body.light select option { background: #f0ede8; }
+  body.light input[type="date"]::-webkit-calendar-picker-indicator,
+  body.light input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.3); }
+  body.light #loading-overlay { background: #f5f3ef; }
+  body.light #loading-overlay p { color: #1a1814; }
+  body.light #loading-overlay div { border-color: #ccc; border-top-color: var(--gold); }
   button { cursor: pointer; font-family: inherit; font-size: 13px; }
   input, select, textarea { font-family: inherit; background: var(--surface3); border: 0.5px solid var(--border2); border-radius: 12px; color: var(--text); font-size: 15px; padding: 13px 16px; width: 100%; outline: none; transition: border-color 0.15s; }
   input:focus, select:focus, textarea:focus { border-color: var(--gold); }
@@ -360,6 +379,13 @@
             <div class="item-left"><div class="item-dot item-dot-gray"></div><p class="item-label">데이터 가져오기</p></div>
             <span class="item-arrow">↑</span>
           </div>
+          <div class="menu-item" onclick="toggleTeacherTheme()" style="cursor:pointer;">
+            <div class="item-left"><div class="item-dot item-dot-gray"></div><p class="item-label">테마</p></div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span id="t-theme-label" style="font-size:12px;color:var(--text2);"></span>
+              <span class="item-arrow">›</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -476,7 +502,7 @@
     <div class="topbar">
       <div class="col"><p class="bold" id="s-name" style="font-size:17px;"></p><p class="small muted" id="s-meta"></p></div>
       <div style="display:flex;align-items:center;gap:8px;">
-        <button class="btn-ghost" onclick="goScreen('sc-student-settings')" style="font-size:18px;padding:4px 6px;color:var(--text3);">⚙</button>
+        <button class="btn-ghost" onclick="goScreen('sc-student-settings')" style="font-size:20px;padding:4px 8px;color:var(--text2);letter-spacing:0.05em;line-height:1;">···</button>
         <button class="btn" onclick="logout()">나가기</button>
       </div>
     </div>
@@ -585,6 +611,8 @@ function _fixStudent(st){
 }
 
 window.addEventListener('DOMContentLoaded', async ()=>{
+  // 저장된 테마 즉시 적용
+  applyTheme(localStorage.getItem('heum_theme') || 'dark');
   try {
     const _timeout = new Promise((_,reject) => setTimeout(()=>reject(new Error('timeout')), 5000));
     const [sSnap, pwSnap, spwSnap] = await Promise.race([
@@ -669,7 +697,8 @@ function goScreen(id) {
   if (id === 'sc-teacher') renderTeacherMenu();
   if (id === 'sc-info') renderInfoScreen();
   if (id === 'sc-change-pw') initChangePw();
-  if (id === 'sc-student-settings') initStudentChangePw();
+  if (id === 'sc-student-settings') { initStudentSettingsMenu(); }
+  if (id === 'sc-student-change-pw') initStudentChangePw();
 }
 function logout() { goScreen('sc-main'); }
 function toggleMenu(bodyId, arrowId) {
@@ -738,6 +767,9 @@ function renderTeacherMenu() {
   const students = loadStudents();
   ['menu-students','menu-settings'].forEach(id=>document.getElementById(id).classList.remove('open'));
   ['arrow-students','arrow-settings'].forEach(id=>document.getElementById(id).classList.remove('open'));
+  // 테마 라벨 동기화
+  const tLabel = document.getElementById('t-theme-label');
+  if (tLabel) tLabel.textContent = (localStorage.getItem('heum_theme')||'dark') === 'light' ? '라이트' : '다크';
   document.getElementById('menu-students').innerHTML = students.map(s => {
     const pend = s.homework.filter(h=>!h.done).length;
     const badge = pend>0 ? `<span class="badge-warn">${pend}개 미완</span>` : '';
@@ -1837,12 +1869,40 @@ function submitImportText() {
     renderTeacherMenu();
   } catch { document.getElementById('import-err').textContent = '형식이 올바르지 않습니다. 다시 확인해주세요'; }
 }
+// ── 테마 ────────────────────────────────────────────────────
+function applyTheme(theme) {
+  if (theme === 'light') {
+    document.body.classList.add('light');
+  } else {
+    document.body.classList.remove('light');
+  }
+  localStorage.setItem('heum_theme', theme);
+  // 라벨 동기화
+  const label = theme === 'light' ? '라이트' : '다크';
+  const tLabel = document.getElementById('t-theme-label');
+  const sLabel = document.getElementById('s-theme-label');
+  if (tLabel) tLabel.textContent = label;
+  if (sLabel) sLabel.textContent = label;
+}
+function toggleTeacherTheme() {
+  const cur = localStorage.getItem('heum_theme') || 'dark';
+  applyTheme(cur === 'dark' ? 'light' : 'dark');
+}
+function toggleStudentTheme() {
+  const cur = localStorage.getItem('heum_theme') || 'dark';
+  applyTheme(cur === 'dark' ? 'light' : 'dark');
+}
 // ── 레슨생 환경설정 ──────────────────────────────────────
-let sCpwStep = 1, sCpwFirst = '';
+function initStudentSettingsMenu() {
+  const cur = localStorage.getItem('heum_theme') || 'dark';
+  const el = document.getElementById('s-theme-label');
+  if (el) el.textContent = cur === 'light' ? '라이트' : '다크';
+}
 function goBackToStudent() {
   document.querySelectorAll('[id^="sc-"]').forEach(el => el.classList.add('hidden'));
   document.getElementById('sc-student').classList.remove('hidden');
 }
+let sCpwStep = 1, sCpwFirst = '';
 function initStudentChangePw() {
   sCpwStep = 1; sCpwFirst = '';
   document.getElementById('s-cpw-err').textContent = '';
@@ -1896,9 +1956,34 @@ function showErr(id,msg){document.getElementById(id).textContent=msg;}
       <div style="width:60px;"></div>
     </div>
     <div class="content">
+      <div class="menu-section">
+        <div class="menu-item" onclick="goScreen('sc-student-change-pw')" style="cursor:pointer;">
+          <div class="item-left"><div class="item-dot item-dot-gray"></div><p class="item-label">비밀번호 변경</p></div>
+          <span class="item-arrow">›</span>
+        </div>
+        <div class="menu-item" onclick="toggleStudentTheme()" style="cursor:pointer;">
+          <div class="item-left"><div class="item-dot item-dot-gray"></div><p class="item-label">테마</p></div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span id="s-theme-label" style="font-size:12px;color:var(--text2);"></span>
+            <span class="item-arrow">›</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 레슨생 비밀번호 변경 -->
+<div id="sc-student-change-pw" class="hidden">
+  <div class="screen">
+    <div class="topbar">
+      <button class="btn-ghost" onclick="goScreen('sc-student-settings')">← 돌아가기</button>
+      <p class="bold">비밀번호 변경</p>
+      <div style="width:60px;"></div>
+    </div>
+    <div class="content">
       <div class="card">
-        <p class="section-title">비밀번호 변경</p>
-        <p id="s-cpw-sub" style="font-size:12px;color:var(--text2);margin-bottom:16px;">현재 비밀번호를 입력하세요</p>
+        <p id="s-cpw-sub" style="font-size:13px;color:var(--text2);margin-bottom:16px;">현재 비밀번호를 입력하세요</p>
         <div class="pw-dots" id="s-cpw-dots" style="justify-content:flex-start;margin:12px 0 16px;"></div>
         <div class="numpad" id="s-cpw-pad" style="max-width:260px;"></div>
         <p class="err-msg mt8" id="s-cpw-err" style="text-align:left;"></p>
