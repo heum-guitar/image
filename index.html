@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="HEUM">
@@ -36,6 +36,39 @@
   textarea { resize: none; line-height: 1.5; }
 
   .screen { max-width: 480px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* 태블릿 (아이패드 등) */
+  @media (min-width: 600px) {
+    .screen { max-width: 600px; }
+    .content { padding: 0 24px 80px; }
+    .topbar { padding: 24px 24px 18px; }
+    input, select, textarea { font-size: 16px; padding: 15px 18px; }
+    .menu-label { font-size: 16px; }
+    .menu-item { padding: 17px 20px; }
+    .item-label { font-size: 15px; }
+    .card { padding: 20px; }
+    .metric-val { font-size: 30px; }
+    .auth-wrap { padding: 48px 36px; }
+    .auth-box { max-width: 360px; }
+    .numpad { max-width: 320px; }
+    .num-btn { padding: 22px 0; font-size: 22px; }
+    .tab { padding: 12px 20px; font-size: 14px; }
+    .section-title { font-size: 14px; }
+    .song-name { font-size: 14px; }
+    .hw-text { font-size: 14px; }
+    .cal-day { min-height: 42px; }
+    .cal-num { font-size: 14px; }
+  }
+
+  /* 데스크톱/노트북 */
+  @media (min-width: 1024px) {
+    .screen { max-width: 640px; }
+    .content { padding: 0 32px 80px; }
+    .topbar { padding: 28px 32px 20px; }
+    .teacher-body { padding: 0 32px 40px; }
+    .auth-wrap { padding: 60px 40px; }
+    .auth-box { max-width: 380px; }
+  }
   .topbar { display: flex; align-items: center; justify-content: space-between; padding: 20px 20px 16px; flex-shrink: 0; }
   .content { padding: 0 16px 80px; }
   .hidden { display: none !important; }
@@ -1193,7 +1226,22 @@ function submitSong(type) {
   s.songs[type].push(text); saveStudents(students); renderSongsTab(s);
 }
 function openYoutube(name) {
-  window.open('https://www.youtube.com/results?search_query='+encodeURIComponent(name),'_blank');
+  const q = encodeURIComponent(name);
+  const webUrl = 'https://www.youtube.com/results?search_query=' + q;
+  const ytAppUrl = 'vnd.youtube://www.youtube.com/results?search_query=' + q;
+  // 유튜브 앱이 설치돼 있으면 앱으로, 없으면 브라우저로 열기
+  const ua = navigator.userAgent || '';
+  if (/android/i.test(ua)) {
+    // Android: intent 스킴으로 유튜브 앱 직접 호출
+    window.location.href = 'intent://www.youtube.com/results?search_query=' + q + '#Intent;scheme=https;package=com.google.android.youtube;end';
+  } else if (/iphone|ipad|ipod/i.test(ua)) {
+    // iOS: 유튜브 앱 스킴 시도 후 fallback
+    window.location.href = ytAppUrl;
+    setTimeout(function(){ window.location.href = webUrl; }, 500);
+  } else {
+    // PC/기타: 새 탭에서 열기
+    window.open(webUrl, '_blank');
+  }
 }
 // ── 레슨생 '배우고 싶은 곡' ─────────────────────────────
 function _refreshWantLists(s) {
@@ -1792,7 +1840,7 @@ function showErr(id,msg){document.getElementById(id).textContent=msg;}
 
 <!-- 데이터 내보내기 모달 -->
 <div id="export-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:999;padding:24px;box-sizing:border-box;overflow-y:auto;">
-  <div style="max-width:480px;margin:0 auto;background:var(--surface);border:0.5px solid var(--border2);border-radius:18px;padding:20px;">
+  <div style="max-width:600px;margin:0 auto;background:var(--surface);border:0.5px solid var(--border2);border-radius:18px;padding:20px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
       <p style="font-size:15px;font-weight:500;">데이터 내보내기</p>
       <button onclick="document.getElementById('export-modal').style.display='none'" style="background:transparent;border:none;color:var(--text2);font-size:20px;line-height:1;cursor:pointer;">×</button>
@@ -1805,7 +1853,7 @@ function showErr(id,msg){document.getElementById(id).textContent=msg;}
 
 <!-- 데이터 가져오기 모달 -->
 <div id="import-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:999;padding:24px;box-sizing:border-box;overflow-y:auto;">
-  <div style="max-width:480px;margin:0 auto;background:var(--surface);border:0.5px solid var(--border2);border-radius:18px;padding:20px;">
+  <div style="max-width:600px;margin:0 auto;background:var(--surface);border:0.5px solid var(--border2);border-radius:18px;padding:20px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
       <p style="font-size:15px;font-weight:500;">데이터 가져오기</p>
       <button onclick="document.getElementById('import-modal').style.display='none'" style="background:transparent;border:none;color:var(--text2);font-size:20px;line-height:1;cursor:pointer;">×</button>
