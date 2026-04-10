@@ -327,6 +327,17 @@
     .metric-val { font-size: 34px; }
     .metrics { gap: 14px; }
   }
+
+  /* ── 레슨생 스케줄 전체화면 모드 ── */
+  #sc-student.sched-mode { overflow-y: hidden !important; }
+  #sc-student.sched-mode .screen { max-width: 100%; width: 100%; height: 100%; }
+  #sc-student.sched-mode .content { flex: 1 !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; padding: 0 !important; min-height: 0; }
+  #sc-student.sched-mode #s-schedule { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+  #sc-student.sched-mode .s-cal-wrap { border-radius: 0; border: none; border-bottom: 0.5px solid var(--border); margin-bottom: 0; padding: 10px 16px 8px; flex-shrink: 0; background: var(--surface); }
+  .s-sched-label { font-size: 12px; color: var(--text2); padding: 5px 16px 3px; font-weight: 500; flex-shrink: 0; }
+  .s-sched-grid { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
+  .s-sched-grid > div { flex: 1; min-height: 0; }
+  #s-cal-detail { display: none; margin-top: 8px; background: var(--surface2); border: 0.5px solid var(--border2); border-radius: 10px; padding: 10px 12px; }
 </style>
 </head>
 <body>
@@ -2042,9 +2053,15 @@ function switchStudentTab(tab,btn) {
   document.querySelectorAll('#sc-student .tab').forEach(t=>t.classList.remove('active'));
   btn.classList.add('active');
   ['home','homework','songs','schedule'].forEach(t=>document.getElementById('s-'+t).classList.toggle('hidden',t!==tab));
-  if (tab === 'schedule' && curStudent) {
-    const s = loadStudents().find(x=>x.id===curStudent.id);
-    if (s) renderStudentScheduleTab(s);
+  const scEl = document.getElementById('sc-student');
+  if (tab === 'schedule') {
+    scEl.classList.add('sched-mode');
+    if (curStudent) {
+      const s = loadStudents().find(x=>x.id===curStudent.id);
+      if (s) renderStudentScheduleTab(s);
+    }
+  } else {
+    scEl.classList.remove('sched-mode');
   }
 }
 function toggleNotYetDrawer() {
@@ -2629,13 +2646,15 @@ function teacherSchedNav(dir) {
   renderTeacherScheduleScreen();
 }
 
-// ── 레슨생 스케줄 확인 탭 (3일 그리드) ──────────────────────
+// ── 레슨생 스케줄 확인 탭 (3일/7일 그리드) ──────────────────────
 function renderStudentScheduleTab(s) {
   const el = document.getElementById('s-schedule');
   if (!el) return;
   const now = new Date();
   if (!_sCalYear) _sCalYear = now.getFullYear();
   if (_sCalMonth == null) _sCalMonth = now.getMonth();
+
+  const numDays = window.innerWidth >= 768 ? 7 : 3;
 
   // 달력 (상단, 읽기 전용)
   const DAY_KO = ['일','월','화','수','목','금','토'];
@@ -2652,17 +2671,19 @@ function renderStudentScheduleTab(s) {
     const ds = `${_sCalYear}-${String(_sCalMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const isToday = ds === todayStr;
     const hasEv = eventDates.has(ds);
-    calCells += `<div class="cal-day${isToday?' today':''}${hasEv?' has-event':''}">
+    calCells += `<div class="cal-day${isToday?' today':''}${hasEv?' has-event':''}" onclick="sCalDayClick('${ds}')">
       <span class="cal-num">${d}</span><span class="cal-dot"></span></div>`;
   }
 
-  // 3일 그리드 데이터
+  // 그리드 데이터 (오늘부터 numDays일)
   const days = [];
-  for (let di=0; di<3; di++) {
+  const dayLabels = ['오늘','내일','모레'];
+  for (let di=0; di<numDays; di++) {
     const d = new Date(now); d.setHours(0,0,0,0); d.setDate(d.getDate()+di);
     const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     const dow = DAY_KO[d.getDay()];
-    const label = (di===0?'오늘':di===1?'내일':'모레') + `\n${d.getMonth()+1}/${d.getDate()} ${dow}`;
+    const prefix = di < 3 ? dayLabels[di] : `${d.getMonth()+1}/${d.getDate()}`;
+    const label = `${prefix}\n${d.getMonth()+1}/${d.getDate()} ${dow}`;
     const events = (s.events||[]).filter(ev=>ev.date===dateStr).map(ev=>({...ev, studentName:''}));
     days.push({ dateStr, label, events });
   }
@@ -2677,9 +2698,10 @@ function renderStudentScheduleTab(s) {
         <button class="cal-nav-btn" onclick="sCalMove(1)">›</button>
       </div>
       <div class="cal-grid">${calCells}</div>
+      <div id="s-cal-detail"></div>
     </div>
-    <p style="font-size:12px;color:var(--text2);padding:0 2px 8px;font-weight:500;">다가오는 3일 수업</p>
-    <div style="height:420px;border:0.5px solid var(--border);border-radius:14px;overflow:hidden;">
+    <p class="s-sched-label">다가오는 ${numDays}일 수업</p>
+    <div class="s-sched-grid">
       ${built.html}
     </div>`;
   built.initScroll(true);
@@ -2693,6 +2715,31 @@ function sCalMove(dir) {
     const s = loadStudents().find(x=>x.id===curStudent.id);
     if (s) renderStudentScheduleTab(s);
   }
+}
+function sCalDayClick(ds) {
+  const detail = document.getElementById('s-cal-detail');
+  if (!detail) return;
+  if (!curStudent) return;
+  const s = loadStudents().find(x => x.id === curStudent.id);
+  if (!s) return;
+  const events = (s.events||[]).filter(e => e.date === ds);
+  if (!events.length) { detail.style.display = 'none'; return; }
+  const [y, m, d] = ds.split('-').map(Number);
+  const dayObj = new Date(y, m-1, d);
+  const DAY_KO = ['일','월','화','수','목','금','토'];
+  const dayLabel = `${m}월 ${d}일 (${DAY_KO[dayObj.getDay()]})`;
+  detail.style.display = 'block';
+  detail.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+      <p style="font-size:13px;font-weight:500;">${dayLabel}</p>
+      <button onclick="document.getElementById('s-cal-detail').style.display='none'" style="background:transparent;border:none;color:var(--text2);font-size:18px;line-height:1;cursor:pointer;padding:0 2px;">×</button>
+    </div>
+    ${events.map((ev,i) => `
+      <div style="display:flex;align-items:center;gap:12px;padding:5px 0;${i<events.length-1?'border-bottom:0.5px solid var(--border);':''}">
+        <span style="font-size:13px;color:var(--gold);font-weight:500;min-width:52px;">${ev.time||'시간 미정'}</span>
+        ${ev.week?`<span style="font-size:11px;color:var(--text3);">${ev.week}주차</span>`:''}
+        ${ev.memo?`<span style="font-size:12px;color:var(--text2);">${ev.memo}</span>`:''}
+      </div>`).join('')}`;
 }
 
 function showWeekTip(el) {
