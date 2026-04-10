@@ -564,6 +564,39 @@ function deleteStudentPw(id) {
   _db.ref('heum/student_pw/' + id).remove().catch(e=>console.error('학생 PW 삭제 오류:', e));
 }
 
+// ── 잠금 헬퍼 ──────────────────────────────────────────────
+const MAX_FAILS = 5;
+function _lockKey(id) { return 'heum_lock_' + id; }
+function _failKey(id) { return 'heum_fails_' + id; }
+function getLockFails(id) { return parseInt(localStorage.getItem(_failKey(id)) || '0'); }
+function addLockFail(id) {
+  const n = getLockFails(id) + 1;
+  localStorage.setItem(_failKey(id), n);
+  if (n >= MAX_FAILS) {
+    localStorage.setItem(_lockKey(id), '1');
+    if (id === 'teacher') localStorage.setItem('heum_teacher_lock_ts', Date.now());
+  }
+  return n;
+}
+function isLockedOut(id) {
+  if (localStorage.getItem(_lockKey(id)) !== '1') return false;
+  // 강사는 10분 후 자동 해제
+  if (id === 'teacher') {
+    const ts = parseInt(localStorage.getItem('heum_teacher_lock_ts') || '0');
+    if (Date.now() - ts > 10 * 60 * 1000) { clearLockOut(id); return false; }
+  }
+  return true;
+}
+function clearLockOut(id) {
+  localStorage.removeItem(_lockKey(id));
+  localStorage.removeItem(_failKey(id));
+  if (id === 'teacher') localStorage.removeItem('heum_teacher_lock_ts');
+}
+function remainLockMin(id) {
+  const ts = parseInt(localStorage.getItem('heum_teacher_lock_ts') || '0');
+  return Math.max(0, Math.ceil((10 * 60 * 1000 - (Date.now() - ts)) / 60000));
+}
+
 // ── 데이터 ─────────────────────────────────────────────────
 const STUDENTS_DEFAULT = [
   { id:1, name:"임슬찬", level:"초급", birthdate:"00000000", startDate:null, progress:0, module:"수업 준비 중", currentWeek:1, nextLesson:"", homework:[], songs:{canLearn:[],notYetBeginner:[],notYetIntermediate:[],wantToLearn:[],learned:[]}, events:[] },
@@ -779,9 +812,28 @@ function toggleMenu(bodyId, arrowId) {
 // ── 강사 PIN ──────────────────────────────────────────────
 function initTeacherPw() {
   document.getElementById('tpw-err').textContent = '';
+  if (isLockedOut('teacher')) {
+    const m = remainLockMin('teacher');
+    showErr('tpw-err', `비밀번호 ${MAX_FAILS}회 오류로 잠겼습니다. 약 ${m}분 후 자동 해제됩니다.`);
+    buildPad('tpw-pad','tpw-dots',4,()=>showErr('tpw-err',`잠금 상태입니다. 약 ${remainLockMin('teacher')}분 후 해제됩니다.`),'tpw-err');
+    return;
+  }
+  const fails = getLockFails('teacher');
+  if (fails > 0) {
+    showErr('tpw-err', `(이전 오류 ${fails}/${MAX_FAILS}회)`);
+  }
   function handleTeacherPin(pin) {
-    if (pin === getTeacherPw()) { goScreen('sc-teacher'); }
-    else { showErr('tpw-err','비밀번호가 틀렸습니다'); resetPad('tpw-pad','tpw-dots',4,handleTeacherPin,'tpw-err'); }
+    if (pin === getTeacherPw()) { clearLockOut('teacher'); goScreen('sc-teacher'); }
+    else {
+      const n = addLockFail('teacher');
+      if (n >= MAX_FAILS) {
+        showErr('tpw-err', `비밀번호 ${MAX_FAILS}회 오류. 10분간 잠금됩니다.`);
+        buildPad('tpw-pad','tpw-dots',4,()=>showErr('tpw-err',`잠금 상태입니다. 약 ${remainLockMin('teacher')}분 후 해제됩니다.`),'tpw-err');
+      } else {
+        showErr('tpw-err',`비밀번호가 틀렸습니다 (${n}/${MAX_FAILS})`);
+        resetPad('tpw-pad','tpw-dots',4,handleTeacherPin,'tpw-err');
+      }
+    }
   }
   buildPad('tpw-pad','tpw-dots',4,handleTeacherPin,'tpw-err');
 }
@@ -854,6 +906,12 @@ function renderInfoScreen() {
   document.getElementById('info-student-list').innerHTML = students.length ? students.map(s => {
     const bd = normBd(s.birthdate);
     const sd = fmtStartDate(s.startDate);
+    const lockKey = 'student_' + s.id;
+    const locked = isLockedOut(lockKey);
+    const fails = getLockFails(lockKey);
+    const lockBadge = locked
+      ? `<span class="badge-warn" style="cursor:pointer;" onclick="unlockStudent(${s.id})" title="클릭하여 잠금 해제">🔒 잠김 — 해제</span>`
+      : (fails > 0 ? `<span class="badge-warn">오류 ${fails}/${MAX_FAILS}</span>` : '');
     return `<div class="info-student-block">
       <div class="stu-info-grid">
         <div class="stu-info-col">
@@ -873,11 +931,16 @@ function renderInfoScreen() {
           <p class="stu-info-val" onclick="inlineEdit(${s.id},'level',this)">${s.level}</p>
         </div>
       </div>
+      ${lockBadge ? `<div style="padding:0 2px 10px;">${lockBadge}</div>` : ''}
     </div>`;
   }).join('') : '<p class="small muted">등록된 레슨생이 없습니다</p>';
   document.getElementById('info-delete-list').innerHTML = students.map(s =>
     `<div class="info-row" id="del-row-${s.id}"><p class="info-name" style="flex:1;">${s.name}</p><span class="item-badge" style="margin-right:8px;">${s.level}</span><button class="btn-del-sm" onclick="confirmDelete(${s.id},'${s.name}')">삭제</button></div>`
   ).join('') || '<p class="small muted">등록된 레슨생이 없습니다</p>';
+}
+function unlockStudent(id) {
+  clearLockOut('student_' + id);
+  renderInfoScreen();
 }
 function inlineEdit(id, field, el) {
   const s = loadStudents().find(x => x.id === id);
@@ -1447,7 +1510,12 @@ function submitStudentLogin() {
 function resetStudentLogin() {
   localStorage.removeItem('heum_autologin_id');
   curStudent = null;
-  goScreen('sc-student-select');
+  // 레슨생 로그인 관련 화면을 히스토리에서 제거해 '돌아가기'가 메인으로 가도록 보정
+  const authScreens = new Set(['sc-enter-pw','sc-student-select','sc-set-pw','sc-birthdate']);
+  while (_navHistory.length && authScreens.has(_navHistory[_navHistory.length - 1])) {
+    _navHistory.pop();
+  }
+  goScreen('sc-student-select', true); // back 방향으로 전환 (히스토리에 현재 화면 미적재)
 }
 function initStudentSelect() {}
 function selectStudent(id) {}
@@ -1475,8 +1543,20 @@ function onSetPw(pin) {
   }
 }
 function startEnterPw(cachedPw) {
+  const lockKey = 'student_' + curStudent.id;
   document.getElementById('epw-name').textContent=curStudent.name+' 레슨생';
   document.getElementById('epw-err').textContent='';
+
+  if (isLockedOut(lockKey)) {
+    showErr('epw-err','비밀번호 오류가 너무 많아 잠겼습니다.\n강사에게 잠금 해제를 요청하세요.');
+    buildPad('epw-pad','epw-dots',4,()=>showErr('epw-err','잠금 상태입니다. 강사에게 문의하세요.'),'epw-err');
+    goScreen('sc-enter-pw');
+    return;
+  }
+  const prevFails = getLockFails(lockKey);
+  if (prevFails > 0) {
+    showErr('epw-err', `(이전 오류 ${prevFails}/${MAX_FAILS}회)`);
+  }
   function handleStudentPin(pin) {
     // cachedPw가 있으면 우선 사용, 없으면 현재 캐시에서 조회 (Firebase 리스너 타이밍 문제 방지)
     const pw = (cachedPw != null) ? String(cachedPw) : String(getStudentPw(curStudent.id) || '');
@@ -1485,8 +1565,19 @@ function startEnterPw(cachedPw) {
       setTimeout(()=>resetStudentLogin(), 1500);
       return;
     }
-    if (pin === pw) { enterStudent(); }
-    else { showErr('epw-err','비밀번호가 틀렸습니다'); resetPad('epw-pad','epw-dots',4,handleStudentPin,'epw-err'); }
+    if (pin === pw) {
+      clearLockOut(lockKey);
+      enterStudent();
+    } else {
+      const n = addLockFail(lockKey);
+      if (n >= MAX_FAILS) {
+        showErr('epw-err', `비밀번호 ${MAX_FAILS}회 오류. 강사에게 잠금 해제를 요청하세요.`);
+        buildPad('epw-pad','epw-dots',4,()=>showErr('epw-err','잠금 상태입니다. 강사에게 문의하세요.'),'epw-err');
+      } else {
+        showErr('epw-err',`비밀번호가 틀렸습니다 (${n}/${MAX_FAILS})`);
+        resetPad('epw-pad','epw-dots',4,handleStudentPin,'epw-err');
+      }
+    }
   }
   buildPad('epw-pad','epw-dots',4,handleStudentPin,'epw-err');
   goScreen('sc-enter-pw');
