@@ -2384,92 +2384,247 @@ function buildCalendarGridHTML(dayData, gridBodyId) {
 }
 
 // ── 강사 스케줄 전체화면 ─────────────────────────────────────
+// ── 강사 스케줄 전체화면 (연속 드래그 / 지도 방식) ─────────────
+const TSCHED_BUFFER = 7;   // 오늘 기준 과거 버퍼 (일)
+const TSCHED_FUTURE = 28;  // 오늘 기준 미래 (일)
+const TSCHED_TOTAL  = TSCHED_BUFFER + 1 + TSCHED_FUTURE; // 36일
+
+let _tSchedDayW   = 0;
+let _tSchedNumVis = 0;
+let _tSchedCurX   = 0;
+let _tSchedTodayX = 0;
+let _tSchedMinX   = 0;
+let _tSchedMaxX   = 0;
+
+function _tSchedGetNumVis() {
+  return window.innerWidth >= 768 ? 7 : 4;
+}
+
+function _tSchedApply(x, animate) {
+  const hdr  = document.getElementById('tsched-hdr-inner');
+  const cols = document.getElementById('tsched-cols-inner');
+  if (!hdr || !cols) return;
+  const t = animate ? 'transform 0.32s cubic-bezier(0.4,0,0.2,1)' : 'none';
+  hdr.style.transition  = t;
+  cols.style.transition = t;
+  hdr.style.transform   = `translateX(${x}px)`;
+  cols.style.transform  = `translateX(${x}px)`;
+  _tSchedCurX = x;
+  _tSchedUpdateLabel();
+}
+
+function _tSchedUpdateLabel() {
+  if (!_tSchedDayW) return;
+  const today = new Date(); today.setHours(0,0,0,0);
+  // 왼쪽 첫 번째 컬럼이 오늘로부터 몇 일 후인지
+  const leftOffset = Math.round((_tSchedTodayX - _tSchedCurX) / _tSchedDayW);
+  const d0 = new Date(today); d0.setDate(today.getDate() + leftOffset);
+  const d1 = new Date(today); d1.setDate(today.getDate() + leftOffset + _tSchedNumVis - 1);
+  const fmt = d => `${d.getMonth()+1}/${d.getDate()}`;
+  const rangeEl = document.getElementById('teacher-sched-range');
+  if (rangeEl) rangeEl.textContent = `${fmt(d0)} ~ ${fmt(d1)}`;
+}
+
 function renderTeacherScheduleScreen() {
   const students = loadStudents();
   const today = new Date(); today.setHours(0,0,0,0);
+  const now   = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
 
-  // 7일치 데이터 생성
-  const DAY_KO = ['일','월','화','수','목','금','토'];
-  const days = [];
-  for (let di = 0; di < 7; di++) {
-    const d = new Date(today);
-    d.setDate(today.getDate() + _teacherCurPage * 7 + di);
-    const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    const dow = DAY_KO[d.getDay()];
-    const label = `${d.getMonth()+1}/${d.getDate()}\n${dow}`;
-    const events = [];
-    students.forEach(s => {
-      (s.events||[]).filter(ev=>ev.date===dateStr).forEach(ev => {
-        events.push({ ...ev, studentName: s.name });
-      });
-    });
-    days.push({ dateStr, label, events });
+  _tSchedNumVis = _tSchedGetNumVis();
+  const screenW = window.innerWidth;
+  _tSchedDayW   = Math.floor((screenW - CGRID_TIME_W) / _tSchedNumVis);
+  const totalW  = TSCHED_TOTAL * _tSchedDayW;
+
+  _tSchedTodayX = -TSCHED_BUFFER * _tSchedDayW;
+  _tSchedCurX   = _tSchedTodayX;
+  _tSchedMaxX   = 0;
+  _tSchedMinX   = -(TSCHED_TOTAL - _tSchedNumVis) * _tSchedDayW;
+
+  const TOTAL_H = (CGRID_H_END - CGRID_H_START) * CGRID_HOUR_H;
+  const DAY_KO  = ['일','월','화','수','목','금','토'];
+
+  // 시간 라벨
+  let timeHtml = '';
+  for (let h = CGRID_H_START; h <= CGRID_H_END; h++) {
+    const top   = (h - CGRID_H_START) * CGRID_HOUR_H;
+    const label = h < 12 ? `${h}AM` : h === 12 ? '12PM' : `${h-12}PM`;
+    timeHtml += `<div style="position:absolute;top:${top-7}px;right:6px;font-size:9px;color:var(--text3);line-height:1;white-space:nowrap;">${label}</div>`;
   }
 
-  // 날짜 범위 표시
-  const s0 = days[0].dateStr, s6 = days[6].dateStr;
-  const rangeEl = document.getElementById('teacher-sched-range');
-  if (rangeEl) {
-    const [,m0,d0] = s0.split('-');
-    const [,m6,d6] = s6.split('-');
-    rangeEl.textContent = `${_teacherCurPage===0?'이번 주  ':''}${parseInt(m0)}/${parseInt(d0)} ~ ${parseInt(m6)}/${parseInt(d6)}`;
+  // 시간 선
+  let hourLines = '';
+  for (let h = CGRID_H_START; h <= CGRID_H_END; h++) {
+    const top = (h - CGRID_H_START) * CGRID_HOUR_H;
+    hourLines += `<div style="position:absolute;top:${top}px;left:0;right:0;border-top:0.5px solid var(--border);pointer-events:none;"></div>`;
+    hourLines += `<div style="position:absolute;top:${top + CGRID_HOUR_H/2}px;left:0;right:0;border-top:0.5px dashed var(--border);opacity:0.4;pointer-events:none;"></div>`;
+  }
+
+  // 현재 시각 선
+  const nowH = now.getHours(), nowM = now.getMinutes();
+  const nowTop = (nowH >= CGRID_H_START && nowH < CGRID_H_END)
+    ? (nowH - CGRID_H_START + nowM/60) * CGRID_HOUR_H : -1;
+  const nowLine = nowTop >= 0
+    ? `<div style="position:absolute;top:${nowTop}px;left:0;right:0;border-top:1.5px solid var(--red);z-index:3;pointer-events:none;"><div class="cgrid-now-dot"></div></div>` : '';
+
+  // 전체 날짜 데이터 빌드
+  let dayHeaders = '', dayCols = '';
+  for (let di = -TSCHED_BUFFER; di <= TSCHED_FUTURE; di++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + di);
+    const ds = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const isToday = (di === 0);
+    const dow = DAY_KO[d.getDay()];
+    const isSun = d.getDay() === 0;
+    const isSat = d.getDay() === 6;
+    const textColor = isToday ? 'var(--gold)' : isSun ? '#c45c4a' : isSat ? '#5a8ac4' : 'var(--text2)';
+
+    // 헤더
+    dayHeaders += `<div style="flex:0 0 ${_tSchedDayW}px;text-align:center;padding:5px 2px 7px;font-size:11px;font-weight:${isToday?'700':'400'};color:${textColor};border-left:0.5px solid var(--border);">
+      ${d.getMonth()+1}/${d.getDate()}<br><span style="font-size:10px;">${dow}</span>
+    </div>`;
+
+    // 이벤트
+    const events = [];
+    students.forEach(s => {
+      (s.events||[]).filter(ev=>ev.date===ds).forEach(ev => {
+        events.push({...ev, studentName: s.name});
+      });
+    });
+    let evHtml = '';
+    const timedEvs = events.filter(ev=>ev.time).sort((a,b)=>a.time.localeCompare(b.time));
+    timedEvs.forEach(ev => {
+      const [h, m] = ev.time.split(':').map(Number);
+      if (h < CGRID_H_START || h >= CGRID_H_END) return;
+      const top = (h - CGRID_H_START + m/60) * CGRID_HOUR_H + 1;
+      const hgt = CGRID_HOUR_H - 3;
+      const week = ev.week ? `${ev.week}주차` : '';
+      evHtml += `<div class="cgrid-event" style="top:${top}px;left:2px;right:2px;height:${hgt}px;">
+        <span class="cgrid-event-time">${ev.time}${week?' · '+week:''}</span>
+        ${ev.studentName?`<span class="cgrid-event-name">${ev.studentName}</span>`:''}
+        ${ev.memo?`<span class="cgrid-event-memo">${ev.memo}</span>`:''}
+      </div>`;
+    });
+    const untimedEvs = events.filter(ev=>!ev.time);
+    if (untimedEvs.length) {
+      evHtml = untimedEvs.map(ev=>`<div style="position:absolute;top:2px;left:2px;right:2px;background:rgba(201,168,76,0.12);border:0.5px solid rgba(201,168,76,0.3);border-radius:4px;padding:2px 4px;font-size:9px;color:var(--gold);z-index:2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ev.studentName||'수업'}</div>`).join('') + evHtml;
+    }
+
+    // 오늘 배경 강조
+    const bg = isToday ? 'rgba(201,168,76,0.04)' : 'transparent';
+    dayCols += `<div style="position:relative;flex:0 0 ${_tSchedDayW}px;height:${TOTAL_H}px;border-left:0.5px solid var(--border);background:${bg};">
+      ${hourLines}
+      ${isToday ? nowLine : ''}
+      ${evHtml}
+    </div>`;
   }
 
   const grid = document.getElementById('teacher-sched-grid');
   if (!grid) return;
 
-  const built = buildCalendarGridHTML(days, 'tcgrid');
+  grid.innerHTML = `
+    <div id="tsched-outer" style="display:flex;flex-direction:column;height:100%;overflow:hidden;user-select:none;touch-action:pan-y;">
+      <!-- 날짜 헤더 -->
+      <div style="display:flex;flex-shrink:0;background:var(--surface);border-bottom:0.5px solid var(--border2);">
+        <div style="width:${CGRID_TIME_W}px;flex-shrink:0;"></div>
+        <div style="flex:1;overflow:hidden;">
+          <div id="tsched-hdr-inner" style="display:flex;width:${totalW}px;transform:translateX(${_tSchedTodayX}px);will-change:transform;">
+            ${dayHeaders}
+          </div>
+        </div>
+      </div>
+      <!-- 시간 그리드 -->
+      <div id="tsched-body" style="flex:1;overflow-y:auto;overflow-x:hidden;display:flex;min-height:0;-webkit-overflow-scrolling:touch;">
+        <div style="position:sticky;left:0;z-index:10;width:${CGRID_TIME_W}px;flex-shrink:0;background:var(--surface);border-right:0.5px solid var(--border);">
+          <div style="position:relative;height:${TOTAL_H+16}px;">${timeHtml}</div>
+        </div>
+        <div style="flex:1;overflow:hidden;">
+          <div id="tsched-cols-inner" style="display:flex;width:${totalW}px;transform:translateX(${_tSchedTodayX}px);will-change:transform;">
+            ${dayCols}
+          </div>
+        </div>
+      </div>
+    </div>`;
 
-  // Day headers need line breaks
-  const result = built.html.replace(/\\n/g, '<br>');
-  grid.innerHTML = result;
-  built.initScroll(true);
-
-  // ── 좌우 드래그(스와이프) 내비게이션 ──
-  const gridBody = document.getElementById('tcgrid');
-  if (gridBody) {
-    let touchStartX = null, touchStartY = null;
-    let mouseStartX = null, mouseStartY = null, mouseDown = false;
-
-    // Touch events (mobile)
-    gridBody.addEventListener('touchstart', e => {
-      touchStartX = e.touches[0].clientX;
-      touchStartY = e.touches[0].clientY;
-    }, { passive: true });
-
-    gridBody.addEventListener('touchend', e => {
-      if (touchStartX === null) return;
-      const dx = e.changedTouches[0].clientX - touchStartX;
-      const dy = e.changedTouches[0].clientY - touchStartY;
-      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 48) {
-        teacherSchedNav(dx > 0 ? -1 : 1);
-      }
-      touchStartX = null; touchStartY = null;
-    }, { passive: true });
-
-    // Mouse events (desktop)
-    gridBody.addEventListener('mousedown', e => {
-      mouseStartX = e.clientX; mouseStartY = e.clientY; mouseDown = true;
-    });
-    gridBody.addEventListener('mousemove', e => {
-      if (!mouseDown) return;
-      // Suppress text selection while dragging horizontally
-      const dx = e.clientX - mouseStartX;
-      if (Math.abs(dx) > 8) e.preventDefault();
-    });
-    gridBody.addEventListener('mouseup', e => {
-      if (!mouseDown) return;
-      mouseDown = false;
-      const dx = e.clientX - mouseStartX;
-      const dy = e.clientY - mouseStartY;
-      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 60) {
-        teacherSchedNav(dx > 0 ? -1 : 1);
-      }
-    });
-    gridBody.addEventListener('mouseleave', () => { mouseDown = false; });
+  // 현재 시각으로 세로 스크롤
+  const body = document.getElementById('tsched-body');
+  if (body && nowTop > 80) {
+    setTimeout(() => { body.scrollTop = Math.max(0, nowTop - 120); }, 50);
   }
+
+  _tSchedUpdateLabel();
+  _tSchedAttachDrag();
 }
+
+function _tSchedAttachDrag() {
+  const outer = document.getElementById('tsched-outer');
+  if (!outer) return;
+
+  let startX = null, startY = null, startTransX = null, isHoriz = null;
+
+  function onStart(cx, cy) {
+    startX = cx; startY = cy;
+    startTransX = _tSchedCurX;
+    isHoriz = null;
+    // 애니메이션 즉시 중단
+    const hdr  = document.getElementById('tsched-hdr-inner');
+    const cols = document.getElementById('tsched-cols-inner');
+    if (hdr)  hdr.style.transition  = 'none';
+    if (cols) cols.style.transition = 'none';
+  }
+
+  function onMove(cx, cy, e) {
+    if (startX === null) return;
+    const dx = cx - startX, dy = cy - startY;
+    if (isHoriz === null && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+      isHoriz = Math.abs(dx) >= Math.abs(dy);
+    }
+    if (!isHoriz) return;
+    e.preventDefault();
+    let nx = startTransX + dx;
+    // 경계 고무밴드 효과
+    if (nx > _tSchedMaxX) nx = _tSchedMaxX + (nx - _tSchedMaxX) * 0.25;
+    if (nx < _tSchedMinX) nx = _tSchedMinX + (nx - _tSchedMinX) * 0.25;
+    const hdr  = document.getElementById('tsched-hdr-inner');
+    const cols = document.getElementById('tsched-cols-inner');
+    if (hdr)  hdr.style.transform  = `translateX(${nx}px)`;
+    if (cols) cols.style.transform = `translateX(${nx}px)`;
+    _tSchedCurX = nx;
+    _tSchedUpdateLabel();
+  }
+
+  function onEnd() {
+    if (startX === null) return;
+    startX = null;
+    if (!isHoriz) return;
+    // 가장 가까운 날짜 경계로 스냅
+    let snapped = Math.round(_tSchedCurX / _tSchedDayW) * _tSchedDayW;
+    snapped = Math.max(_tSchedMinX, Math.min(_tSchedMaxX, snapped));
+    _tSchedApply(snapped, true);
+  }
+
+  // 터치 이벤트
+  outer.addEventListener('touchstart', e => onStart(e.touches[0].clientX, e.touches[0].clientY), {passive:true});
+  outer.addEventListener('touchmove',  e => onMove(e.touches[0].clientX, e.touches[0].clientY, e), {passive:false});
+  outer.addEventListener('touchend',   onEnd, {passive:true});
+  outer.addEventListener('touchcancel',onEnd, {passive:true});
+
+  // 마우스 이벤트 (데스크탑)
+  outer.addEventListener('mousedown', e => {
+    onStart(e.clientX, e.clientY);
+    function mm(e) { onMove(e.clientX, e.clientY, e); }
+    function mu()  { onEnd(); document.removeEventListener('mousemove', mm); document.removeEventListener('mouseup', mu); }
+    document.addEventListener('mousemove', mm);
+    document.addEventListener('mouseup',   mu);
+  });
+}
+
+function teacherSchedToday() {
+  _tSchedApply(_tSchedTodayX, true);
+}
+
 function teacherSchedNav(dir) {
+  // 하위 호환 (호출되지 않음)
   _teacherCurPage += dir;
   renderTeacherScheduleScreen();
 }
@@ -2628,13 +2783,10 @@ function showErr(id,msg){document.getElementById(id).textContent=msg;}
 <!-- 강사 스케줄 전체화면 -->
 <div id="sc-teacher-schedule-view" class="hidden">
   <div class="screen" style="height:100vh;overflow:hidden;display:flex;flex-direction:column;max-width:100%;width:100%;">
-    <div class="topbar" style="flex-shrink:0;">
+    <div class="topbar" style="flex-shrink:0;padding-top:16px;padding-bottom:12px;">
       <button class="btn-ghost" onclick="goBack()">← 돌아가기</button>
-      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-        <p class="bold" id="teacher-sched-range" style="font-size:12px;color:var(--text2);text-align:center;"></p>
-        <p style="font-size:10px;color:var(--text3);">좌우로 밀어서 이동</p>
-      </div>
-      <div style="width:60px;"></div>
+      <p id="teacher-sched-range" style="font-size:12px;color:var(--text2);font-weight:500;"></p>
+      <button onclick="teacherSchedToday()" style="background:rgba(201,168,76,0.12);border:0.5px solid rgba(201,168,76,0.4);border-radius:8px;color:var(--gold);font-size:12px;font-weight:500;padding:6px 12px;cursor:pointer;transition:background 0.15s;">오늘</button>
     </div>
     <div id="teacher-sched-grid" style="flex:1;overflow:hidden;min-height:0;"></div>
   </div>
