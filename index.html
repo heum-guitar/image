@@ -364,6 +364,58 @@
     #sc-student.sched-mode .cal-grid { flex: 1; align-content: stretch; }
     #sc-student.sched-mode #s-cal-detail { flex-shrink: 0; }
   }
+
+  /* ── 레슨생 하단 네비게이션 바 ── */
+  .s-bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    display: flex;
+    background: var(--surface); border-top: 0.5px solid var(--border2);
+    padding-bottom: env(safe-area-inset-bottom);
+    z-index: 200;
+    max-width: 100%;
+  }
+  .s-nav-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 4px; padding: 10px 4px 9px;
+    background: transparent; border: none; color: var(--text3);
+    cursor: pointer; transition: color 0.15s; position: relative;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .s-nav-btn.active { color: var(--gold); }
+  .s-nav-btn svg { display: block; }
+  .s-nav-label { font-size: 10px; font-weight: 500; letter-spacing: 0.02em; line-height: 1; }
+  .s-nav-badge {
+    position: absolute; top: 6px; left: calc(50% + 6px);
+    background: var(--red); color: #fff; font-size: 9px; font-weight: 700;
+    min-width: 14px; height: 14px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center; padding: 0 3px;
+  }
+  /* 학생 화면 콘텐츠 하단 패딩 (fixed 네비 높이만큼 확보) */
+  #sc-student .content { padding-bottom: 72px; }
+  /* sched-mode: 콘텐츠가 네비 위까지만 차도록 */
+  #sc-student.sched-mode .content { padding-bottom: 60px !important; }
+
+  /* ── 이번 주 레슨 일정 위젯 ── */
+  .week-sched-widget { background: var(--surface); border: 0.5px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 10px; }
+  .week-sched-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .week-day-row { display: flex; align-items: flex-start; gap: 0; }
+  .week-day-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+  .week-day-circle {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 500; transition: background 0.15s;
+  }
+  .week-day-circle.no-ev { background: var(--surface3); color: var(--text3); }
+  .week-day-circle.has-ev { background: var(--gold); color: #111; font-weight: 600; }
+  .week-day-circle.is-today { background: var(--red); color: #fff; font-weight: 600; }
+  .week-day-circle.is-today.has-ev { background: var(--gold); color: #111; }
+  .week-day-circle.is-past { background: var(--surface3); color: var(--text3); opacity: 0.5; }
+  .week-day-circle.is-past.has-ev { background: var(--surface3); color: var(--text3); opacity: 0.6; }
+  .week-day-circle.is-past { background: var(--surface3); color: var(--text3); opacity: 0.5; }
+  .week-day-circle.is-past.has-ev { background: var(--surface3); color: var(--text3); opacity: 0.6; }
+  .week-day-info { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+  .week-day-time { font-size: 9px; color: var(--gold); font-weight: 600; line-height: 1.3; text-align: center; }
+  .week-day-content { font-size: 8px; color: var(--text2); line-height: 1.3; text-align: center; max-width: 34px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -575,18 +627,41 @@
         <button class="btn" onclick="logout()">나가기</button>
       </div>
     </div>
-    <div class="tabs">
-      <button class="tab active" onclick="switchStudentTab('home',this)">홈</button>
-      <button class="tab" onclick="switchStudentTab('homework',this)">숙제</button>
-      <button class="tab" onclick="switchStudentTab('songs',this)">곡 목록</button>
-      <button class="tab" onclick="switchStudentTab('schedule',this)">스케줄 확인</button>
-    </div>
     <div class="content">
       <div id="s-home"></div>
       <div id="s-homework" class="hidden"></div>
       <div id="s-songs" class="hidden"></div>
       <div id="s-schedule" class="hidden"></div>
     </div>
+    <nav class="s-bottom-nav">
+      <button class="s-nav-btn active" id="s-nav-home" onclick="switchStudentTab('home',this)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12L12 3l9 9"/><path d="M5 10v9a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-9"/>
+        </svg>
+        <span class="s-nav-label">홈</span>
+      </button>
+      <button class="s-nav-btn" id="s-nav-homework" onclick="switchStudentTab('homework',this)">
+        <span style="position:relative;display:inline-flex;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/>
+          </svg>
+          <span class="s-nav-badge hidden" id="s-nav-hw-badge"></span>
+        </span>
+        <span class="s-nav-label">숙제</span>
+      </button>
+      <button class="s-nav-btn" id="s-nav-songs" onclick="switchStudentTab('songs',this)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 18V6l12-2v12"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+        </svg>
+        <span class="s-nav-label">곡 목록</span>
+      </button>
+      <button class="s-nav-btn" id="s-nav-schedule" onclick="switchStudentTab('schedule',this)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+        </svg>
+        <span class="s-nav-label">스케줄</span>
+      </button>
+    </nav>
   </div>
 </div>
 
@@ -1795,6 +1870,112 @@ let _learnedOpen = false;
 let _notYetLevel = null;
 let _notYetDrawerOpen = false;
 
+
+// ── 이번 주 레슨 일정 위젯 ──────────────────────────────────────
+function renderWeekScheduleWidget(s) {
+  const now = new Date(); now.setHours(0,0,0,0);
+  const todayStr = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+  const dow = now.getDay();
+  const fmt = d => (d.getMonth()+1)+'월 '+d.getDate()+'일';
+  const DAY_KO = ['일','월','화','수','목','금','토'];
+
+  function buildWeekPage(weekOffset) {
+    const weekSun = new Date(now); weekSun.setDate(now.getDate() - dow + weekOffset * 7);
+    const weekSat = new Date(weekSun); weekSat.setDate(weekSun.getDate() + 6);
+    const dateRange = fmt(weekSun)+' - '+fmt(weekSat);
+    const cols = DAY_KO.map((label, i) => {
+      const d = new Date(weekSun); d.setDate(weekSun.getDate()+i);
+      const ds = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      const evs = (s.events||[]).filter(e=>e.date===ds);
+      const hasEv = evs.length > 0;
+      const isToday = ds === todayStr;
+      const isPast = ds < todayStr;
+      let cirClass = 'no-ev';
+      if (isPast) cirClass = hasEv ? 'is-past has-ev' : 'is-past';
+      else if (hasEv && isToday) cirClass = 'is-today has-ev';
+      else if (isToday) cirClass = 'is-today';
+      else if (hasEv) cirClass = 'has-ev';
+      const infoHtml = hasEv ? evs.map(ev=>`
+        <div class="week-day-info">
+          ${ev.time?`<span class="week-day-time" style="${isPast?'color:var(--text3);':''}">${ev.time}</span>`:''}
+          ${ev.content?`<span class="week-day-content">${ev.content}</span>`:''}
+        </div>`).join('') : '';
+      return `<div class="week-day-col"><div class="week-day-circle ${cirClass}">${label}</div>${infoHtml}</div>`;
+    }).join('');
+    return { dateRange, cols };
+  }
+
+  const w0 = buildWeekPage(0);
+  const w1 = buildWeekPage(1);
+
+  return `<div class="week-sched-widget">
+    <div class="week-sched-header">
+      <p style="font-size:13px;font-weight:600;">레슨 일정</p>
+      <p id="week-sched-range" style="font-size:11px;color:var(--text2);">${w0.dateRange}</p>
+    </div>
+    <div id="week-sched-wrap" style="overflow:hidden;position:relative;touch-action:pan-y;"
+      data-range0="${w0.dateRange}" data-range1="${w1.dateRange}">
+      <div id="week-sched-slider" style="display:flex;width:200%;will-change:transform;">
+        <div style="width:50%;flex-shrink:0;"><div class="week-day-row">${w0.cols}</div></div>
+        <div style="width:50%;flex-shrink:0;"><div class="week-day-row">${w1.cols}</div></div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:center;gap:6px;margin-top:10px;">
+      <div id="wdot-0" style="width:5px;height:5px;border-radius:50%;background:var(--gold);transition:background 0.2s;"></div>
+      <div id="wdot-1" style="width:5px;height:5px;border-radius:50%;background:var(--border2);transition:background 0.2s;"></div>
+    </div>
+  </div>`;
+}
+
+function _initWeekWidgetDrag() {
+  const wrap = document.getElementById('week-sched-wrap');
+  const slider = document.getElementById('week-sched-slider');
+  if (!wrap || !slider) return;
+  let _page = 0, startX = null, startY = null, isH = null, liveX = 0;
+  const W = () => wrap.getBoundingClientRect().width;
+
+  function setPage(p, animate) {
+    _page = p;
+    slider.style.transition = animate ? 'transform 0.3s cubic-bezier(0.4,0,0.2,1)' : 'none';
+    slider.style.transform = `translateX(${-p * 50}%)`;
+    const d0 = document.getElementById('wdot-0');
+    const d1 = document.getElementById('wdot-1');
+    if (d0) d0.style.background = p === 0 ? 'var(--gold)' : 'var(--border2)';
+    if (d1) d1.style.background = p === 1 ? 'var(--gold)' : 'var(--border2)';
+    const rng = document.getElementById('week-sched-range');
+    if (rng) rng.textContent = wrap.dataset['range'+p] || '';
+  }
+
+  function onStart(cx, cy) { startX=cx; startY=cy; isH=null; liveX=-_page*W(); }
+  function onMove(cx, cy, e) {
+    if (startX===null) return;
+    const dx=cx-startX, dy=cy-startY;
+    if (isH===null && (Math.abs(dx)>6||Math.abs(dy)>6)) isH=Math.abs(dx)>=Math.abs(dy);
+    if (!isH) return;
+    e.preventDefault();
+    const raw = liveX + dx;
+    const minX = -W(); const maxX = 0;
+    const x = raw < minX ? minX+(raw-minX)*0.25 : raw > maxX ? maxX+(raw-maxX)*0.25 : raw;
+    slider.style.transition='none';
+    slider.style.transform=`translateX(${x}px)`;
+  }
+  function onEnd(cx) {
+    if (startX===null) return;
+    const dx=cx-startX;
+    startX=null;
+    if (!isH) return;
+    if (Math.abs(dx)>40) setPage(dx<0?1:0, true);
+    else setPage(_page, true);
+  }
+
+  wrap.addEventListener('touchstart', e=>onStart(e.touches[0].clientX,e.touches[0].clientY),{passive:true});
+  wrap.addEventListener('touchmove',  e=>onMove(e.touches[0].clientX,e.touches[0].clientY,e),{passive:false});
+  wrap.addEventListener('touchend',   e=>onEnd(e.changedTouches[0].clientX),{passive:true});
+  wrap.addEventListener('mousedown',  e=>{onStart(e.clientX,e.clientY); e.preventDefault();});
+  document.addEventListener('mousemove', e=>{if(startX!==null&&isH!==false)onMove(e.clientX,e.clientY,e);});
+  document.addEventListener('mouseup',   e=>{if(startX!==null)onEnd(e.clientX);});
+}
+
 // ── 레슨생 대시보드 ────────────────────────────────────────
 function enterStudent() {
   _hwCardOpen = false;
@@ -1807,7 +1988,7 @@ function enterStudent() {
   if(!s){ goScreen('sc-main'); return; }
   const months=calcMonths(s.startDate);
   document.getElementById('s-name').textContent=s.name;
-  document.getElementById('s-meta').textContent=`${s.level} · ${months>0?months+'개월차':'수업 시작 전'}`;
+  document.getElementById('s-meta').textContent=`${months>0?months+'개월':'수업 시작 전'} · ${s.currentWeek||1}주차`;
   const week=s.currentWeek||1;
   const weekPct=Math.round((week/4)*100);
   const pending=s.homework.filter(h=>!h.done);
@@ -1827,18 +2008,19 @@ function enterStudent() {
   const dateSuffix = nextEvent ? ` · ${fmtCalDate(nextEvent.date)}` : '';
   const hwSection=`<div class="card s-hw-card" id="s-home-hw" onclick="toggleStudentHwCard()" style="cursor:pointer;"></div>`;
   const nextCard=`<div class="card"><p class="section-title" style="color:var(--text2);">다음 수업 내용 — ${targetWeek}주차${dateSuffix}</p><p style="font-size:13px;line-height:1.6;${s.nextLesson?'':'color:var(--text3);'}">${s.nextLesson||'아직 입력되지 않았습니다'}</p></div>`;
-  document.getElementById('s-home').innerHTML=`
-    <div class="card s-progress-card" id="s-progress-card" onclick="toggleProgressCard()">
-      <div class="s-prog-header">
-        <span class="s-prog-pre" id="s-prog-pre">현재</span>
-        <strong class="s-prog-week" id="s-prog-week">${week}주차</strong>
-        <span class="s-prog-post" id="s-prog-post">진행중</span>
-      </div>
-      <div class="progress-track" id="s-prog-bar"><div class="progress-fill" style="width:${weekPct}%"></div></div>
-      <div class="s-prog-extra">
-        <div class="row mt8"><span class="small muted">4주 기준</span><span class="small gold">${week} / 4주차</span></div>
-      </div>
-    </div>
+  // 하단 네비 숙제 배지 업데이트
+  const _hwBadge = document.getElementById('s-nav-hw-badge');
+  if (_hwBadge) {
+    const _pend = pending.length;
+    _hwBadge.textContent = _pend > 9 ? '9+' : String(_pend);
+    _hwBadge.classList.toggle('hidden', _pend === 0);
+  }
+  // 홈 탭 활성화 상태 복원
+  document.querySelectorAll('#sc-student .s-nav-btn').forEach(b=>b.classList.remove('active'));
+  const _navHome = document.getElementById('s-nav-home');
+  if (_navHome) _navHome.classList.add('active');
+
+  document.getElementById('s-home').innerHTML=renderWeekScheduleWidget(s)+`
     ${hwSection}
     ${nextCard}
     <div class="card" style="margin-top:20px;"><p class="section-title gold">현재 배울 수 있는 곡 <span class="muted" style="font-weight:400;">${s.songs.canLearn.length}곡</span></p>
@@ -1862,6 +2044,7 @@ function enterStudent() {
   renderStudentHomeHw(s);
   renderStudentHomeWant(s);
   renderStudentSongsTab(s);
+  setTimeout(_initWeekWidgetDrag, 0);
   goScreen('sc-student');
 }
 function toggleStudentHwCard() {
@@ -1996,6 +2179,13 @@ function _renderHwCardBody(s) {
     badge.textContent   = `${done}/${s.homework.length}`;
     badge.style.display = (_hwCardOpen && pending.length > 0) ? '' : 'none';
   }
+  // 하단 네비 배지 동기화
+  const _nb = document.getElementById('s-nav-hw-badge');
+  if (_nb) {
+    const _pc = pending.length;
+    _nb.textContent = _pc > 9 ? '9+' : String(_pc);
+    _nb.classList.toggle('hidden', _pc === 0);
+  }
 }
 function renderStudentHwTab(s) {
   const done=s.homework.filter(h=>h.done).length;
@@ -2081,8 +2271,8 @@ function renderStudentSongsTab(s) {
   }
 }
 function switchStudentTab(tab,btn) {
-  document.querySelectorAll('#sc-student .tab').forEach(t=>t.classList.remove('active'));
-  btn.classList.add('active');
+  document.querySelectorAll('#sc-student .s-nav-btn').forEach(b=>b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
   ['home','homework','songs','schedule'].forEach(t=>document.getElementById('s-'+t).classList.toggle('hidden',t!==tab));
   const scEl = document.getElementById('sc-student');
   if (tab === 'schedule') {
