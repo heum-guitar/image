@@ -339,6 +339,21 @@
   .s-sched-grid { flex: 1; min-height: 0; overflow: visible; display: flex; flex-direction: column; }
   .s-sched-grid > div { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: visible; }
   #s-cal-detail { display: none; margin-top: 8px; background: var(--surface2); border: 0.5px solid var(--border2); border-radius: 10px; padding: 10px 12px; }
+
+  /* ── 레슨생 달력 반응형 높이 (가로 모드 / 데스크탑) ── */
+  @media (orientation: landscape) and (min-width: 600px) {
+    #sc-student.sched-mode .cal-day { aspect-ratio: auto; min-height: 22px; padding: 2px 2px; }
+    #sc-student.sched-mode .cal-num { font-size: 11px; line-height: 1.4; }
+    #sc-student.sched-mode .s-cal-wrap { padding: 6px 16px 4px; }
+    #sc-student.sched-mode .s-cal-nav { margin-bottom: 6px; }
+    #sc-student.sched-mode .cal-dot { width: 4px; height: 4px; }
+  }
+  @media (min-width: 1024px) {
+    #sc-student.sched-mode .cal-day { aspect-ratio: auto; min-height: 26px; padding: 3px 2px; }
+    #sc-student.sched-mode .cal-num { font-size: 12px; line-height: 1.5; }
+    #sc-student.sched-mode .s-cal-wrap { padding: 8px 16px 6px; }
+    #sc-student.sched-mode .s-cal-nav { margin-bottom: 8px; }
+  }
 </style>
 </head>
 <body>
@@ -1255,6 +1270,7 @@ function renderCalendar(s) {
           <div class="event-info">
             <p class="event-time">${ev.time||'시간 미정'}</p>
             ${ev.week?`<p class="event-week">${ev.week}주차</p>`:''}
+            ${ev.content?`<p class="event-memo" style="color:var(--text);">${ev.content}</p>`:''}
             ${ev.memo?`<p class="event-memo">${ev.memo}</p>`:''}
           </div>
           <div style="display:flex;align-items:center;gap:4px;">
@@ -1296,7 +1312,8 @@ function renderCalendar(s) {
           </select>
         </div>
       </div>
-      <div class="form-group"><p class="form-label">메모</p><textarea id="ev-memo" rows="2" placeholder="수업 내용이나 메모를 입력하세요"></textarea></div>
+      <div class="form-group"><p class="form-label">수업 내용</p><textarea id="ev-content" rows="2" placeholder="이번 수업에서 다룬 내용을 입력하세요 (레슨생에게 표시됩니다)"></textarea></div>
+      <div class="form-group"><p class="form-label">메모 (강사용)</p><textarea id="ev-memo" rows="2" placeholder="수업 내용이나 메모를 입력하세요"></textarea></div>
       <div class="panel-actions">
         <button class="panel-btn panel-btn-cancel" onclick="cancelEventPanel()">취소</button>
         <button class="panel-btn panel-btn-submit" id="event-submit-btn" onclick="submitEvent()">추가</button>
@@ -1325,6 +1342,7 @@ function showAddEvent() {
   document.getElementById('ev-date').value=calSelectedDate||todayStr;
   document.getElementById('ev-hour').value='';
   document.getElementById('ev-min').value='';
+  document.getElementById('ev-content').value='';
   document.getElementById('ev-memo').value='';
   document.getElementById('event-panel-title').textContent='일정 추가';
   document.getElementById('event-submit-btn').textContent='추가';
@@ -1344,6 +1362,7 @@ function editEvent(date, idx) {
   document.getElementById('ev-hour').value = evH;
   document.getElementById('ev-min').value = evM;
   document.getElementById('ev-memo').value = ev.memo||'';
+  document.getElementById('ev-content').value = ev.content||'';
   eventWeekSel = ev.week||null;
   document.getElementById('event-panel-title').textContent='일정 수정';
   document.getElementById('event-submit-btn').textContent='저장';
@@ -1371,6 +1390,7 @@ function submitEvent() {
   const m=document.getElementById('ev-min').value;
   const time = (h && m) ? `${h}:${m}` : (h ? `${h}:00` : '');
   const memo=document.getElementById('ev-memo').value.trim();
+  const content=document.getElementById('ev-content').value.trim();
   if (!date) { alert('날짜를 선택하세요'); return; }
   const students=loadStudents(); const s=students.find(x=>x.id===curDetailId);
   if (!s.events) s.events=[];
@@ -1381,12 +1401,12 @@ function submitEvent() {
     const target = dateEvents[editingEventIdx];
     const globalIdx = s.events.indexOf(target);
     if (globalIdx > -1) {
-      s.events[globalIdx] = { date, week:eventWeekSel, time, memo };
+      s.events[globalIdx] = { date, week:eventWeekSel, time, memo, content };
     }
     calSelectedDate = date;
   } else {
     // 추가 모드
-    s.events.push({ date, week:eventWeekSel, time, memo });
+    s.events.push({ date, week:eventWeekSel, time, memo, content });
     calSelectedDate = date;
   }
 
@@ -2368,7 +2388,7 @@ function buildCalendarGridHTML(dayData, gridBodyId) {
       evHtml += `<div class="cgrid-event" style="top:${top}px;left:2px;right:2px;height:${hgt}px;">
         <span class="cgrid-event-time">${ev.time}${week ? ' · '+week : ''}</span>
         ${name ? `<span class="cgrid-event-name">${name}</span>` : ''}
-        ${ev.memo ? `<span class="cgrid-event-memo">${ev.memo}</span>` : ''}
+        ${ev.content ? `<span class="cgrid-event-memo">${ev.content}</span>` : ''}
       </div>`;
     });
 
@@ -2757,7 +2777,7 @@ function sCalDayClick(ds) {
       <div style="display:flex;align-items:center;gap:12px;padding:5px 0;${i<events.length-1?'border-bottom:0.5px solid var(--border);':''}">
         <span style="font-size:13px;color:var(--gold);font-weight:500;min-width:52px;">${ev.time||'시간 미정'}</span>
         ${ev.week?`<span style="font-size:11px;color:var(--text3);">${ev.week}주차</span>`:''}
-        ${ev.memo?`<span style="font-size:12px;color:var(--text2);">${ev.memo}</span>`:''}
+        ${ev.content?`<span style="font-size:12px;color:var(--text2);">${ev.content}</span>`:''}
       </div>`).join('')}`;
 }
 
