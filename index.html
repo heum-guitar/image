@@ -340,19 +340,29 @@
   .s-sched-grid > div { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: visible; }
   #s-cal-detail { display: none; margin-top: 8px; background: var(--surface2); border: 0.5px solid var(--border2); border-radius: 10px; padding: 10px 12px; }
 
-  /* ── 레슨생 달력 반응형 높이 (가로 모드 / 데스크탑) ── */
+  /* ── 레슨생 달력 반응형 높이 + 1:1 비율 (가로 모드 / 데스크탑) ── */
   @media (orientation: landscape) and (min-width: 600px) {
     #sc-student.sched-mode .cal-day { aspect-ratio: auto; min-height: 22px; padding: 2px 2px; }
     #sc-student.sched-mode .cal-num { font-size: 11px; line-height: 1.4; }
-    #sc-student.sched-mode .s-cal-wrap { padding: 6px 16px 4px; }
-    #sc-student.sched-mode .s-cal-nav { margin-bottom: 6px; }
     #sc-student.sched-mode .cal-dot { width: 4px; height: 4px; }
+    #sc-student.sched-mode .s-cal-wrap {
+      flex: 1; display: flex; flex-direction: column; overflow: hidden;
+      padding: 6px 32px 4px;
+    }
+    #sc-student.sched-mode .s-cal-nav { margin-bottom: 6px; flex-shrink: 0; }
+    #sc-student.sched-mode .cal-grid { flex: 1; align-content: stretch; }
+    #sc-student.sched-mode #s-cal-detail { flex-shrink: 0; }
   }
   @media (min-width: 1024px) {
-    #sc-student.sched-mode .cal-day { aspect-ratio: auto; min-height: 26px; padding: 3px 2px; }
+    #sc-student.sched-mode .cal-day { aspect-ratio: auto; min-height: 28px; padding: 3px 2px; }
     #sc-student.sched-mode .cal-num { font-size: 12px; line-height: 1.5; }
-    #sc-student.sched-mode .s-cal-wrap { padding: 8px 16px 6px; }
-    #sc-student.sched-mode .s-cal-nav { margin-bottom: 8px; }
+    #sc-student.sched-mode .s-cal-wrap {
+      flex: 1; display: flex; flex-direction: column; overflow: hidden;
+      padding: 8px 48px 6px;
+    }
+    #sc-student.sched-mode .s-cal-nav { margin-bottom: 8px; flex-shrink: 0; }
+    #sc-student.sched-mode .cal-grid { flex: 1; align-content: stretch; }
+    #sc-student.sched-mode #s-cal-detail { flex-shrink: 0; }
   }
 </style>
 </head>
@@ -2806,6 +2816,21 @@ function hideWeekTip() {
   if (tip) tip.style.display = 'none';
 }
 function showErr(id,msg){document.getElementById(id).textContent=msg;}
+
+// ── 방향 전환 / 리사이즈 시 스케줄 탭 재렌더링 ────────────────
+(function() {
+  let _resizeTimer = null;
+  window.addEventListener('resize', function() {
+    clearTimeout(_resizeTimer);
+    _resizeTimer = setTimeout(function() {
+      const schedEl = document.getElementById('s-schedule');
+      if (!schedEl || schedEl.classList.contains('hidden')) return;
+      if (!curStudent) return;
+      const s = loadStudents().find(x => x.id === curStudent.id);
+      if (s) renderStudentScheduleTab(s);
+    }, 80);
+  });
+})();
 </script>
 
 <!-- 레슨생 환경설정 -->
