@@ -370,14 +370,17 @@
     position: fixed; bottom: 0; left: 0; right: 0;
     display: flex;
     background: var(--surface); border-top: 0.5px solid var(--border2);
+    /* 배경만 safe area까지 연장 */
     padding-bottom: env(safe-area-inset-bottom);
     z-index: 200;
     max-width: 100%;
   }
   .s-nav-btn {
     flex: 1; display: flex; flex-direction: column; align-items: center;
-    justify-content: center; gap: 5px; padding: 16px 4px 12px;
-    min-height: 64px;
+    /* flex-start + padding-top으로 아이콘 위치 직접 제어 (safe-area와 독립) */
+    justify-content: flex-start; gap: 5px;
+    padding: 16px 4px 8px;
+    min-height: 80px;
     background: transparent; border: none; color: var(--text3);
     cursor: pointer; transition: color 0.15s; position: relative;
     -webkit-tap-highlight-color: transparent;
@@ -386,15 +389,14 @@
   .s-nav-btn svg { display: block; }
   .s-nav-label { font-size: 10px; font-weight: 500; letter-spacing: 0.02em; line-height: 1; }
   .s-nav-badge {
-    position: absolute; top: 6px; left: calc(50% + 6px);
+    position: absolute; top: 10px; left: calc(50% + 6px);
     background: var(--red); color: #fff; font-size: 9px; font-weight: 700;
     min-width: 14px; height: 14px; border-radius: 7px;
     display: flex; align-items: center; justify-content: center; padding: 0 3px;
   }
-  /* 학생 화면 콘텐츠 하단 패딩 (fixed 네비 높이만큼 확보) */
-  #sc-student .content { padding-bottom: 88px; }
-  /* sched-mode: 콘텐츠가 네비 위까지만 차도록 */
-  #sc-student.sched-mode .content { padding-bottom: 72px !important; }
+  /* 학생 화면 콘텐츠 하단 패딩 */
+  #sc-student .content { padding-bottom: 96px; }
+  #sc-student.sched-mode .content { padding-bottom: 84px !important; }
 
   /* ── 이번 주 레슨 일정 위젯 ── */
   .week-sched-widget { background: var(--surface); border: 0.5px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 10px; }
@@ -1907,22 +1909,31 @@ let _notYetDrawerOpen = false;
 
 // ── 레슨 일정 말풍선 팝오버 ──────────────────────────────────────
 let _weekPopoverEl = null;
+window._weekEvStore = {}; // 날짜 키 → 이벤트 배열
+
 function _closeWeekPopover() {
   if (_weekPopoverEl) { _weekPopoverEl.remove(); _weekPopoverEl = null; }
 }
-function showWeekEvPopover(el, evJson, dateLabel) {
+
+function showWeekEvPopover(el, dateKey) {
   _closeWeekPopover();
-  const evs = JSON.parse(decodeURIComponent(evJson));
-  if (!evs.length) return;
+  const entry = window._weekEvStore[dateKey];
+  if (!entry || !entry.evs.length) return;
+  const { evs, label } = entry;
 
   const pop = document.createElement('div');
   pop.className = 'week-ev-popover';
-  pop.innerHTML = `<p class="week-ev-pop-date">${dateLabel}</p>` +
-    evs.map(ev => `<div class="week-ev-pop-row">
-      ${ev.time ? `<span class="week-ev-pop-time">${ev.time}</span>` : ''}
-      ${ev.week ? `<span class="week-ev-pop-week">${ev.week}주차</span>` : ''}
-      ${ev.content ? `<span class="week-ev-pop-content">${ev.content}</span>` : '<span class="week-ev-pop-content" style="color:var(--text3);">수업 내용 미입력</span>'}
-    </div>`).join('');
+  pop.innerHTML =
+    '<p class="week-ev-pop-date">' + label + '</p>' +
+    evs.map(function(ev) {
+      return '<div class="week-ev-pop-row">' +
+        (ev.time ? '<span class="week-ev-pop-time">' + ev.time + '</span>' : '') +
+
+        (ev.content
+          ? '<span class="week-ev-pop-content">' + ev.content + '</span>'
+          : '<span class="week-ev-pop-content" style="color:var(--text3);">수업 내용 미입력</span>') +
+        '</div>';
+    }).join('');
   document.body.appendChild(pop);
   _weekPopoverEl = pop;
 
@@ -1933,34 +1944,25 @@ function showWeekEvPopover(el, evJson, dateLabel) {
   const vw = window.innerWidth, vh = window.innerHeight;
   let left = rect.left + rect.width / 2 - pw / 2;
   left = Math.max(8, Math.min(vw - pw - 8, left));
+  const arrowPct = ((rect.left + rect.width / 2 - left) / pw * 100).toFixed(1) + '%';
 
-  // 아래 공간 충분하면 아래, 아니면 위
+  const st = document.createElement('style');
   const spaceBelow = vh - rect.bottom;
-  if (spaceBelow >= ph + 12) {
-    pop.style.top = (rect.bottom + 8) + 'px';
+  if (spaceBelow >= ph + 14) {
+    pop.style.top  = (rect.bottom + 8) + 'px';
     pop.style.left = left + 'px';
-    // 화살표 위치 조정
-    const arrowLeft = rect.left + rect.width / 2 - left;
-    pop.style.setProperty('--arrow-left', Math.max(10, Math.min(pw - 10, arrowLeft)) + 'px');
-    pop.style.cssText += `;--arrow-left:${Math.max(10,Math.min(pw-10,arrowLeft))}px`;
-    pop.querySelector('style')?.remove();
-    // 화살표 가로 위치를 인라인으로 덮어씀
-    const arrowPct = ((rect.left + rect.width/2 - left) / pw * 100).toFixed(1);
-    const st = document.createElement('style');
-    st.textContent = `.week-ev-popover::before,.week-ev-popover::after{left:${arrowPct}%}`;
-    pop.appendChild(st);
+    st.textContent = '.week-ev-popover::before,.week-ev-popover::after{left:' + arrowPct + '}';
   } else {
-    pop.style.top = (rect.top - ph - 8) + 'px';
+    pop.style.top  = (rect.top - ph - 8) + 'px';
     pop.style.left = left + 'px';
     pop.classList.add('week-ev-popover-arrow-down');
-    const arrowPct = ((rect.left + rect.width/2 - left) / pw * 100).toFixed(1);
-    const st = document.createElement('style');
-    st.textContent = `.week-ev-popover.week-ev-popover-arrow-down::before,.week-ev-popover.week-ev-popover-arrow-down::after{left:${arrowPct}%}`;
-    pop.appendChild(st);
+    st.textContent =
+      '.week-ev-popover.week-ev-popover-arrow-down::before,' +
+      '.week-ev-popover.week-ev-popover-arrow-down::after{left:' + arrowPct + '}';
   }
+  pop.appendChild(st);
 
-  // 외부 클릭 시 닫기
-  setTimeout(() => {
+  setTimeout(function() {
     document.addEventListener('click', _closeWeekPopover, { once: true });
   }, 0);
 }
@@ -1989,15 +1991,22 @@ function renderWeekScheduleWidget(s) {
       else if (hasEv && isToday) cirClass = 'is-today has-ev';
       else if (isToday) cirClass = 'is-today';
       else if (hasEv) cirClass = 'has-ev';
-      const infoHtml = hasEv ? evs.map(ev=>`
-        <div class="week-day-info">
-          ${ev.time?`<span class="week-day-time" style="${isPast?'color:var(--text3);':''}">${ev.time}</span>`:''}
-          ${ev.content?`<span class="week-day-content">${ev.content}</span>`:''}
-        </div>`).join('') : '';
-      const dateLabel = fmt(d) + ' (' + label + ')';
-      const evData = hasEv ? encodeURIComponent(JSON.stringify(evs.map(e=>({time:e.time||'',week:e.week||0,content:e.content||''})))) : '';
-      const clickAttr = hasEv ? `onclick="event.stopPropagation();showWeekEvPopover(this,'${evData}'.replace(/&#39;/g,\"'\"),'${dateLabel}')" style="cursor:pointer;"` : '';
-      return `<div class="week-day-col"><div class="week-day-circle ${cirClass}" ${clickAttr}>${label}</div>${infoHtml}</div>`;
+      const infoHtml = hasEv ? evs.map(function(ev){
+        return '<div class="week-day-info">' +
+          (ev.time ? '<span class="week-day-time" style="' + (isPast?'color:var(--text3);':'') + '">' + ev.time + '</span>' : '') +
+          (ev.content ? '<span class="week-day-content">' + ev.content + '</span>' : '') +
+          '</div>';
+      }).join('') : '';
+      if (hasEv) {
+        window._weekEvStore[ds] = {
+          label: fmt(d) + ' (' + label + ')',
+          evs: evs.map(function(e){ return {time:e.time||'',week:e.week||0,content:e.content||''}; })
+        };
+      }
+      const clickAttr = hasEv
+        ? 'onclick="event.stopPropagation();showWeekEvPopover(this,\'' + ds + '\')" style="cursor:pointer;"'
+        : '';
+      return '<div class="week-day-col"><div class="week-day-circle ' + cirClass + '" ' + clickAttr + '>' + label + '</div>' + infoHtml + '</div>';
     }).join('');
     return { dateRange, cols };
   }
