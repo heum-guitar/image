@@ -452,7 +452,7 @@
   /* Tablet */
   @media (min-width: 600px) {
     .screen { max-width: 100%; }
-    #sc-student .screen { max-width: 420px; }
+    #sc-student .screen { max-width: 400px; }
     .content { padding: 0 32px 80px; }
     .topbar { padding: 24px 32px 18px; }
     .teacher-body { padding: 0 32px 40px; }
@@ -491,8 +491,8 @@
     .metric-val { font-size: 34px; }
     .metrics { gap: 14px; }
     #sc-student { display: flex; justify-content: center; }
-    #sc-student .screen { max-width: 420px; width: 420px; }
-    #sc-student nav > div { max-width: 380px !important; }
+    #sc-student .screen { max-width: 400px; width: 400px; }
+    #sc-student nav > div { max-width: 360px !important; }
     #sc-student .content { padding: 0 28px calc(120px + env(safe-area-inset-bottom)); }
   }
 
@@ -565,7 +565,7 @@
     display: flex; align-items: center; justify-content: center; padding: 0 3px;
     box-shadow: 0 1px 4px rgba(196,92,74,0.4);
   }
-  #sc-student .content { padding-bottom: 120px !important; }
+  #sc-student .content { padding-bottom: 120px !important; padding-left: 32px !important; padding-right: 32px !important; }
   #sc-student.sched-mode .content { padding-bottom: 96px !important; }
 
   /* ── Weekly schedule widget ── */
@@ -730,14 +730,14 @@
   }
   /* 홈 숙제리스트 아이템 */
   .s-hw-row {
-    width:100%; padding:16px 20px; border-radius:2rem;
+    width:100%; padding:20px; border-radius:2rem;
     background:var(--bg); box-shadow:var(--sh-out);
-    display:flex; align-items:center; gap:16px;
+    display:flex; align-items:center; gap:20px;
     transition: all 0.2s ease;
   }
   .s-hw-row.done { opacity:0.55; }
   .s-hw-row-icon {
-    width:52px; height:52px; border-radius:18px; flex-shrink:0;
+    width:56px; height:56px; border-radius:16px; flex-shrink:0;
     box-shadow:var(--sh-in); display:flex; align-items:center; justify-content:center;
     font-size:22px;
   }
@@ -771,7 +771,7 @@
 
   /* 새 홈 2열 카드 버튼 */
   .s-home-grid-btn {
-    width: 100%; aspect-ratio:1/1; height:auto; border-radius:2rem;
+    min-width:0; aspect-ratio:1/1; height:auto; border-radius:2rem;
     background:linear-gradient(145deg,#464648,#333335);
     box-shadow:var(--sh-out); padding:6px;
     border:4px solid var(--bg); cursor:pointer;
@@ -788,7 +788,7 @@
   }
   .s-home-grid-inner {
     width:100%; height:100%; border-radius:1.5rem;
-    background:var(--bg); padding:16px 18px;
+    background:var(--bg); padding:20px;
     display:flex; flex-direction:column; justify-content:space-between;
     box-sizing:border-box;
   }
@@ -1002,7 +1002,7 @@
 <!-- 레슨생 홈 -->
 <div id="sc-student" class="hidden">
   <div class="screen">
-    <header style="padding:20px 28px 8px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+    <header style="padding:20px 32px 16px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
       <div>
         <p style="font-size:10px;font-weight:700;color:var(--text2);letter-spacing:0.2em;text-transform:uppercase;margin-bottom:4px;">환영합니다</p>
         <h1 class="bold" id="s-name" style="font-size:22px;font-weight:800;letter-spacing:-0.02em;color:var(--text);"></h1>
@@ -2646,7 +2646,7 @@ function renderStudentNewHome(s) {
 
   return `
     <!-- ① 오늘 숙제 진행 카드 (4:3 비율) -->
-    <div style="width:100%;aspect-ratio:4/3;border-radius:2.5rem;background:var(--bg);box-shadow:var(--sh-out);overflow:hidden;position:relative;margin-bottom:22px;">
+    <div style="width:100%;aspect-ratio:4/3;border-radius:2.5rem;background:var(--bg);box-shadow:var(--sh-out);overflow:hidden;position:relative;margin-bottom:32px;">
       <div style="position:absolute;inset:0;padding:28px;display:flex;flex-direction:column;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
         <div>
@@ -2687,7 +2687,7 @@ function renderStudentNewHome(s) {
     </div><!-- /outer aspect-ratio card -->
 
     <!-- ② 2열 버튼 그리드 -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:22px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:32px;width:100%;">
       <button class="s-home-grid-btn"
         onclick="switchStudentTab('songs',document.getElementById('s-nav-songs'))">
         <div class="s-home-grid-inner">
@@ -2715,7 +2715,7 @@ function renderStudentNewHome(s) {
     </div>
 
     <!-- ③ 오늘 숙제 리스트 -->
-    <div style="margin-bottom:22px;">
+    <div style="margin-bottom:32px;">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:0 4px;margin-bottom:14px;">
         <h3 style="font-size:17px;font-weight:700;color:var(--text);">오늘 숙제 리스트</h3>
       </div>
