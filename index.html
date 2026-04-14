@@ -3800,7 +3800,7 @@ function enterStudent() {
   // s-meta 제거됨 (새 헤더 구조)
   // 아바타 이니셜 설정
   const _avatarEl = document.getElementById('s-avatar');
-  if (_avatarEl) _avatarEl.textContent = s.name ? s.name.slice(0,2) : '';
+  if (_avatarEl) _avatarEl.textContent = s.name ? s.name.slice(0,1) : '';
   const week=s.currentWeek||1;
   const weekPct=Math.round((week/4)*100);
   const pending=s.homework.filter(h=>!h.done);
@@ -3975,7 +3975,15 @@ function renderStudentNewHome(s) {
   const pendingCnt  = s.homework.filter(h => !h.done).length;
 
   return `
-    <!-- ① 오늘 숙제 진행 카드 (4:3 비율) -->
+    <!-- ① 이번주 일정 -->
+    <div style="padding:22px 24px;border-radius:2.5rem;box-shadow:var(--sh-out);background:var(--bg);margin-bottom:32px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h4 style="font-size:12px;font-weight:700;color:var(--text2);letter-spacing:0.12em;text-transform:uppercase;">이번주 일정</h4>
+      </div>
+      <div style="display:flex;justify-content:space-between;" id="s-home-week-row"></div>
+    </div>
+
+    <!-- ② 오늘 숙제 진행 카드 (4:3 비율) -->
     <div style="width:100%;aspect-ratio:4/3;border-radius:2.5rem;background:var(--bg);box-shadow:var(--sh-out);overflow:hidden;position:relative;margin-bottom:32px;">
       <div style="position:absolute;inset:0;padding:28px;display:flex;flex-direction:column;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
@@ -4016,7 +4024,15 @@ function renderStudentNewHome(s) {
       </div><!-- /inner absolute flex col -->
     </div><!-- /outer aspect-ratio card -->
 
-    <!-- ② 2열 버튼 그리드 -->
+    <!-- ③ 오늘 숙제 리스트 -->
+    <div style="margin-bottom:32px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:0 4px;margin-bottom:14px;">
+        <h3 style="font-size:17px;font-weight:700;color:var(--text);">오늘 숙제 리스트</h3>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;" id="s-home-hw-rows"></div>
+    </div>
+
+    <!-- ④ 2열 버튼 그리드 -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:32px;width:100%;">
       <button class="s-home-grid-btn neu-button"
         onclick="switchStudentTab('songs',document.getElementById('s-nav-songs'))">
@@ -4042,22 +4058,6 @@ function renderStudentNewHome(s) {
           </div>
         </div>
       </button>
-    </div>
-
-    <!-- ③ 오늘 숙제 리스트 -->
-    <div style="margin-bottom:32px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:0 4px;margin-bottom:14px;">
-        <h3 style="font-size:17px;font-weight:700;color:var(--text);">오늘 숙제 리스트</h3>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:10px;" id="s-home-hw-rows"></div>
-    </div>
-
-    <!-- ④ 이번주 일정 -->
-    <div style="padding:22px 24px;border-radius:2.5rem;box-shadow:var(--sh-out);background:var(--bg);margin-bottom:14px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-        <h4 style="font-size:12px;font-weight:700;color:var(--text2);letter-spacing:0.12em;text-transform:uppercase;">이번주 일정</h4>
-      </div>
-      <div style="display:flex;justify-content:space-between;" id="s-home-week-row"></div>
     </div>
   `;
 }
