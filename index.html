@@ -44,8 +44,9 @@
     --sh-out-sm: -4px -4px 10px #525254,  4px  4px 10px #282828;
     --sh-out-lg: -12px -12px 26px #545456, 12px 12px 26px #222224;
     /* inset: 좌상단=어둡, 우하단=밝 → 움푹 패인 느낌 */
-    --sh-in:    inset  6px  6px 14px #242426, inset -6px -6px 14px #505052;
-    --sh-in-sm: inset  3px  3px  8px #282828, inset -3px -3px  8px #4e4e50;
+    --sh-in:      inset  6px  6px 14px #242426, inset -6px -6px 14px #505052;
+    --sh-in-sm:   inset  3px  3px  8px #282828, inset -3px -3px  8px #4e4e50;
+    --sh-in-deep: inset  9px  9px 20px #1a1a1c, inset -3px -3px  8px #545456;
   }
 
   body {
@@ -68,8 +69,9 @@
     --shadow-light: rgba(255, 255, 255, 0.8);
     --sh-out-sm: -3px -3px 8px rgba(255,255,255,0.85), 3px 3px 8px rgba(163,177,198,0.60);
     --sh-out-lg: -10px -10px 24px rgba(255,255,255,0.92), 10px 10px 24px rgba(163,177,198,0.75);
-    --sh-in: inset -4px -4px 10px rgba(255,255,255,0.85), inset 4px 4px 10px rgba(163,177,198,0.65);
-    --sh-in-sm: inset -2px -2px 6px rgba(255,255,255,0.80), inset 2px 2px 6px rgba(163,177,198,0.55);
+    --sh-in:      inset -4px -4px 10px rgba(255,255,255,0.85), inset 4px 4px 10px rgba(163,177,198,0.65);
+    --sh-in-sm:   inset -2px -2px 6px rgba(255,255,255,0.80), inset 2px 2px 6px rgba(163,177,198,0.55);
+    --sh-in-deep: inset -2px -2px 5px rgba(255,255,255,0.45), inset 7px 7px 18px rgba(163,177,198,0.90);
   }
   body.light input, body.light select, body.light textarea {
     background: var(--bg); color: var(--text);
@@ -84,7 +86,7 @@
   [id^="sc-"] { height: 100dvh; height: 100vh; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-y: none; }
   @supports (height: 100dvh) { [id^="sc-"] { height: 100dvh; } #sc-teacher-schedule-view > .screen { height: 100dvh; } }
 
-  button { cursor: pointer; font-family: inherit; font-size: 13px; }
+  button { cursor: pointer; font-family: inherit; font-size: 13px; border: none; }
 
   input, select, textarea {
     user-select: text; -webkit-user-select: text;
@@ -423,14 +425,7 @@
   .song-match { animation: goldGlow 2.2s ease-in-out infinite; font-weight: 500; }
 
   /* Screen transitions */
-  @keyframes _siFwd  { from { transform:translateX(40%);  opacity:0; } to { transform:translateX(0);    opacity:1; } }
-  @keyframes _soFwd  { from { transform:translateX(0);    opacity:1; } to { transform:translateX(-12%); opacity:0; } }
-  @keyframes _siBwd  { from { transform:translateX(-40%); opacity:0; } to { transform:translateX(0);    opacity:1; } }
-  @keyframes _soBwd  { from { transform:translateX(0);    opacity:1; } to { transform:translateX(12%);  opacity:0; } }
-  .sc-in-fwd  { animation: _siFwd 0.3s cubic-bezier(0.4,0,0.2,1) both; }
-  .sc-out-fwd { animation: _soFwd 0.3s cubic-bezier(0.4,0,0.2,1) both; }
-  .sc-in-bwd  { animation: _siBwd 0.3s cubic-bezier(0.4,0,0.2,1) both; }
-  .sc-out-bwd { animation: _soBwd 0.3s cubic-bezier(0.4,0,0.2,1) both; }
+  .sc-in-fwd, .sc-out-fwd, .sc-in-bwd, .sc-out-bwd { /* 애니메이션 없음 — 즉시 전환 */ }
 
   /* Calendar grid (iOS Calendar style) */
   .cgrid-event {
@@ -1032,33 +1027,27 @@
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: none;
-    padding: 0 20px 100px;
+    padding: 25px 20px 100px;
     display: flex;
     flex-direction: column;
     gap: 20px;
   }
   .td-m-scroll::-webkit-scrollbar { display: none; }
 
-  /* 가로 스크롤 스탯 카드 */
+  /* 2×2 스탯 그리드 */
   .td-stat-row {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 14px;
-    overflow-x: auto;
-    margin: 0 -20px;
-    padding: 6px 20px;
   }
-  .td-stat-row::-webkit-scrollbar { display: none; }
   .td-stat-card {
-    min-width: 148px;
     border-radius: 24px;
     padding: 18px;
     display: flex;
     flex-direction: column;
     gap: 14px;
-    flex-shrink: 0;
     background: var(--bg);
     box-shadow: var(--sh-out);
-    border: 1px solid var(--border2);
   }
   .td-stat-icon {
     width: 32px; height: 32px;
@@ -1077,7 +1066,6 @@
     padding: 22px;
     background: var(--bg);
     box-shadow: var(--sh-out);
-    border: 1px solid var(--border2);
   }
   .td-card-title { font-size: 14px; font-weight: 700; color: var(--text); }
   .td-card-sub { font-size: 10px; font-weight: 600; color: var(--text2); margin-top: 2px; }
@@ -1170,7 +1158,6 @@
     border-radius: 20px;
     background: var(--bg);
     box-shadow: var(--sh-out);
-    border: 1px solid var(--border2);
     display: flex; align-items: center; justify-content: space-around;
     padding: 0 8px;
     z-index: 50;
@@ -1219,7 +1206,6 @@
       border-radius: 2.5rem;
       background: var(--bg);
       box-shadow: var(--sh-out);
-      border: 1px solid var(--border2);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -1345,8 +1331,7 @@
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       display: flex; flex-direction: column; gap: 20px;
-      padding-right: 4px;
-      padding-bottom: 20px;
+      padding: 28px 12px 20px 20px;
     }
     .td-d-body::-webkit-scrollbar { width: 5px; }
     .td-d-body::-webkit-scrollbar-thumb { background: var(--text3); border-radius: 10px; }
@@ -1356,7 +1341,6 @@
       border-radius: 24px; padding: 24px;
       display: flex; flex-direction: column; gap: 16px;
       background: var(--bg); box-shadow: var(--sh-out);
-      border: 1px solid var(--border2);
     }
     .td-d-stat-icon {
       width: 38px; height: 38px; border-radius: 12px;
@@ -1382,7 +1366,6 @@
     .td-d-card {
       border-radius: 2.5rem; padding: 28px;
       background: var(--bg); box-shadow: var(--sh-out);
-      border: 1px solid var(--border2);
       display: flex; flex-direction: column;
     }
     .td-d-card-title { font-size: 16px; font-weight: 700; color: var(--text); }
@@ -1436,7 +1419,6 @@
       display: flex; align-items: center; gap: 16px;
       padding: 14px; border-radius: 16px; margin-bottom: 10px;
       background: var(--bg); box-shadow: var(--sh-out-sm);
-      border: 1px solid var(--border);
       cursor: pointer; transition: box-shadow 0.2s;
     }
     .td-d-file-icon {
@@ -1481,11 +1463,8 @@
   }
   @media (min-width: 768px) {
     body.heum-teacher-mode #td-global-sidebar { display: flex; }
-    /* 애니메이션 정착 후: margin-left로 사이드바 공간 확보 */
-    body.heum-teacher-mode [id^="sc-"]:not(.hidden) {
-      margin-left: 104px !important;
-      width: calc(100vw - 104px) !important;
-    }
+    /* 사이드바 공간: body에 padding-left 적용. 개별 sc-* 요소에 margin/left 없음 → 애니메이션 중 이중 오프셋 없음 */
+    body.heum-teacher-mode { padding-left: 104px; }
   }
 
   .tdg-logo-btn {
@@ -1514,10 +1493,11 @@
     display: flex; align-items: center; justify-content: center;
     font-size: 22px; color: var(--text2); cursor: pointer;
     position: relative;
-    transition: color 0.18s, box-shadow 0.18s;
+    transition: box-shadow 0.18s cubic-bezier(0.4, 0, 0.2, 1), transform 0.18s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  .tdg-btn:active { box-shadow: var(--sh-in-sm); transform: scale(0.96); }
-  .tdg-btn.active { box-shadow: var(--sh-in); color: #818cf8; }
+  /* :active pseudo 제거 — 시각 효과는 JS mousedown으로 직접 관리 */
+  .tdg-btn.active { box-shadow: var(--sh-in); color: #818cf8; transform: none; }
+  .tdg-btn.pressing { box-shadow: var(--sh-in-deep) !important; transform: scale(0.94); }
   .tdg-active-bar {
     position: absolute; left: 0; top: 50%; transform: translateY(-50%);
     width: 4px; height: 28px; background: #818cf8;
@@ -1540,29 +1520,29 @@
     </div>
   </div>
   <nav class="tdg-nav">
-    <button class="tdg-btn active" id="tdg-btn-dashboard" title="대시보드" onclick="goScreen('sc-teacher')">
+    <button class="tdg-btn active" id="tdg-btn-dashboard" title="대시보드" data-screen="sc-teacher">
       <div class="tdg-active-bar"></div>
       <i class="ph-fill ph-squares-four"></i>
     </button>
-    <button class="tdg-btn" id="tdg-btn-schedule" title="스케줄" onclick="goScreen('sc-teacher-schedule-view')">
+    <button class="tdg-btn" id="tdg-btn-schedule" title="스케줄" data-screen="sc-teacher-schedule-view">
       <i class="ph-bold ph-calendar-blank"></i>
     </button>
-    <button class="tdg-btn" id="tdg-btn-chat" title="채팅" onclick="openTeacherChatList()">
+    <button class="tdg-btn" id="tdg-btn-chat" title="채팅" data-action="chat">
       <i class="ph-bold ph-chat-circle-text"></i>
       <span class="tdg-dot" id="tdg-chat-dot" style="display:none;"></span>
     </button>
-    <button class="tdg-btn" id="tdg-btn-students" title="레슨생 관리" onclick="goScreen('sc-info')">
+    <button class="tdg-btn" id="tdg-btn-students" title="레슨생 관리" data-screen="sc-info">
       <i class="ph-bold ph-users-three"></i>
     </button>
-    <button class="tdg-btn" id="tdg-btn-settings" title="비밀번호 변경" onclick="goScreen('sc-change-pw')">
+    <button class="tdg-btn" id="tdg-btn-settings" title="비밀번호 변경" data-screen="sc-change-pw">
       <i class="ph-bold ph-gear-six"></i>
     </button>
   </nav>
   <div class="tdg-bottom">
-    <button class="tdg-btn" title="테마" onclick="toggleTeacherTheme()">
+    <button class="tdg-btn" title="테마" data-action="theme">
       <i class="ph-bold ph-moon-stars"></i>
     </button>
-    <button class="tdg-btn" title="로그아웃" onclick="logout()">
+    <button class="tdg-btn" title="로그아웃" data-action="logout">
       <i class="ph-bold ph-sign-out"></i>
     </button>
   </div>
@@ -1629,7 +1609,7 @@
     </div>
 
     <div class="td-m-scroll">
-      <!-- 스탯 카드 -->
+      <!-- 스탯 카드 (2×2 그리드) -->
       <div class="td-stat-row" id="td-m-stats">
         <div class="td-stat-card">
           <div class="td-stat-icon"><i class="ph-fill ph-users" style="color:#818cf8;"></i></div>
@@ -1639,17 +1619,24 @@
           </div>
         </div>
         <div class="td-stat-card">
-          <div class="td-stat-icon"><i class="ph-fill ph-check-circle" style="color:#34d399;"></i></div>
-          <div>
-            <p class="td-stat-label">완료율</p>
-            <h3 class="td-stat-val" id="td-m-completion">—</h3>
-          </div>
-        </div>
-        <div class="td-stat-card">
           <div class="td-stat-icon"><i class="ph-fill ph-calendar-check" style="color:#f59e0b;"></i></div>
           <div>
             <p class="td-stat-label">오늘 수업</p>
             <h3 class="td-stat-val" id="td-m-today-count">—</h3>
+          </div>
+        </div>
+        <div class="td-stat-card">
+          <div class="td-stat-icon"><i class="ph-fill ph-check-circle" style="color:#34d399;"></i></div>
+          <div>
+            <p class="td-stat-label">숙제 완료율</p>
+            <h3 class="td-stat-val" id="td-m-completion">—</h3>
+          </div>
+        </div>
+        <div class="td-stat-card">
+          <div class="td-stat-icon"><i class="ph-fill ph-music-notes" style="color:#f472b6;"></i></div>
+          <div>
+            <p class="td-stat-label">총 곡 수</p>
+            <h3 class="td-stat-val" id="td-m-songs-count">—</h3>
           </div>
         </div>
       </div>
@@ -1833,9 +1820,11 @@
                   <circle cx="80" cy="80" r="66" fill="transparent" stroke="#f472b6" stroke-width="14"
                     stroke-dasharray="415" id="td-d-ring2" stroke-dashoffset="374" stroke-linecap="round"/>
                 </svg>
-                <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;width:110px;height:110px;border-radius:50%;margin:auto;background:var(--bg);box-shadow:var(--sh-out-sm);top:50%;left:50%;transform:translate(-50%,-50%);">
-                  <span style="font-size:22px;font-weight:800;color:var(--text);" id="td-d-ring-pct">—</span>
-                  <span style="font-size:9px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px;">달성률</span>
+                <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                  <div style="width:110px;height:110px;border-radius:50%;background:var(--bg);box-shadow:var(--sh-out-sm);display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                    <span style="font-size:22px;font-weight:800;color:var(--text);" id="td-d-ring-pct">—</span>
+                    <span style="font-size:9px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px;">달성률</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2269,7 +2258,7 @@ let _teacherCurPage = 0;
 
 // ── 화면 전환 ──────────────────────────────────────────────
 const _navHistory = [];
-const _ANIM = 300;
+const _ANIM = 0;
 
 function _initScreen(id) {
   if (id === 'sc-teacher-chat-list') _renderTeacherChatList();
@@ -2295,6 +2284,10 @@ function haptic(type) {
 }
 
 function goScreen(id, _back) {
+  // 사이드바 active는 mousedown에서 이미 처리됨.
+  // goBack() 경유 시에는 여기서 직접 갱신
+  if (_back) _tdgUpdateActiveBtn(id);
+
   haptic('medium');
   const allSc = Array.from(document.querySelectorAll('[id^="sc-"]'));
   const cur = allSc.find(el => !el.classList.contains('hidden'));
@@ -2305,42 +2298,12 @@ function goScreen(id, _back) {
   _initScreen(id);
   if (!isBack && cur) _navHistory.push(cur.id);
 
-  // 전역 사이드바 활성 버튼 업데이트
-  _tdgUpdateActiveBtn(id);
-
-  // teacher-mode 데스크탑: 애니메이션 중 position:fixed + left 오프셋
-  // 애니메이션 완료 후 removeAttribute('style') 되면 CSS margin-left 규칙이 담당
-  const isTDesktop = document.body.classList.contains('heum-teacher-mode') && window.innerWidth >= 768;
-  const sideW = isTDesktop ? 104 : 0;
-  const insetStyle = sideW
-    ? `position:fixed;top:0;left:${sideW}px;right:0;bottom:0;`
-    : `position:fixed;inset:0;`;
-
-  document.body.style.pointerEvents = 'none';
-
+  // 이전 화면 즉시 숨김 → 다음 화면 즉시 표시 (position:fixed 중간 상태 없음)
   if (cur) {
-    const zCur  = isBack ? 201 : 199;
-    const zNext = isBack ? 199 : 201;
-    cur.style.cssText  = `${insetStyle}z-index:${zCur};overflow-y:auto;-webkit-overflow-scrolling:touch;`;
-    next.style.cssText = `${insetStyle}z-index:${zNext};overflow-y:auto;-webkit-overflow-scrolling:touch;`;
-    cur.classList.add(isBack ? 'sc-out-bwd' : 'sc-out-fwd');
-  } else {
-    next.style.cssText = `${insetStyle}z-index:201;overflow-y:auto;-webkit-overflow-scrolling:touch;`;
+    cur.classList.add('hidden');
   }
   next.classList.remove('hidden');
-  next.classList.add(isBack ? 'sc-in-bwd' : 'sc-in-fwd');
-
-  setTimeout(() => {
-    if (cur) {
-      cur.classList.add('hidden');
-      cur.classList.remove('sc-out-fwd', 'sc-out-bwd');
-      cur.removeAttribute('style');
-    }
-    next.classList.remove('sc-in-fwd', 'sc-in-bwd');
-    // 인라인 style 제거 → CSS margin-left:104px 규칙이 자동 적용됨
-    next.removeAttribute('style');
-    document.body.style.pointerEvents = '';
-  }, _ANIM);
+  document.body.style.pointerEvents = '';
 }
 
 function goBack() {
@@ -2366,6 +2329,103 @@ function _tdgUpdateActiveBtn(screenId) {
     if (el) el.classList.add('active');
   }
 }
+
+// ── 사이드바 버튼 이벤트 초기화 ──────────────────────────────
+// mousedown: .active 클래스 즉시 전환 + .pressing 시각 효과
+// mouseup/mouseleave: .pressing 제거
+// click: 화면 전환만 담당 (active는 이미 mousedown에서 완료)
+function _initSidebarEvents() {
+  const sidebar = document.getElementById('td-global-sidebar');
+  if (!sidebar) return;
+
+  sidebar.querySelectorAll('.tdg-btn').forEach(btn => {
+    let _prevActiveId = null; // mousedown 시점의 이전 active 버튼 ID
+
+    btn.addEventListener('mousedown', e => {
+      const screenId = btn.dataset.screen;
+      const action   = btn.dataset.action;
+
+      // 이미 active인 버튼이면 아무 것도 안 함
+      if (btn.classList.contains('active')) return;
+
+      // 현재 active 버튼 기억 (mouseleave 시 복원용)
+      const curActive = sidebar.querySelector('.tdg-btn.active');
+      _prevActiveId = curActive ? curActive.id : null;
+
+      // active 즉시 전환
+      if (screenId) {
+        _tdgUpdateActiveBtn(screenId);
+      } else if (action === 'chat') {
+        _tdgUpdateActiveBtn('sc-teacher-chat-list');
+      }
+      btn.classList.add('pressing');
+    });
+
+    // mouseup: pressing 제거 + 정상 확정 (prevActiveId 리셋)
+    btn.addEventListener('mouseup', () => {
+      btn.classList.remove('pressing');
+      _prevActiveId = null;
+    });
+
+    // mouseleave: 마우스 버튼이 눌린 채로 벗어나면 active 원복
+    btn.addEventListener('mouseleave', () => {
+      btn.classList.remove('pressing');
+      if (_prevActiveId !== null) {
+        // 이전 버튼으로 active 복원
+        sidebar.querySelectorAll('.tdg-btn').forEach(b => b.classList.remove('active'));
+        const prev = document.getElementById(_prevActiveId);
+        if (prev) prev.classList.add('active');
+        _prevActiveId = null;
+      }
+    });
+
+    // 터치: 손가락이 버튼 안에서 떼야만 확정
+    btn.addEventListener('touchstart', e => {
+      const screenId = btn.dataset.screen;
+      const action   = btn.dataset.action;
+      if (btn.classList.contains('active')) return;
+      const curActive = sidebar.querySelector('.tdg-btn.active');
+      _prevActiveId = curActive ? curActive.id : null;
+      if (screenId) {
+        _tdgUpdateActiveBtn(screenId);
+      } else if (action === 'chat') {
+        _tdgUpdateActiveBtn('sc-teacher-chat-list');
+      }
+      btn.classList.add('pressing');
+    }, { passive: true });
+
+    btn.addEventListener('touchend', () => {
+      btn.classList.remove('pressing');
+      _prevActiveId = null;
+    });
+    btn.addEventListener('touchcancel', () => {
+      btn.classList.remove('pressing');
+      if (_prevActiveId !== null) {
+        sidebar.querySelectorAll('.tdg-btn').forEach(b => b.classList.remove('active'));
+        const prev = document.getElementById(_prevActiveId);
+        if (prev) prev.classList.add('active');
+        _prevActiveId = null;
+      }
+    });
+
+    // click: 화면 전환만 (active는 mousedown에서 처리됨)
+    btn.addEventListener('click', () => {
+      const screenId = btn.dataset.screen;
+      const action   = btn.dataset.action;
+      if (screenId) {
+        goScreen(screenId);
+      } else if (action === 'chat') {
+        openTeacherChatList();
+      } else if (action === 'theme') {
+        toggleTeacherTheme();
+      } else if (action === 'logout') {
+        logout();
+      }
+    });
+  });
+}
+// DOM 준비 후 초기화
+document.addEventListener('DOMContentLoaded', _initSidebarEvents);
 
 function logout() {
   _navHistory.length = 0;
@@ -2564,8 +2624,9 @@ function renderTeacherDashboard() {
   function _set(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
 
   _set('td-m-active-count', totalStu + '명');
-  _set('td-m-completion', completion + '%');
   _set('td-m-today-count', todayStu + '명');
+  _set('td-m-completion', completion + '%');
+  _set('td-m-songs-count', totalSongs + '곡');
 
   // 모바일 바 차트
   const mBarChart = document.getElementById('td-m-bar-chart');
@@ -2621,27 +2682,30 @@ function renderTeacherDashboard() {
   // 모바일 메시지 (최근 채팅 학생 표시)
   const mMsg = document.getElementById('td-m-messages');
   if (mMsg && students.length) {
-    mMsg.innerHTML = students.slice(0,2).map(s => {
-      return `<div class="td-msg-item" style="margin-bottom:12px;" onclick="openTeacherChat(${s.id},'${s.name.replace(/'/g,"\\'")}')">
-        <div class="td-msg-avatar">${s.name.slice(0,2)}</div>
-        <div class="td-msg-bubble">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <p class="td-msg-name">${s.name}</p>
-          </div>
-          <p class="td-msg-text" id="td-m-msg-${s.id}">대화 불러오는 중...</p>
-        </div>
-      </div>`;
-    }).join('');
-    // 비동기로 마지막 메시지 로드
-    students.slice(0,2).forEach(s => {
+    mMsg.innerHTML = '<p style="font-size:12px;color:var(--text2);">불러오는 중...</p>';
+    let mResults = [], mPending = students.length;
+    students.forEach(s => {
       _chatRef(s.id).limitToLast(1).once('value', snap => {
-        const el = document.getElementById('td-m-msg-' + s.id);
-        if (!el) return;
-        if (!snap.exists()) { el.textContent = '대화 없음'; return; }
-        const msgs = Object.values(snap.val());
-        if (!msgs.length) { el.textContent = '대화 없음'; return; }
-        const last = msgs[0];
-        el.textContent = (last.sender === 'teacher' ? '나: ' : '') + (last.text || '');
+        let ts = 0, lastText = '대화 없음';
+        if (snap.exists()) {
+          const msgs = Object.values(snap.val());
+          if (msgs.length) { ts = msgs[0].ts || 0; lastText = (msgs[0].sender === 'teacher' ? '나: ' : '') + (msgs[0].text || ''); }
+        }
+        mResults.push({ s, ts, lastText });
+        if (--mPending === 0) {
+          mResults.sort((a, b) => b.ts - a.ts);
+          mMsg.innerHTML = mResults.slice(0,2).map(({ s, lastText }) =>
+            `<div class="td-msg-item" style="margin-bottom:12px;" onclick="openTeacherChat(${s.id},'${s.name.replace(/'/g,"\\'")}')">
+              <div class="td-msg-avatar">${s.name.slice(0,2)}</div>
+              <div class="td-msg-bubble">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <p class="td-msg-name">${s.name}</p>
+                </div>
+                <p class="td-msg-text">${lastText}</p>
+              </div>
+            </div>`
+          ).join('');
+        }
       });
     });
   } else if (mMsg) {
@@ -2707,29 +2771,33 @@ function renderTeacherDashboard() {
   // 데스크탑 메시지
   const dMsg = document.getElementById('td-d-messages');
   if (dMsg && students.length) {
-    dMsg.innerHTML = students.slice(0,3).map(s => {
-      return `<div class="td-d-msg-item" onclick="openTeacherChat(${s.id},'${s.name.replace(/'/g,"\\'")}')">
-        <div class="td-d-msg-avatar">
-          ${s.name.slice(0,2)}
-          <span class="td-d-msg-online"></span>
-        </div>
-        <div class="td-d-msg-bubble">
-          <div class="td-d-msg-header">
-            <p class="td-d-msg-name">${s.name}</p>
-          </div>
-          <p class="td-d-msg-text" id="td-d-msg-${s.id}">대화 불러오는 중...</p>
-        </div>
-      </div>`;
-    }).join('');
-    students.slice(0,3).forEach(s => {
+    dMsg.innerHTML = '<p style="font-size:13px;color:var(--text2);">불러오는 중...</p>';
+    let dResults = [], dPending = students.length;
+    students.forEach(s => {
       _chatRef(s.id).limitToLast(1).once('value', snap => {
-        const el = document.getElementById('td-d-msg-' + s.id);
-        if (!el) return;
-        if (!snap.exists()) { el.textContent = '대화 없음'; return; }
-        const msgs = Object.values(snap.val());
-        if (!msgs.length) { el.textContent = '대화 없음'; return; }
-        const last = msgs[0];
-        el.textContent = (last.sender === 'teacher' ? '나: ' : '') + (last.text || '');
+        let ts = 0, lastText = '대화 없음';
+        if (snap.exists()) {
+          const msgs = Object.values(snap.val());
+          if (msgs.length) { ts = msgs[0].ts || 0; lastText = (msgs[0].sender === 'teacher' ? '나: ' : '') + (msgs[0].text || ''); }
+        }
+        dResults.push({ s, ts, lastText });
+        if (--dPending === 0) {
+          dResults.sort((a, b) => b.ts - a.ts);
+          dMsg.innerHTML = dResults.slice(0,3).map(({ s, lastText }) =>
+            `<div class="td-d-msg-item" onclick="openTeacherChat(${s.id},'${s.name.replace(/'/g,"\\'")}')">
+              <div class="td-d-msg-avatar">
+                ${s.name.slice(0,2)}
+                <span class="td-d-msg-online"></span>
+              </div>
+              <div class="td-d-msg-bubble">
+                <div class="td-d-msg-header">
+                  <p class="td-d-msg-name">${s.name}</p>
+                </div>
+                <p class="td-d-msg-text">${lastText}</p>
+              </div>
+            </div>`
+          ).join('');
+        }
       });
     });
   } else if (dMsg) {
@@ -5218,7 +5286,7 @@ function _renderTeacherChatList() {
   }
   // 각 학생의 마지막 메시지/안읽은 수 비동기 로드
   container.innerHTML = students.map(s =>
-    `<div class="chat-list-item" id="t-cl-${s.id}" onclick="openTeacherChat(${s.id},'${s.name.replace(/'/g,"\\'")}')">
+    `<div class="chat-list-item" id="t-cl-${s.id}" data-ts="0" onclick="openTeacherChat(${s.id},'${s.name.replace(/'/g,"\\'")}')">
       <div class="chat-list-avatar">${s.name.slice(0,2)}</div>
       <div class="chat-list-info">
         <div class="chat-list-name">${s.name}</div>
@@ -5231,12 +5299,13 @@ function _renderTeacherChatList() {
     </div>`
   ).join('');
 
-  // 비동기로 각 학생 마지막 메시지 로드
+  // 비동기로 각 학생 마지막 메시지 로드 + 타임스탬프 기준 정렬
   students.forEach(s => {
     _chatRef(s.id).limitToLast(1).once('value', snap => {
       const previewEl = document.getElementById('t-cl-preview-' + s.id);
       const timeEl    = document.getElementById('t-cl-time-' + s.id);
       const dotEl     = document.getElementById('t-cl-dot-' + s.id);
+      const itemEl    = document.getElementById('t-cl-' + s.id);
       if (!snap.exists()) return;
       const msgs = Object.values(snap.val());
       if (!msgs.length) return;
@@ -5246,7 +5315,17 @@ function _renderTeacherChatList() {
         const cat = last.hwCategory ? `[${last.hwCategory}] ` : '';
         previewEl.textContent = prefix + cat + (last.text || '');
       }
-      if (timeEl)    timeEl.textContent    = _chatFmtTime(last.ts);
+      if (timeEl) timeEl.textContent = _chatFmtTime(last.ts);
+      // 타임스탬프 저장 후 목록 재정렬 (최근순)
+      if (itemEl) {
+        itemEl.dataset.ts = String(last.ts);
+        const c = document.getElementById('t-chat-list-inner');
+        if (c) {
+          Array.from(c.querySelectorAll('.chat-list-item'))
+            .sort((a, b) => (parseInt(b.dataset.ts) || 0) - (parseInt(a.dataset.ts) || 0))
+            .forEach(el => c.appendChild(el));
+        }
+      }
       // 안읽은 메시지 (student가 보낸 것 중 read:false)
       _chatRef(s.id).orderByChild('sender').equalTo('student').once('value', allSnap => {
         if (!allSnap.exists()) return;
