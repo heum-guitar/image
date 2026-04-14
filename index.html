@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta id="meta-theme-color" name="theme-color" content="#e0e5ec">
 <meta name="apple-mobile-web-app-title" content="HEUM">
 <link rel="apple-touch-icon" href="heum_icon_512.png">
 <link rel="manifest" href="manifest.json">
@@ -19,7 +20,7 @@
 </script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; -webkit-user-drag: none; }
   html { height: 100%; overflow: hidden; }
 
   /* ── 다크 뉴모피즘 — 스페이스 그레이 (기본) ── */
@@ -86,6 +87,7 @@
   button { cursor: pointer; font-family: inherit; font-size: 13px; }
 
   input, select, textarea {
+    user-select: text; -webkit-user-select: text;
     font-family: inherit;
     background: var(--bg);
     border: none;
@@ -190,7 +192,7 @@
   .teacher-body { flex:1; display:flex; flex-direction:column; justify-content:center; padding:0 16px 40px; gap:12px; }
 
   .menu-section {
-    background: var(--bg); border: none; border-radius: 24px;
+    background: var(--bg); border: none; border-radius: 2rem;
     overflow: hidden;
     box-shadow: var(--sh-out);
   }
@@ -231,7 +233,7 @@
   }
 
   .card {
-    background: var(--bg); border: none; border-radius: 24px;
+    background: var(--bg); border: none; border-radius: 2rem;
     padding: 20px; margin-bottom: 12px;
     box-shadow: var(--sh-out);
   }
@@ -402,8 +404,8 @@
   .s-hw-card { box-shadow: var(--sh-out), 0 0 0 2px rgba(201,168,76,0.2) !important; }
   .hw-body-drawer { overflow: hidden; max-height: 0; margin-top: 0; transition: max-height 0.38s cubic-bezier(0.4,0,0.2,1), margin-top 0.28s ease; }
   .hw-body-drawer.open { max-height: 800px; margin-top: 12px; }
-  .not-yet-drawer { overflow: hidden; max-height: 0; margin-top: 0; transition: max-height 0.38s cubic-bezier(0.4,0,0.2,1), margin-top 0.28s ease; }
-  .not-yet-drawer.open { max-height: 180px; margin-top: 10px; }
+  .not-yet-drawer { overflow: hidden; max-height: 0; margin-top: 0; padding: 0 10px; margin-left: -10px; margin-right: -10px; transition: max-height 0.38s cubic-bezier(0.4,0,0.2,1), margin-top 0.28s ease; }
+  .not-yet-drawer.open { max-height: 280px; margin-top: 8px; padding: 10px 10px 10px; }
   .level-item {
     display:flex; align-items:center; justify-content:space-between;
     padding:13px 14px; background:var(--bg); border:none; border-radius:14px;
@@ -776,14 +778,14 @@
     box-shadow:var(--sh-out); padding:6px;
     border:4px solid var(--bg); cursor:pointer;
     display:flex; flex-direction:column; justify-content:center; align-items:center;
-    transition: all 0.2s ease;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
     box-sizing:border-box;
   }
   body.light .s-home-grid-btn {
     background:linear-gradient(145deg,#f0f3f7,#cbd5e0);
   }
   .s-home-grid-btn:active {
-    box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light) !important;
+    box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
     transform: scale(0.98);
   }
   .s-home-grid-inner {
@@ -797,9 +799,774 @@
     .btn-primary:active { opacity:0.9; }
     .btn:active { opacity:0.9; }
   }
+
+  /* ── 채팅 ── */
+  .chat-screen { display:flex; flex-direction:column; height:100dvh; height:100vh; max-width:480px; margin:0 auto; }
+  .chat-topbar { display:flex; align-items:center; justify-content:space-between; padding:16px 20px 12px; flex-shrink:0; }
+  .chat-messages {
+    flex:1; overflow-y:auto; padding:12px 20px 16px;
+    display:flex; flex-direction:column; gap:10px;
+    -webkit-overflow-scrolling: touch; overscroll-behavior-y:none;
+  }
+  .chat-messages::-webkit-scrollbar { display:none; }
+  .chat-bubble-wrap { display:flex; flex-direction:column; gap:3px; }
+  .chat-bubble-wrap.mine { align-items:flex-end; }
+  .chat-bubble-wrap.theirs { align-items:flex-start; }
+  .chat-bubble {
+    max-width:72%; padding:11px 15px; border-radius:20px;
+    font-size:14px; line-height:1.55; word-break:break-word;
+  }
+  .chat-bubble.mine {
+    background: linear-gradient(135deg, #d4b05c, #C9A84C);
+    color:#fff; border-bottom-right-radius:6px;
+  }
+  .chat-bubble.theirs {
+    background: var(--surface2); color:var(--text);
+    border-bottom-left-radius:6px;
+    box-shadow: var(--sh-out-sm);
+  }
+  .chat-ts { font-size:10px; color:var(--text3); padding:0 4px; }
+  .chat-sender-label { font-size:11px; color:var(--text2); font-weight:600; padding:0 4px; margin-bottom:2px; }
+  .chat-input-bar {
+    display:flex; align-items:flex-end; gap:10px;
+    padding:10px 16px calc(14px + env(safe-area-inset-bottom)) 16px;
+    border-top:0.5px solid var(--border); background:var(--bg); flex-shrink:0;
+  }
+  .chat-input {
+    flex:1; resize:none; border-radius:16px; min-height:44px; max-height:120px;
+    font-size:14px; padding:11px 14px; line-height:1.4;
+    background:var(--bg); color:var(--text); border:none;
+    box-shadow:var(--sh-in); outline:none;
+  }
+  .chat-send-btn {
+    width:44px; height:44px; border-radius:14px; flex-shrink:0;
+    background:linear-gradient(135deg,#d4b05c,#C9A84C); border:none;
+    color:#fff; font-size:18px; display:flex; align-items:center; justify-content:center;
+    box-shadow:var(--sh-out-sm); cursor:pointer;
+    transition: box-shadow 0.15s, transform 0.15s;
+  }
+  .chat-send-btn:active { box-shadow:var(--sh-in-sm); transform:scale(0.94); }
+  .chat-date-divider {
+    text-align:center; font-size:11px; color:var(--text3);
+    padding:8px 0; font-weight:500;
+  }
+  .chat-empty {
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:8px; color:var(--text3);
+  }
+  .chat-unread-badge {
+    position:absolute; top:6px; right:8px;
+    background:var(--red); color:#fff; font-size:9px; font-weight:700;
+    min-width:14px; height:14px; border-radius:7px;
+    display:flex; align-items:center; justify-content:center; padding:0 3px;
+  }
+  .chat-list-item {
+    display:flex; align-items:center; gap:14px;
+    padding:16px 20px; cursor:pointer;
+    transition:background 0.12s; border-bottom:1px solid var(--border);
+  }
+  .chat-list-item:last-child { border-bottom:none; }
+  .chat-list-item:active { background:var(--surface3); }
+  .chat-list-avatar {
+    width:44px; height:44px; border-radius:14px; flex-shrink:0;
+    background:var(--bg); box-shadow:var(--sh-out-sm);
+    display:flex; align-items:center; justify-content:center;
+    font-size:14px; font-weight:700; color:var(--text2);
+  }
+  .chat-list-info { flex:1; min-width:0; }
+  .chat-list-name { font-size:14px; font-weight:700; color:var(--text); margin-bottom:3px; }
+  .chat-list-preview { font-size:12px; color:var(--text2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .chat-list-meta { display:flex; flex-direction:column; align-items:flex-end; gap:5px; }
+  .chat-list-time { font-size:10px; color:var(--text3); }
+  .chat-unread-dot {
+    width:8px; height:8px; border-radius:50%; background:var(--red);
+    box-shadow:0 0 6px rgba(196,92,74,0.5);
+  }
+
+  /* ── 모르겠어요 바텀 시트 ── */
+  .hw-q-overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:800;
+    opacity:0; pointer-events:none; transition:opacity 0.25s ease;
+  }
+  .hw-q-overlay.open { opacity:1; pointer-events:all; }
+  .hw-q-sheet {
+    position:fixed; bottom:0; left:0; right:0; z-index:801;
+    background:var(--bg); border-radius:2rem 2rem 0 0;
+    box-shadow:0 -8px 40px rgba(0,0,0,0.25);
+    transform:translateY(100%);
+    transition:transform 0.32s cubic-bezier(0.4,0,0.2,1);
+    max-height:82vh; display:flex; flex-direction:column;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .hw-q-sheet.open { transform:translateY(0); }
+  .hw-q-handle {
+    width:36px; height:4px; border-radius:2px; background:var(--border2);
+    margin:12px auto 0; flex-shrink:0;
+  }
+  .hw-q-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 20px 12px; flex-shrink:0;
+    border-bottom:0.5px solid var(--border);
+  }
+  .hw-q-title { font-size:15px; font-weight:700; color:var(--text); }
+  .hw-q-close {
+    background:transparent; border:none; color:var(--text2);
+    font-size:20px; line-height:1; cursor:pointer; padding:2px 4px;
+  }
+  .hw-q-list { overflow-y:auto; flex:1; padding:8px 0; }
+  .hw-q-list::-webkit-scrollbar { display:none; }
+  .hw-q-item {
+    display:flex; align-items:center; gap:14px;
+    padding:15px 20px; cursor:pointer;
+    transition:background 0.12s;
+    border-bottom:0.5px solid var(--border);
+  }
+  .hw-q-item:last-child { border-bottom:none; }
+  .hw-q-item:active { background:var(--surface3); }
+  .hw-q-item-icon {
+    width:40px; height:40px; border-radius:13px; flex-shrink:0;
+    box-shadow:var(--sh-in);
+    display:flex; align-items:center; justify-content:center; font-size:18px;
+  }
+  .hw-q-item-text { font-size:14px; font-weight:600; color:var(--text); flex:1; }
+  .hw-q-compose { padding:16px 20px 20px; flex-shrink:0; }
+  .hw-q-category-badge {
+    display:inline-flex; align-items:center; gap:7px;
+    background:rgba(129,140,248,0.15); border:0.5px solid rgba(129,140,248,0.4);
+    border-radius:10px; padding:7px 12px; margin-bottom:12px;
+    font-size:13px; font-weight:600; color:#818cf8; width:100%;
+  }
+  .hw-q-category-change {
+    margin-left:auto; font-size:11px; color:var(--text3);
+    background:transparent; border:none; cursor:pointer; padding:2px 4px;
+    font-weight:500;
+  }
+  .hw-q-textarea {
+    width:100%; resize:none; border-radius:16px;
+    font-size:14px; padding:12px 14px; line-height:1.5; min-height:88px;
+    background:var(--bg); color:var(--text); border:none;
+    box-shadow:var(--sh-in); outline:none; font-family:inherit;
+  }
+  .hw-q-send-btn {
+    margin-top:12px; width:100%; padding:15px;
+    background:linear-gradient(135deg,#d4b05c,#C9A84C);
+    border:none; border-radius:16px; color:#fff;
+    font-size:14px; font-weight:700; cursor:pointer;
+    box-shadow:var(--sh-out-sm);
+    transition:box-shadow 0.15s, transform 0.15s;
+  }
+  .hw-q-send-btn:active { box-shadow:var(--sh-in-sm); transform:scale(0.97); }
+  .hw-q-empty {
+    padding:36px 20px; text-align:center;
+    font-size:13px; color:var(--text2); line-height:1.8;
+  }
+  /* 채팅 버블 내 카테고리 뱃지 */
+  .chat-hw-badge {
+    display:inline-flex; align-items:center; gap:6px;
+    background:rgba(129,140,248,0.18); border-radius:8px;
+    padding:5px 10px; margin-bottom:6px;
+    font-size:12px; font-weight:600; color:#818cf8;
+    max-width:100%; word-break:break-word;
+  }
+
+  /* ── 강사 뉴모피즘 대시보드 ── */
+  #sc-teacher { height: 100dvh; height: 100vh; overflow: hidden; }
+
+  /* 뉴모피즘 헬퍼 (라이트 모드 기준 — 다크는 변수로 자동 처리) */
+  .td-flat {
+    background: var(--bg);
+    box-shadow: var(--sh-out);
+  }
+  .td-flat-sm {
+    background: var(--bg);
+    box-shadow: var(--sh-out-sm);
+  }
+  .td-pressed {
+    background: var(--bg);
+    box-shadow: var(--sh-in);
+  }
+  .td-pressed-sm {
+    background: var(--bg);
+    box-shadow: var(--sh-in-sm);
+  }
+
+  /* ── 모바일 레이아웃 (< 768px) ── */
+  #td-mobile {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
+  }
+  #td-desktop { display: none; }
+
+  .td-m-header {
+    padding: 56px 24px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .td-m-title { font-size: 22px; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
+  .td-m-sub { font-size: 10px; font-weight: 700; color: var(--text2); margin-top: 2px; letter-spacing: 0.08em; text-transform: uppercase; }
+
+  .td-m-icon-btn {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    border: none;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text2); font-size: 18px;
+    position: relative;
+    background: var(--bg);
+    box-shadow: var(--sh-out-sm);
+    flex-shrink: 0;
+  }
+  .td-m-icon-btn .td-dot {
+    position: absolute; top: 10px; right: 10px;
+    width: 7px; height: 7px;
+    background: #34d399; border-radius: 50%;
+    border: 2px solid var(--bg);
+  }
+
+  .td-m-scroll {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: none;
+    padding: 0 20px 100px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .td-m-scroll::-webkit-scrollbar { display: none; }
+
+  /* 가로 스크롤 스탯 카드 */
+  .td-stat-row {
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    margin: 0 -20px;
+    padding: 6px 20px;
+  }
+  .td-stat-row::-webkit-scrollbar { display: none; }
+  .td-stat-card {
+    min-width: 148px;
+    border-radius: 24px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    flex-shrink: 0;
+    background: var(--bg);
+    box-shadow: var(--sh-out);
+    border: 1px solid var(--border2);
+  }
+  .td-stat-icon {
+    width: 32px; height: 32px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    background: var(--bg);
+    box-shadow: var(--sh-in-sm);
+  }
+  .td-stat-label { font-size: 9px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 2px; }
+  .td-stat-val { font-size: 20px; font-weight: 800; color: var(--text); }
+
+  /* 주간 차트 카드 */
+  .td-card {
+    border-radius: 28px;
+    padding: 22px;
+    background: var(--bg);
+    box-shadow: var(--sh-out);
+    border: 1px solid var(--border2);
+  }
+  .td-card-title { font-size: 14px; font-weight: 700; color: var(--text); }
+  .td-card-sub { font-size: 10px; font-weight: 600; color: var(--text2); margin-top: 2px; }
+  .td-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+
+  .td-bar-chart {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    height: 100px;
+    padding: 0 4px;
+    gap: 6px;
+  }
+  .td-bar-col { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1; }
+  .td-bar-track {
+    width: 8px;
+    border-radius: 10px;
+    background: var(--bg);
+    box-shadow: var(--sh-in-sm);
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+  }
+  .td-bar-fill {
+    width: 100%;
+    background: linear-gradient(to top, #818cf8, #a78bfa);
+    border-radius: 10px;
+    transition: height 0.4s ease;
+  }
+  .td-bar-fill.today { background: linear-gradient(to top, #818cf8, #c084fc); box-shadow: 0 0 8px rgba(129,140,248,0.4); }
+  .td-bar-label { font-size: 8px; font-weight: 700; color: var(--text2); }
+  .td-bar-label.today { color: #818cf8; }
+
+  /* 목표 링 카드 (모바일) */
+  .td-goal-row { display: flex; align-items: center; gap: 20px; }
+  .td-goal-details { flex: 1; }
+  .td-goal-item { display: flex; justify-content: space-between; align-items: center; font-size: 10px; font-weight: 700; margin-bottom: 8px; color: var(--text2); }
+  .td-goal-item span:last-child { color: #818cf8; }
+  .td-goal-bar { height: 5px; border-radius: 10px; background: var(--bg); box-shadow: var(--sh-in-sm); overflow: hidden; margin-bottom: 10px; }
+  .td-goal-bar-fill { height: 100%; background: #818cf8; border-radius: 10px; }
+
+  /* 레슨생 리스트 카드 */
+  .td-student-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .td-student-item:last-child { border-bottom: none; }
+  .td-student-avatar {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: var(--bg);
+    box-shadow: var(--sh-out-sm);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: var(--text2);
+    flex-shrink: 0;
+  }
+  .td-student-name { font-size: 13px; font-weight: 700; color: var(--text); }
+  .td-student-level { font-size: 10px; color: var(--text2); margin-top: 1px; }
+  .td-student-week { font-size: 10px; font-weight: 700; color: #818cf8; margin-left: auto; }
+
+  /* 메시지 카드 */
+  .td-msg-item { display: flex; align-items: flex-start; gap: 10px; }
+  .td-msg-avatar {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: var(--bg);
+    box-shadow: var(--sh-out-sm);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: var(--text2);
+    flex-shrink: 0;
+  }
+  .td-msg-bubble {
+    flex: 1;
+    padding: 12px 14px;
+    border-radius: 16px;
+    border-top-left-radius: 4px;
+    background: var(--bg);
+    box-shadow: var(--sh-in-sm);
+  }
+  .td-msg-name { font-size: 11px; font-weight: 700; color: var(--text); }
+  .td-msg-time { font-size: 8px; color: var(--text2); }
+  .td-msg-text { font-size: 10px; color: var(--text2); margin-top: 4px; line-height: 1.5; }
+
+  /* 모바일 바텀 네비 */
+  .td-m-nav {
+    position: absolute; bottom: 20px; left: 20px; right: 20px;
+    height: 60px;
+    border-radius: 20px;
+    background: var(--bg);
+    box-shadow: var(--sh-out);
+    border: 1px solid var(--border2);
+    display: flex; align-items: center; justify-content: space-around;
+    padding: 0 8px;
+    z-index: 50;
+  }
+  .td-m-nav-btn {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    border: none;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    background: transparent;
+    color: var(--text2);
+    cursor: pointer;
+  }
+  .td-m-nav-btn.active {
+    background: var(--bg);
+    box-shadow: var(--sh-in-sm);
+    color: #818cf8;
+  }
+  .td-m-nav-center {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, #818cf8, #a78bfa);
+    box-shadow: var(--sh-out-sm), 0 0 12px rgba(129,140,248,0.35);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 20px;
+    margin-top: -20px;
+    cursor: pointer;
+  }
+
+  /* ── 데스크탑 레이아웃 (≥ 768px) ── */
+  @media (min-width: 768px) {
+    #td-mobile { display: none; }
+    #td-desktop {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      padding: 24px;
+      background: var(--bg);
+    }
+
+    .td-sidebar {
+      width: 80px;
+      height: 100%;
+      border-radius: 2.5rem;
+      background: var(--bg);
+      box-shadow: var(--sh-out);
+      border: 1px solid var(--border2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 28px 0;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 10;
+    }
+    .td-logo-btn {
+      width: 52px; height: 52px;
+      border-radius: 16px;
+      background: var(--bg);
+      box-shadow: var(--sh-in);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 32px;
+      flex-shrink: 0;
+    }
+    .td-logo-inner {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #818cf8, #a78bfa);
+      display: flex; align-items: center; justify-content: center;
+      transform: rotate(12deg);
+    }
+    .td-sidebar-nav {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      width: 100%;
+      padding: 0 16px;
+    }
+    .td-sidebar-btn {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 14px;
+      border: none;
+      background: var(--bg);
+      box-shadow: var(--sh-out-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      color: var(--text2);
+      cursor: pointer;
+      transition: color 0.2s, box-shadow 0.2s;
+      position: relative;
+    }
+    .td-sidebar-btn:active { box-shadow: var(--sh-in-sm); }
+    .td-sidebar-btn.active {
+      box-shadow: var(--sh-in);
+      color: #818cf8;
+    }
+    .td-sidebar-btn .td-active-bar {
+      position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+      width: 4px; height: 28px;
+      background: #818cf8; border-radius: 0 4px 4px 0;
+    }
+    .td-sidebar-btn .td-dot-badge {
+      position: absolute; top: 10px; right: 10px;
+      width: 9px; height: 9px;
+      background: #f87171; border-radius: 50%;
+      border: 2px solid var(--bg);
+    }
+    .td-sidebar-bottom {
+      display: flex; flex-direction: column; gap: 14px;
+      width: 100%; padding: 0 16px;
+      margin-top: auto;
+    }
+
+    .td-main {
+      flex: 1;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .td-d-header {
+      height: 68px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 4px;
+    }
+    .td-d-title { font-size: 26px; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
+    .td-d-sub { font-size: 13px; color: var(--text2); margin-top: 3px; }
+    .td-d-search {
+      flex: 0 0 320px;
+      height: 50px;
+      border-radius: 16px;
+      background: var(--bg);
+      box-shadow: var(--sh-in);
+      display: flex; align-items: center; padding: 0 18px; gap: 10px;
+    }
+    .td-d-search input {
+      background: transparent; border: none; outline: none;
+      font-size: 13px; color: var(--text); flex: 1;
+      box-shadow: none; padding: 0; border-radius: 0;
+    }
+    .td-d-search input::placeholder { color: var(--text3); }
+    .td-d-actions { display: flex; align-items: center; gap: 12px; }
+    .td-d-action-btn {
+      width: 50px; height: 50px;
+      border-radius: 14px; border: none;
+      background: var(--bg); box-shadow: var(--sh-out-sm);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text2); font-size: 18px; cursor: pointer;
+      position: relative;
+    }
+    .td-d-action-btn .td-dot { position: absolute; top: 11px; right: 11px; width: 9px; height: 9px; background: #34d399; border-radius: 50%; border: 2px solid var(--bg); }
+    .td-d-new-btn {
+      height: 50px; padding: 0 20px;
+      border-radius: 14px; border: none;
+      background: var(--bg); box-shadow: var(--sh-out-sm);
+      display: flex; align-items: center; gap: 8px;
+      color: var(--text); font-size: 13px; font-weight: 700;
+      cursor: pointer;
+    }
+
+    .td-d-body {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      display: flex; flex-direction: column; gap: 20px;
+      padding-right: 4px;
+      padding-bottom: 20px;
+    }
+    .td-d-body::-webkit-scrollbar { width: 5px; }
+    .td-d-body::-webkit-scrollbar-thumb { background: var(--text3); border-radius: 10px; }
+
+    .td-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .td-d-stat-card {
+      border-radius: 24px; padding: 24px;
+      display: flex; flex-direction: column; gap: 16px;
+      background: var(--bg); box-shadow: var(--sh-out);
+      border: 1px solid var(--border2);
+    }
+    .td-d-stat-icon {
+      width: 38px; height: 38px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; background: var(--bg); box-shadow: var(--sh-in-sm);
+    }
+    .td-d-stat-top { display: flex; justify-content: space-between; align-items: flex-start; }
+    .td-d-stat-badge {
+      padding: 4px 10px; border-radius: 10px;
+      font-size: 11px; font-weight: 700;
+      background: rgba(255,255,255,0.3);
+      display: flex; align-items: center; gap: 3px;
+    }
+    .td-d-stat-badge.up { color: #059669; }
+    .td-d-stat-badge.down { color: #e11d48; }
+    .td-d-stat-badge.neu { color: var(--text2); }
+    .td-d-stat-label { font-size: 11px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+    .td-d-stat-val { font-size: 28px; font-weight: 800; color: var(--text); }
+
+    .td-mid-grid { display: grid; grid-template-columns: 8fr 4fr; gap: 16px; }
+    .td-bot-grid { display: grid; grid-template-columns: 6fr 6fr; gap: 16px; }
+
+    .td-d-card {
+      border-radius: 2.5rem; padding: 28px;
+      background: var(--bg); box-shadow: var(--sh-out);
+      border: 1px solid var(--border2);
+      display: flex; flex-direction: column;
+    }
+    .td-d-card-title { font-size: 16px; font-weight: 700; color: var(--text); }
+    .td-d-card-sub { font-size: 11px; color: var(--text2); margin-top: 3px; }
+    .td-d-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+
+    .td-d-bar-chart {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      gap: 12px; height: 200px; padding: 0 8px;
+    }
+    .td-d-bar-col { display: flex; flex-direction: column; align-items: center; gap: 10px; flex: 1; cursor: pointer; }
+    .td-d-bar-track {
+      width: 100%; border-radius: 12px;
+      background: var(--bg); box-shadow: var(--sh-in-sm);
+      display: flex; align-items: flex-end; overflow: hidden;
+    }
+    .td-d-bar-fill {
+      width: 100%;
+      background: linear-gradient(to top, #818cf8, #a78bfa);
+      border-radius: 12px; transition: height 0.4s ease;
+    }
+    .td-d-bar-fill.today {
+      background: linear-gradient(to top, #818cf8, #c084fc);
+      box-shadow: 0 0 10px rgba(129,140,248,0.4);
+    }
+    .td-d-bar-label { font-size: 11px; font-weight: 700; color: var(--text2); }
+    .td-d-bar-label.today { color: #818cf8; }
+
+    .td-d-ring-wrap { display: flex; flex-direction: column; align-items: center; flex: 1; justify-content: center; margin-bottom: 16px; }
+
+    .td-d-msg-item { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 18px; }
+    .td-d-msg-avatar {
+      width: 40px; height: 40px; border-radius: 12px;
+      background: var(--bg); box-shadow: var(--sh-out-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: var(--text2); flex-shrink: 0;
+      position: relative;
+    }
+    .td-d-msg-online { position: absolute; top: -3px; right: -3px; width: 11px; height: 11px; background: #34d399; border-radius: 50%; border: 2px solid var(--bg); }
+    .td-d-msg-bubble {
+      flex: 1; padding: 14px 16px;
+      border-radius: 18px; border-top-left-radius: 4px;
+      background: var(--bg); box-shadow: var(--sh-in-sm);
+    }
+    .td-d-msg-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+    .td-d-msg-name { font-size: 13px; font-weight: 700; color: var(--text); }
+    .td-d-msg-time { font-size: 10px; color: var(--text2); }
+    .td-d-msg-text { font-size: 12px; color: var(--text2); line-height: 1.6; }
+
+    .td-d-file-item {
+      display: flex; align-items: center; gap: 16px;
+      padding: 14px; border-radius: 16px; margin-bottom: 10px;
+      background: var(--bg); box-shadow: var(--sh-out-sm);
+      border: 1px solid var(--border);
+      cursor: pointer; transition: box-shadow 0.2s;
+    }
+    .td-d-file-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: var(--bg); box-shadow: var(--sh-in-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .td-d-file-name { font-size: 13px; font-weight: 700; color: var(--text); }
+    .td-d-file-meta { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+    .td-d-stu-item {
+      display: flex; align-items: center; gap: 14px; padding: 10px 0;
+      border-bottom: 1px solid var(--border); cursor: pointer;
+    }
+    .td-d-stu-item:last-child { border-bottom: none; }
+    .td-d-stu-avatar {
+      width: 40px; height: 40px; border-radius: 12px;
+      background: var(--bg); box-shadow: var(--sh-out-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: var(--text2); flex-shrink: 0;
+    }
+    .td-d-stu-name { font-size: 14px; font-weight: 700; color: var(--text); }
+    .td-d-stu-level { font-size: 11px; color: var(--text2); margin-top: 2px; }
+    .td-d-stu-week { font-size: 12px; font-weight: 700; color: #818cf8; margin-left: auto; }
+  }
+
+  /* ── 전역 강사 사이드바 (데스크탑 고정) ── */
+  #td-global-sidebar {
+    display: none;
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    width: 104px;
+    z-index: 10000;
+    flex-direction: column;
+    align-items: center;
+    padding: 28px 0;
+    background: var(--bg);
+    box-shadow: var(--sh-out-lg);
+    border-right: 1px solid var(--border2);
+    border-radius: 0 2.5rem 2.5rem 0;
+  }
+  @media (min-width: 768px) {
+    body.heum-teacher-mode #td-global-sidebar { display: flex; }
+    /* 애니메이션 정착 후: margin-left로 사이드바 공간 확보 */
+    body.heum-teacher-mode [id^="sc-"]:not(.hidden) {
+      margin-left: 104px !important;
+      width: calc(100vw - 104px) !important;
+    }
+  }
+
+  .tdg-logo-btn {
+    width: 56px; height: 56px; border-radius: 18px;
+    background: var(--bg); box-shadow: var(--sh-in);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 32px; flex-shrink: 0;
+  }
+  .tdg-logo-inner {
+    width: 38px; height: 38px; border-radius: 12px;
+    background: linear-gradient(135deg, #818cf8, #a78bfa);
+    display: flex; align-items: center; justify-content: center;
+    transform: rotate(12deg);
+  }
+  .tdg-nav {
+    flex: 1; display: flex; flex-direction: column;
+    gap: 12px; width: 100%; padding: 0 14px;
+  }
+  .tdg-bottom {
+    display: flex; flex-direction: column; gap: 12px;
+    width: 100%; padding: 0 14px; margin-top: auto;
+  }
+  .tdg-btn {
+    width: 100%; aspect-ratio: 1; border-radius: 16px; border: none;
+    background: var(--bg); box-shadow: var(--sh-out-sm);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; color: var(--text2); cursor: pointer;
+    position: relative;
+    transition: color 0.18s, box-shadow 0.18s;
+  }
+  .tdg-btn:active { box-shadow: var(--sh-in-sm); transform: scale(0.96); }
+  .tdg-btn.active { box-shadow: var(--sh-in); color: #818cf8; }
+  .tdg-active-bar {
+    position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+    width: 4px; height: 28px; background: #818cf8;
+    border-radius: 0 4px 4px 0;
+  }
+  .tdg-dot {
+    position: absolute; top: 9px; right: 9px;
+    width: 9px; height: 9px; background: #f87171;
+    border-radius: 50%; border: 2px solid var(--bg);
+  }
 </style>
 </head>
 <body>
+
+<!-- ── 전역 강사 사이드바 (데스크탑 고정) ── -->
+<aside id="td-global-sidebar" aria-label="강사 사이드바">
+  <div class="tdg-logo-btn">
+    <div class="tdg-logo-inner">
+      <i class="ph-bold ph-music-note" style="color:white;font-size:18px;transform:rotate(-12deg);"></i>
+    </div>
+  </div>
+  <nav class="tdg-nav">
+    <button class="tdg-btn active" id="tdg-btn-dashboard" title="대시보드" onclick="goScreen('sc-teacher')">
+      <div class="tdg-active-bar"></div>
+      <i class="ph-fill ph-squares-four"></i>
+    </button>
+    <button class="tdg-btn" id="tdg-btn-schedule" title="스케줄" onclick="goScreen('sc-teacher-schedule-view')">
+      <i class="ph-bold ph-calendar-blank"></i>
+    </button>
+    <button class="tdg-btn" id="tdg-btn-chat" title="채팅" onclick="openTeacherChatList()">
+      <i class="ph-bold ph-chat-circle-text"></i>
+      <span class="tdg-dot" id="tdg-chat-dot" style="display:none;"></span>
+    </button>
+    <button class="tdg-btn" id="tdg-btn-students" title="레슨생 관리" onclick="goScreen('sc-info')">
+      <i class="ph-bold ph-users-three"></i>
+    </button>
+    <button class="tdg-btn" id="tdg-btn-settings" title="비밀번호 변경" onclick="goScreen('sc-change-pw')">
+      <i class="ph-bold ph-gear-six"></i>
+    </button>
+  </nav>
+  <div class="tdg-bottom">
+    <button class="tdg-btn" title="테마" onclick="toggleTeacherTheme()">
+      <i class="ph-bold ph-moon-stars"></i>
+    </button>
+    <button class="tdg-btn" title="로그아웃" onclick="logout()">
+      <i class="ph-bold ph-sign-out"></i>
+    </button>
+  </div>
+</aside>
 
 <!-- 로딩 오버레이 -->
 <div id="loading-overlay" style="display:flex;position:fixed;inset:0;background:#e0e5ec;z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:20px;">
@@ -832,61 +1599,292 @@
 
 <!-- 강사 대시보드 -->
 <div id="sc-teacher" class="hidden">
-  <div class="screen">
-    <div class="topbar">
-      <div class="col">
-        <p style="font-size:20px;letter-spacing:0.12em;font-weight:300;">HEUM</p>
-        <p class="small muted">강사 메뉴</p>
+
+  <!-- 숨겨진 JS 호환 요소들 -->
+  <div style="display:none;">
+    <div id="menu-students"></div>
+    <div id="menu-settings"></div>
+    <span id="t-chat-unread-total"></span>
+    <span id="arrow-students"></span>
+    <span id="arrow-settings"></span>
+    <span id="t-theme-label"></span>
+  </div>
+
+  <!-- ── 모바일 레이아웃 ── -->
+  <div id="td-mobile">
+    <div class="td-m-header">
+      <div>
+        <p class="td-m-title">대시보드</p>
+        <p class="td-m-sub">실시간 현황</p>
       </div>
-      <button class="btn" onclick="logout()">로그아웃</button>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="td-m-icon-btn" onclick="openTeacherChatList()" title="채팅">
+          <i class="ph-bold ph-chat-circle-text"></i>
+          <span class="td-dot" id="td-m-chat-dot" style="display:none;"></span>
+        </button>
+        <button class="td-m-icon-btn" onclick="logout()" title="로그아웃" style="font-size:15px;">
+          <i class="ph-bold ph-sign-out"></i>
+        </button>
+      </div>
     </div>
-    <div class="teacher-body">
-      <div class="menu-section">
-        <div class="menu-header" onclick="goScreen('sc-teacher-schedule-view')" style="cursor:pointer;">
-          <p class="menu-label">스케줄</p>
-          <span class="menu-arrow">›</span>
+
+    <div class="td-m-scroll">
+      <!-- 스탯 카드 -->
+      <div class="td-stat-row" id="td-m-stats">
+        <div class="td-stat-card">
+          <div class="td-stat-icon"><i class="ph-fill ph-users" style="color:#818cf8;"></i></div>
+          <div>
+            <p class="td-stat-label">활성 레슨생</p>
+            <h3 class="td-stat-val" id="td-m-active-count">—</h3>
+          </div>
+        </div>
+        <div class="td-stat-card">
+          <div class="td-stat-icon"><i class="ph-fill ph-check-circle" style="color:#34d399;"></i></div>
+          <div>
+            <p class="td-stat-label">완료율</p>
+            <h3 class="td-stat-val" id="td-m-completion">—</h3>
+          </div>
+        </div>
+        <div class="td-stat-card">
+          <div class="td-stat-icon"><i class="ph-fill ph-calendar-check" style="color:#f59e0b;"></i></div>
+          <div>
+            <p class="td-stat-label">오늘 수업</p>
+            <h3 class="td-stat-val" id="td-m-today-count">—</h3>
+          </div>
         </div>
       </div>
-      <div class="menu-section">
-        <div class="menu-header" onclick="toggleMenu('menu-students','arrow-students')">
-          <p class="menu-label">레슨생 리스트</p>
-          <span class="menu-arrow" id="arrow-students">›</span>
+
+      <!-- 주간 일정 차트 -->
+      <div class="td-card">
+        <div class="td-card-header">
+          <div>
+            <p class="td-card-title">주간 일정</p>
+            <p class="td-card-sub">이번 주 수업 현황</p>
+          </div>
+          <span style="font-size:10px;font-weight:700;color:#818cf8;text-transform:uppercase;">이번 주</span>
         </div>
-        <div class="menu-body" id="menu-students"></div>
+        <div class="td-bar-chart" id="td-m-bar-chart">
+          <!-- JS로 렌더 -->
+        </div>
       </div>
-      <div class="menu-section">
-        <div class="menu-header" onclick="toggleMenu('menu-settings','arrow-settings')">
-          <p class="menu-label">환경설정</p>
-          <span class="menu-arrow" id="arrow-settings">›</span>
+
+      <!-- 월 목표 -->
+      <div class="td-card">
+        <div class="td-card-header">
+          <p class="td-card-title">월 목표</p>
         </div>
-        <div class="menu-body" id="menu-settings">
-          <div class="menu-item" onclick="goScreen('sc-info')">
-            <div class="item-left"><div class="item-dot item-dot-gray"></div><p class="item-label">레슨생 정보 관리</p></div>
-            <span class="item-arrow">›</span>
-          </div>
-          <div class="menu-item" onclick="goScreen('sc-change-pw')">
-            <div class="item-left"><div class="item-dot item-dot-gray"></div><p class="item-label">비밀번호 변경</p></div>
-            <span class="item-arrow">›</span>
-          </div>
-          <div class="menu-item" onclick="exportData()">
-            <div class="item-left"><div class="item-dot item-dot-gray"></div><p class="item-label">데이터 내보내기</p></div>
-            <span class="item-arrow">↓</span>
-          </div>
-          <div class="menu-item" onclick="openImportModal()">
-            <div class="item-left"><div class="item-dot item-dot-gray"></div><p class="item-label">데이터 가져오기</p></div>
-            <span class="item-arrow">↑</span>
-          </div>
-          <div class="menu-item" onclick="toggleTeacherTheme()" style="cursor:pointer;">
-            <div class="item-left"><div class="item-dot item-dot-gray"></div><p class="item-label">테마</p></div>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span id="t-theme-label" style="font-size:12px;color:var(--text2);"></span>
-              <span class="item-arrow">›</span>
+        <div class="td-goal-row">
+          <div style="position:relative;width:90px;height:90px;flex-shrink:0;">
+            <svg width="90" height="90" style="transform:rotate(-90deg);">
+              <circle cx="45" cy="45" r="36" fill="transparent" stroke="var(--bg)" stroke-width="8"
+                style="filter:drop-shadow(1px 1px 2px var(--shadow-dark,rgba(163,177,198,0.5)));"/>
+              <circle cx="45" cy="45" r="36" fill="transparent" stroke="#818cf8" stroke-width="8"
+                stroke-dasharray="226" id="td-m-ring" stroke-dashoffset="56" stroke-linecap="round"
+                style="filter:drop-shadow(0 0 6px rgba(129,140,248,0.4));"/>
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+              <span style="font-size:14px;font-weight:800;color:var(--text);" id="td-m-ring-pct">—</span>
             </div>
           </div>
+          <div class="td-goal-details">
+            <div class="td-goal-item"><span>초급</span><span id="td-m-goal-beg">—</span></div>
+            <div class="td-goal-bar"><div class="td-goal-bar-fill" id="td-m-bar-beg" style="width:0%;"></div></div>
+            <div class="td-goal-item"><span>중급</span><span id="td-m-goal-int">—</span></div>
+            <div class="td-goal-bar"><div class="td-goal-bar-fill" id="td-m-bar-int" style="width:0%;background:#a78bfa;"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 레슨생 리스트 -->
+      <div class="td-card">
+        <div class="td-card-header">
+          <p class="td-card-title">레슨생 리스트</p>
+          <button style="font-size:10px;font-weight:700;color:#818cf8;background:none;border:none;cursor:pointer;text-transform:uppercase;" onclick="goScreen('sc-info')">추가</button>
+        </div>
+        <div id="td-m-student-list">
+          <p style="font-size:12px;color:var(--text2);text-align:center;padding:12px 0;">로딩 중...</p>
+        </div>
+      </div>
+
+      <!-- 메시지 -->
+      <div class="td-card">
+        <div class="td-card-header">
+          <p class="td-card-title">레슨생 메시지</p>
+          <button class="td-m-icon-btn" style="width:32px;height:32px;border-radius:10px;font-size:14px;" onclick="openTeacherChatList()">
+            <i class="ph-bold ph-arrow-right"></i>
+          </button>
+        </div>
+        <div id="td-m-messages">
+          <p style="font-size:12px;color:var(--text2);">메시지를 불러오는 중...</p>
         </div>
       </div>
     </div>
+
+    <!-- 바텀 네비 -->
+    <nav class="td-m-nav">
+      <button class="td-m-nav-btn active"><i class="ph-fill ph-squares-four"></i></button>
+      <button class="td-m-nav-btn" onclick="goScreen('sc-teacher-schedule-view')"><i class="ph-bold ph-calendar-blank"></i></button>
+      <button class="td-m-nav-center" onclick="goScreen('sc-info')"><i class="ph-bold ph-plus"></i></button>
+      <button class="td-m-nav-btn" onclick="openTeacherChatList()"><i class="ph-bold ph-chat-circle-text"></i></button>
+      <button class="td-m-nav-btn" onclick="toggleTeacherTheme()"><i class="ph-bold ph-gear-six"></i></button>
+    </nav>
   </div>
+
+  <!-- ── 데스크탑 레이아웃 ── -->
+  <div id="td-desktop">
+    <main class="td-main">
+      <!-- 헤더 -->
+      <header class="td-d-header">
+        <div>
+          <p class="td-d-title">대시보드</p>
+          <p class="td-d-sub">모든 레슨 현황의 실시간 업데이트</p>
+        </div>
+        <div class="td-d-actions">
+          <div class="td-d-search">
+            <i class="ph-bold ph-magnifying-glass" style="color:var(--text2);font-size:16px;"></i>
+            <input type="text" placeholder="레슨생 검색..." readonly onclick="goScreen('sc-info')">
+          </div>
+          <button class="td-d-action-btn" onclick="openTeacherChatList()">
+            <i class="ph-bold ph-bell-simple"></i>
+            <span class="td-dot" id="td-d-bell-dot" style="display:none;"></span>
+          </button>
+          <button class="td-d-new-btn" onclick="goScreen('sc-info')">
+            <i class="ph-bold ph-plus" style="color:#818cf8;"></i>
+            레슨생 추가
+          </button>
+        </div>
+      </header>
+
+      <!-- 바디 -->
+      <div class="td-d-body">
+        <!-- 스탯 그리드 -->
+        <section class="td-stat-grid">
+          <div class="td-d-stat-card">
+            <div class="td-d-stat-top">
+              <div class="td-d-stat-icon"><i class="ph-fill ph-users" style="color:#818cf8;"></i></div>
+              <span class="td-d-stat-badge up"><i class="ph-bold ph-caret-up"></i> <span id="td-d-active-trend">—</span></span>
+            </div>
+            <div>
+              <p class="td-d-stat-label">활성 레슨생</p>
+              <h3 class="td-d-stat-val"><span id="td-d-active-count">—</span><span style="font-size:16px;color:var(--text2);font-weight:400;margin-left:2px;">명</span></h3>
+            </div>
+          </div>
+          <div class="td-d-stat-card">
+            <div class="td-d-stat-top">
+              <div class="td-d-stat-icon"><i class="ph-fill ph-calendar-check" style="color:#f59e0b;"></i></div>
+              <span class="td-d-stat-badge up"><i class="ph-bold ph-caret-up"></i> 이번 주</span>
+            </div>
+            <div>
+              <p class="td-d-stat-label">오늘 수업</p>
+              <h3 class="td-d-stat-val"><span id="td-d-today-count">—</span><span style="font-size:16px;color:var(--text2);font-weight:400;margin-left:2px;">명</span></h3>
+            </div>
+          </div>
+          <div class="td-d-stat-card">
+            <div class="td-d-stat-top">
+              <div class="td-d-stat-icon"><i class="ph-fill ph-check-circle" style="color:#34d399;"></i></div>
+              <span class="td-d-stat-badge neu"><i class="ph-bold ph-minus"></i> 동일</span>
+            </div>
+            <div>
+              <p class="td-d-stat-label">숙제 완료율</p>
+              <h3 class="td-d-stat-val"><span id="td-d-completion">—</span><span style="font-size:16px;color:var(--text2);font-weight:400;margin-left:2px;">%</span></h3>
+            </div>
+          </div>
+          <div class="td-d-stat-card">
+            <div class="td-d-stat-top">
+              <div class="td-d-stat-icon"><i class="ph-fill ph-music-notes" style="color:#f472b6;"></i></div>
+              <span class="td-d-stat-badge up"><i class="ph-bold ph-caret-up"></i> 이번 달</span>
+            </div>
+            <div>
+              <p class="td-d-stat-label">총 곡 수</p>
+              <h3 class="td-d-stat-val"><span id="td-d-songs-count">—</span><span style="font-size:16px;color:var(--text2);font-weight:400;margin-left:2px;">곡</span></h3>
+            </div>
+          </div>
+        </section>
+
+        <!-- 주간 차트 + 목표 링 -->
+        <section class="td-mid-grid">
+          <div class="td-d-card">
+            <div class="td-d-card-header">
+              <div>
+                <p class="td-d-card-title">이번 주 일정</p>
+                <p class="td-d-card-sub">수업 횟수 그래프</p>
+              </div>
+              <div style="display:flex;padding:6px;border-radius:14px;background:var(--bg);box-shadow:var(--sh-in-sm);">
+                <span style="padding:6px 16px;border-radius:10px;font-size:12px;font-weight:700;background:var(--bg);box-shadow:var(--sh-out-sm);color:var(--text);">주간</span>
+              </div>
+            </div>
+            <div class="td-d-bar-chart" id="td-d-bar-chart"></div>
+          </div>
+          <div class="td-d-card">
+            <div class="td-d-card-header">
+              <p class="td-d-card-title">월 목표 기준</p>
+              <button style="width:36px;height:36px;border-radius:10px;border:none;background:var(--bg);box-shadow:var(--sh-out-sm);display:flex;align-items:center;justify-content:center;color:var(--text2);cursor:pointer;">
+                <i class="ph-bold ph-dots-three"></i>
+              </button>
+            </div>
+            <div class="td-d-ring-wrap">
+              <div style="position:relative;width:160px;height:160px;">
+                <svg width="160" height="160" style="transform:rotate(-90deg);">
+                  <circle cx="80" cy="80" r="66" fill="transparent" stroke="var(--bg)" stroke-width="14"
+                    style="filter:drop-shadow(2px 2px 4px var(--shadow-dark,rgba(163,177,198,0.5)));"/>
+                  <circle cx="80" cy="80" r="66" fill="transparent" stroke="#818cf8" stroke-width="14"
+                    stroke-dasharray="415" id="td-d-ring" stroke-dashoffset="104" stroke-linecap="round"
+                    style="filter:drop-shadow(0 0 10px rgba(129,140,248,0.4));"/>
+                  <circle cx="80" cy="80" r="66" fill="transparent" stroke="#f472b6" stroke-width="14"
+                    stroke-dasharray="415" id="td-d-ring2" stroke-dashoffset="374" stroke-linecap="round"/>
+                </svg>
+                <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;width:110px;height:110px;border-radius:50%;margin:auto;background:var(--bg);box-shadow:var(--sh-out-sm);top:50%;left:50%;transform:translate(-50%,-50%);">
+                  <span style="font-size:22px;font-weight:800;color:var(--text);" id="td-d-ring-pct">—</span>
+                  <span style="font-size:9px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px;">달성률</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:14px;background:var(--bg);box-shadow:var(--sh-in-sm);margin-bottom:10px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <span style="width:12px;height:12px;border-radius:50%;background:#818cf8;display:inline-block;"></span>
+                  <span style="font-size:13px;font-weight:700;color:var(--text);">초급</span>
+                </div>
+                <span style="font-size:13px;font-weight:700;color:var(--text);" id="td-d-beg-count">—</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:14px;background:var(--bg);box-shadow:var(--sh-in-sm);">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <span style="width:12px;height:12px;border-radius:50%;background:#f472b6;display:inline-block;"></span>
+                  <span style="font-size:13px;font-weight:700;color:var(--text);">중급/고급</span>
+                </div>
+                <span style="font-size:13px;font-weight:700;color:var(--text);" id="td-d-adv-count">—</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 레슨생 목록 + 메시지 -->
+        <section class="td-bot-grid">
+          <div class="td-d-card">
+            <div class="td-d-card-header">
+              <p class="td-d-card-title">레슨생 리스트</p>
+              <button style="font-size:12px;font-weight:700;color:#818cf8;background:none;border:none;cursor:pointer;text-transform:uppercase;letter-spacing:0.05em;" onclick="goScreen('sc-info')">모두 보기</button>
+            </div>
+            <div id="td-d-student-list">
+              <p style="font-size:13px;color:var(--text2);text-align:center;padding:16px 0;">로딩 중...</p>
+            </div>
+          </div>
+          <div class="td-d-card">
+            <div class="td-d-card-header">
+              <p class="td-d-card-title">레슨생 메시지</p>
+              <button style="width:36px;height:36px;border-radius:10px;border:none;background:var(--bg);box-shadow:var(--sh-out-sm);display:flex;align-items:center;justify-content:center;color:var(--text2);cursor:pointer;" onclick="openTeacherChatList()">
+                <i class="ph-bold ph-arrow-right"></i>
+              </button>
+            </div>
+            <div id="td-d-messages">
+              <p style="font-size:13px;color:var(--text2);">메시지를 불러오는 중...</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
 </div>
 
 <!-- 비밀번호 변경 -->
@@ -1036,11 +2034,11 @@
           <span class="s-nav-label">숙제</span>
         </button>
 
-        <!-- 채팅 (기능 없음) -->
-        <button class="neu-convex neu-button"
-          style="width:50px;height:50px;border-radius:50%;border:4px solid var(--bg);display:flex;align-items:center;justify-content:center;cursor:default;opacity:0.5;"
-          disabled>
+        <!-- 채팅 -->
+        <button class="neu-convex neu-button" onclick="openStudentChat()"
+          style="width:50px;height:50px;border-radius:50%;border:4px solid var(--bg);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;">
           <i class="ph-bold ph-chat" style="font-size:20px;color:var(--text2);"></i>
+          <span id="s-nav-chat-badge" class="chat-unread-badge hidden"></span>
         </button>
 
         <!-- 곡 목록 -->
@@ -1187,6 +2185,10 @@ function _fixStudent(st){
 }
 
 window.addEventListener('DOMContentLoaded', async ()=>{
+  // 다크 저장값 → 라이트 일괄 마이그레이션
+  if (localStorage.getItem('heum_theme') === 'dark') {
+    localStorage.setItem('heum_theme', 'light');
+  }
   // 저장된 테마 즉시 적용
   applyTheme(localStorage.getItem('heum_theme') || 'light');
   try {
@@ -1270,6 +2272,7 @@ const _navHistory = [];
 const _ANIM = 300;
 
 function _initScreen(id) {
+  if (id === 'sc-teacher-chat-list') _renderTeacherChatList();
   if (id === 'sc-teacher-pw') initTeacherPw();
   if (id === 'sc-student-select') initStudentLoginForm();
   if (id === 'sc-teacher') { _teacherCurPage = 0; renderTeacherMenu(); }
@@ -1302,18 +2305,27 @@ function goScreen(id, _back) {
   _initScreen(id);
   if (!isBack && cur) _navHistory.push(cur.id);
 
+  // 전역 사이드바 활성 버튼 업데이트
+  _tdgUpdateActiveBtn(id);
+
+  // teacher-mode 데스크탑: 애니메이션 중 position:fixed + left 오프셋
+  // 애니메이션 완료 후 removeAttribute('style') 되면 CSS margin-left 규칙이 담당
+  const isTDesktop = document.body.classList.contains('heum-teacher-mode') && window.innerWidth >= 768;
+  const sideW = isTDesktop ? 104 : 0;
+  const insetStyle = sideW
+    ? `position:fixed;top:0;left:${sideW}px;right:0;bottom:0;`
+    : `position:fixed;inset:0;`;
+
   document.body.style.pointerEvents = 'none';
 
   if (cur) {
-    /* Forward: next slides on top (201) over cur (199)
-       Back:    cur slides out on top (201), next emerges below (199) */
     const zCur  = isBack ? 201 : 199;
     const zNext = isBack ? 199 : 201;
-    cur.style.cssText  = `position:fixed;inset:0;z-index:${zCur};overflow-y:auto;-webkit-overflow-scrolling:touch;`;
-    next.style.cssText = `position:fixed;inset:0;z-index:${zNext};overflow-y:auto;-webkit-overflow-scrolling:touch;`;
+    cur.style.cssText  = `${insetStyle}z-index:${zCur};overflow-y:auto;-webkit-overflow-scrolling:touch;`;
+    next.style.cssText = `${insetStyle}z-index:${zNext};overflow-y:auto;-webkit-overflow-scrolling:touch;`;
     cur.classList.add(isBack ? 'sc-out-bwd' : 'sc-out-fwd');
   } else {
-    next.style.cssText = 'position:fixed;inset:0;z-index:201;overflow-y:auto;-webkit-overflow-scrolling:touch;';
+    next.style.cssText = `${insetStyle}z-index:201;overflow-y:auto;-webkit-overflow-scrolling:touch;`;
   }
   next.classList.remove('hidden');
   next.classList.add(isBack ? 'sc-in-bwd' : 'sc-in-fwd');
@@ -1325,6 +2337,7 @@ function goScreen(id, _back) {
       cur.removeAttribute('style');
     }
     next.classList.remove('sc-in-fwd', 'sc-in-bwd');
+    // 인라인 style 제거 → CSS margin-left:104px 규칙이 자동 적용됨
     next.removeAttribute('style');
     document.body.style.pointerEvents = '';
   }, _ANIM);
@@ -1334,8 +2347,29 @@ function goBack() {
   if (_navHistory.length === 0) return;
   goScreen(_navHistory.pop(), true);
 }
+
+// ── 전역 사이드바 활성 버튼 동기화 ──────────────────────────
+const _TDG_BTN_MAP = {
+  'sc-teacher':               'tdg-btn-dashboard',
+  'sc-teacher-schedule-view': 'tdg-btn-schedule',
+  'sc-teacher-chat-list':     'tdg-btn-chat',
+  'sc-teacher-chat':          'tdg-btn-chat',
+  'sc-info':                  'tdg-btn-students',
+  'sc-detail':                'tdg-btn-students',
+  'sc-change-pw':             'tdg-btn-settings',
+};
+function _tdgUpdateActiveBtn(screenId) {
+  document.querySelectorAll('.tdg-btn').forEach(btn => btn.classList.remove('active'));
+  const target = _TDG_BTN_MAP[screenId];
+  if (target) {
+    const el = document.getElementById(target);
+    if (el) el.classList.add('active');
+  }
+}
+
 function logout() {
   _navHistory.length = 0;
+  document.body.classList.remove('heum-teacher-mode');
   document.querySelectorAll('[id^="sc-"]').forEach(el => el.classList.add('hidden'));
   document.getElementById('sc-main').classList.remove('hidden');
 }
@@ -1372,7 +2406,7 @@ function initTeacherPw() {
     showErr('tpw-err', `(이전 오류 ${fails}/${MAX_FAILS}회)`);
   }
   function handleTeacherPin(pin) {
-    if (pin === getTeacherPw()) { clearLockOut('teacher'); goScreen('sc-teacher'); }
+    if (pin === getTeacherPw()) { clearLockOut('teacher'); document.body.classList.add('heum-teacher-mode'); goScreen('sc-teacher'); }
     else {
       const n = addLockFail('teacher');
       if (n >= MAX_FAILS) {
@@ -1426,7 +2460,9 @@ function renderTeacherMenu() {
   ['arrow-students','arrow-settings'].forEach(id=>document.getElementById(id).classList.remove('open'));
   // 테마 라벨 동기화
   const tLabel = document.getElementById('t-theme-label');
-  if (tLabel) tLabel.textContent = (localStorage.getItem('heum_theme')||'dark') === 'light' ? '라이트' : '다크';
+  if (tLabel) tLabel.textContent = (localStorage.getItem('heum_theme')||'light') === 'light' ? '라이트' : '다크';
+  // 채팅 미읽 배지 업데이트
+  _updateTeacherChatBadge();
   const todayStr = new Date().toISOString().slice(0,10);
 
   // 정렬: 오늘 수업 있는 수강생 최상단, 나머지는 주차 오름차순
@@ -1478,6 +2514,230 @@ function renderTeacherMenu() {
       <div class="item-right">${weekBadge}<span class="item-arrow">›</span></div>
     </div>`;
   }).join('') || '<div style="padding:14px 18px;"><p class="small muted">등록된 레슨생이 없습니다</p></div>';
+
+  // 새 뉴모피즘 대시보드 렌더
+  renderTeacherDashboard();
+}
+
+// ── 강사 뉴모피즘 대시보드 렌더 ──────────────────────────
+function renderTeacherDashboard() {
+  const students = loadStudents();
+  const todayStr = new Date().toISOString().slice(0,10);
+  const todayDow = new Date().getDay(); // 0=Sun
+
+  // ── 기본 통계 계산 ──
+  const totalStu = students.length;
+  const todayStu = students.filter(s => (s.events||[]).some(ev => ev.date === todayStr)).length;
+
+  // 숙제 완료율
+  let hwDone = 0, hwTotal = 0;
+  students.forEach(s => { s.homework.forEach(h => { hwTotal++; if (h.done) hwDone++; }); });
+  const completion = hwTotal > 0 ? Math.round((hwDone / hwTotal) * 100) : 0;
+
+  // 총 학습 곡 수
+  let totalSongs = 0;
+  students.forEach(s => { totalSongs += (s.songs?.learned||[]).length; });
+
+  // 레벨별 카운트
+  const begCount = students.filter(s => s.level === '초급').length;
+  const advCount = students.filter(s => s.level !== '초급').length;
+
+  // 이번 주 Mon-Sun 날짜 배열
+  const weekDays = [];
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0=Sun
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(now);
+    d.setDate(now.getDate() + mondayOffset + i);
+    weekDays.push(d.toISOString().slice(0, 10));
+  }
+  const LABELS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+  // 요일별 수업 수 계산
+  const dayCounts = weekDays.map(dateStr =>
+    students.reduce((acc, s) => acc + (s.events||[]).filter(ev => ev.date === dateStr).length, 0)
+  );
+  const maxCount = Math.max(...dayCounts, 1);
+
+  // ── 모바일 UI 업데이트 ──
+  function _set(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
+
+  _set('td-m-active-count', totalStu + '명');
+  _set('td-m-completion', completion + '%');
+  _set('td-m-today-count', todayStu + '명');
+
+  // 모바일 바 차트
+  const mBarChart = document.getElementById('td-m-bar-chart');
+  if (mBarChart) {
+    mBarChart.innerHTML = weekDays.map((dateStr, i) => {
+      const count = dayCounts[i];
+      const isToday = dateStr === todayStr;
+      const h = Math.max(8, Math.round((count / maxCount) * 90));
+      return `<div class="td-bar-col">
+        <div class="td-bar-track" style="height:90px;">
+          <div class="td-bar-fill${isToday?' today':''}" style="height:${count?h:0}px;"></div>
+        </div>
+        <span class="td-bar-label${isToday?' today':''}">${LABELS[i]}</span>
+      </div>`;
+    }).join('');
+  }
+
+  // 모바일 목표 링 (초급 비율)
+  const ringPct = totalStu > 0 ? Math.round((begCount / totalStu) * 100) : 0;
+  const circumference = 226;
+  const dashOffset = circumference - (circumference * ringPct / 100);
+  const mRing = document.getElementById('td-m-ring');
+  if (mRing) mRing.setAttribute('stroke-dashoffset', dashOffset);
+  _set('td-m-ring-pct', ringPct + '%');
+  _set('td-m-goal-beg', begCount + '명');
+  _set('td-m-goal-int', advCount + '명');
+  const mBarBeg = document.getElementById('td-m-bar-beg');
+  const mBarInt = document.getElementById('td-m-bar-int');
+  if (mBarBeg) mBarBeg.style.width = (totalStu ? (begCount/totalStu*100) : 0) + '%';
+  if (mBarInt) mBarInt.style.width = (totalStu ? (advCount/totalStu*100) : 0) + '%';
+
+  // 모바일 레슨생 리스트
+  const mStuList = document.getElementById('td-m-student-list');
+  if (mStuList) {
+    if (!students.length) {
+      mStuList.innerHTML = '<p style="font-size:12px;color:var(--text2);text-align:center;padding:12px 0;">등록된 레슨생이 없습니다</p>';
+    } else {
+      mStuList.innerHTML = students.slice(0,6).map(s => {
+        const hasToday = (s.events||[]).some(ev => ev.date === todayStr);
+        const weekLabel = s.currentWeek ? s.currentWeek + '주차' : '미설정';
+        return `<div class="td-student-item" onclick="openDetail(${s.id})">
+          <div class="td-student-avatar">${s.name.slice(0,2)}</div>
+          <div style="flex:1;">
+            <p class="td-student-name">${s.name}</p>
+            <p class="td-student-level">${s.level||''}${hasToday?' · 오늘 수업':''}</p>
+          </div>
+          <span class="td-student-week">${weekLabel}</span>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // 모바일 메시지 (최근 채팅 학생 표시)
+  const mMsg = document.getElementById('td-m-messages');
+  if (mMsg && students.length) {
+    mMsg.innerHTML = students.slice(0,2).map(s => {
+      return `<div class="td-msg-item" style="margin-bottom:12px;" onclick="openTeacherChat(${s.id},'${s.name.replace(/'/g,"\\'")}')">
+        <div class="td-msg-avatar">${s.name.slice(0,2)}</div>
+        <div class="td-msg-bubble">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <p class="td-msg-name">${s.name}</p>
+          </div>
+          <p class="td-msg-text" id="td-m-msg-${s.id}">대화 불러오는 중...</p>
+        </div>
+      </div>`;
+    }).join('');
+    // 비동기로 마지막 메시지 로드
+    students.slice(0,2).forEach(s => {
+      _chatRef(s.id).limitToLast(1).once('value', snap => {
+        const el = document.getElementById('td-m-msg-' + s.id);
+        if (!el) return;
+        if (!snap.exists()) { el.textContent = '대화 없음'; return; }
+        const msgs = Object.values(snap.val());
+        if (!msgs.length) { el.textContent = '대화 없음'; return; }
+        const last = msgs[0];
+        el.textContent = (last.sender === 'teacher' ? '나: ' : '') + (last.text || '');
+      });
+    });
+  } else if (mMsg) {
+    mMsg.innerHTML = '<p style="font-size:12px;color:var(--text2);">등록된 레슨생이 없습니다</p>';
+  }
+
+  // ── 데스크탑 UI 업데이트 ──
+  _set('td-d-active-count', totalStu);
+  _set('td-d-today-count', todayStu);
+  _set('td-d-completion', completion);
+  _set('td-d-songs-count', totalSongs);
+  _set('td-d-active-trend', totalStu + '명');
+  _set('td-d-beg-count', begCount + '명');
+  _set('td-d-adv-count', advCount + '명');
+
+  // 데스크탑 링
+  const pct75 = totalStu > 0 ? Math.round((begCount / totalStu) * 100) : 0;
+  const pct25 = 100 - pct75;
+  const C415 = 415;
+  const dRing = document.getElementById('td-d-ring');
+  const dRing2 = document.getElementById('td-d-ring2');
+  if (dRing) dRing.setAttribute('stroke-dashoffset', C415 - (C415 * pct75 / 100));
+  if (dRing2) dRing2.setAttribute('stroke-dashoffset', C415 - (C415 * pct25 / 100));
+  _set('td-d-ring-pct', (pct75) + '%');
+
+  // 데스크탑 바 차트
+  const dBarChart = document.getElementById('td-d-bar-chart');
+  if (dBarChart) {
+    dBarChart.innerHTML = weekDays.map((dateStr, i) => {
+      const count = dayCounts[i];
+      const isToday = dateStr === todayStr;
+      const h = maxCount > 0 ? Math.max(6, Math.round((count / maxCount) * 100)) : 6;
+      return `<div class="td-d-bar-col" onclick="goScreen('sc-teacher-schedule-view')">
+        <div class="td-d-bar-track" style="height:${count?h:6}%;">
+          <div class="td-d-bar-fill${isToday?' today':''}" style="height:100%;"></div>
+        </div>
+        <span class="td-d-bar-label${isToday?' today':''}">${LABELS[i]}</span>
+      </div>`;
+    }).join('');
+  }
+
+  // 데스크탑 레슨생 리스트
+  const dStuList = document.getElementById('td-d-student-list');
+  if (dStuList) {
+    if (!students.length) {
+      dStuList.innerHTML = '<p style="font-size:13px;color:var(--text2);text-align:center;padding:16px 0;">등록된 레슨생이 없습니다</p>';
+    } else {
+      dStuList.innerHTML = students.slice(0,6).map(s => {
+        const hasToday = (s.events||[]).some(ev => ev.date === todayStr);
+        const weekLabel = s.currentWeek ? s.currentWeek + '주차' : '미설정';
+        return `<div class="td-d-stu-item" onclick="openDetail(${s.id})">
+          <div class="td-d-stu-avatar">${s.name.slice(0,2)}</div>
+          <div>
+            <p class="td-d-stu-name">${s.name}</p>
+            <p class="td-d-stu-level">${s.level||''}${hasToday?' · 오늘 수업':''}</p>
+          </div>
+          <span class="td-d-stu-week">${weekLabel}</span>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // 데스크탑 메시지
+  const dMsg = document.getElementById('td-d-messages');
+  if (dMsg && students.length) {
+    dMsg.innerHTML = students.slice(0,3).map(s => {
+      return `<div class="td-d-msg-item" onclick="openTeacherChat(${s.id},'${s.name.replace(/'/g,"\\'")}')">
+        <div class="td-d-msg-avatar">
+          ${s.name.slice(0,2)}
+          <span class="td-d-msg-online"></span>
+        </div>
+        <div class="td-d-msg-bubble">
+          <div class="td-d-msg-header">
+            <p class="td-d-msg-name">${s.name}</p>
+          </div>
+          <p class="td-d-msg-text" id="td-d-msg-${s.id}">대화 불러오는 중...</p>
+        </div>
+      </div>`;
+    }).join('');
+    students.slice(0,3).forEach(s => {
+      _chatRef(s.id).limitToLast(1).once('value', snap => {
+        const el = document.getElementById('td-d-msg-' + s.id);
+        if (!el) return;
+        if (!snap.exists()) { el.textContent = '대화 없음'; return; }
+        const msgs = Object.values(snap.val());
+        if (!msgs.length) { el.textContent = '대화 없음'; return; }
+        const last = msgs[0];
+        el.textContent = (last.sender === 'teacher' ? '나: ' : '') + (last.text || '');
+      });
+    });
+  } else if (dMsg) {
+    dMsg.innerHTML = '<p style="font-size:13px;color:var(--text2);">등록된 레슨생이 없습니다</p>';
+  }
+
+  // 채팅 알림 점
+  _updateTeacherChatBadge();
 }
 
 // ── 레슨생 정보 관리 ─────────────────────────────────────
@@ -2526,6 +3786,8 @@ function enterStudent() {
   renderStudentSongsTab(s);
   setTimeout(_initWeekWidgetDrag, 0);
   goScreen('sc-student');
+  // 채팅 미읽 배지 초기화
+  _initStudentChatBadge(s.id);
 }
 function toggleStudentHwCard() {
   _hwCardOpen = !_hwCardOpen;
@@ -2688,7 +3950,7 @@ function renderStudentNewHome(s) {
 
     <!-- ② 2열 버튼 그리드 -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:32px;width:100%;">
-      <button class="s-home-grid-btn"
+      <button class="s-home-grid-btn neu-button"
         onclick="switchStudentTab('songs',document.getElementById('s-nav-songs'))">
         <div class="s-home-grid-inner">
           <div style="width:46px;height:46px;border-radius:15px;box-shadow:var(--sh-in);display:flex;align-items:center;justify-content:center;">
@@ -2700,8 +3962,8 @@ function renderStudentNewHome(s) {
           </div>
         </div>
       </button>
-      <button class="s-home-grid-btn"
-        onclick="switchStudentTab('homework',document.getElementById('s-nav-homework'))">
+      <button class="s-home-grid-btn neu-button"
+        onclick="openHwQuestion()">
         <div class="s-home-grid-inner">
           <div style="width:46px;height:46px;border-radius:15px;box-shadow:var(--sh-in);display:flex;align-items:center;justify-content:center;">
             <i class="ph-bold ph-question" style="color:#818cf8;font-size:20px;"></i>
@@ -2750,7 +4012,10 @@ function _renderHomeHwRows(s) {
           <p class="s-hw-row-title done">${h.text}</p>
           <p class="s-hw-row-sub">${h.week ? h.week+'주차' : '완료'}</p>
         </div>
-        <div class="s-hw-check-done"><i class="ph-bold ph-check" style="color:#fff;font-size:16px;"></i></div>
+        <button class="s-hw-check-btn" onclick="event.stopPropagation();toggleStudentHw(${s.id},${i})"
+          style="background:linear-gradient(135deg,#d4b05c,#C9A84C);box-shadow:none;">
+          <i class="ph-bold ph-check" style="color:#fff;font-size:16px;"></i>
+        </button>
       </div>`;
     } else {
       return `<div class="s-hw-row">
@@ -2772,12 +4037,16 @@ function _renderHomeWeekRow(s) {
   const el = document.getElementById('s-home-week-row');
   if (!el) return;
   const now = new Date(); now.setHours(0,0,0,0);
-  const todayStr = now.toISOString().slice(0,10);
+  // toISOString()은 UTC 기준이라 한국(UTC+9)에서 날짜가 하루 밀림 → 로컬 날짜 포맷 사용
+  function _localDate(d) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  const todayStr = _localDate(now);
   const dow = now.getDay();
   const DAY_KO = ['일','월','화','수','목','금','토'];
   el.innerHTML = DAY_KO.map((label, i) => {
     const d = new Date(now); d.setDate(now.getDate() - dow + i);
-    const ds = d.toISOString().slice(0,10);
+    const ds = _localDate(d);
     const hasLesson = (s.events||[]).some(e => e.date === ds);
     const isToday   = ds === todayStr;
     let cls = 'wdc-normal';
@@ -3129,6 +4398,9 @@ function applyTheme(theme) {
     document.body.classList.remove('light');
   }
   localStorage.setItem('heum_theme', theme);
+  // theme-color 메타 즉시 반영 (Android 상태바 + iOS PWA 배경)
+  const tcMeta = document.getElementById('meta-theme-color');
+  if (tcMeta) tcMeta.content = theme === 'light' ? '#e0e5ec' : '#3a3a3c';
   // 라벨 동기화
   const label = theme === 'light' ? '라이트' : '다크';
   const tLabel = document.getElementById('t-theme-label');
@@ -3151,6 +4423,13 @@ function initStudentSettingsMenu() {
   if (el) el.textContent = cur === 'light' ? '라이트' : '다크';
 }
 function goBackToStudent() { goBack(); }
+function studentLogout() {
+  localStorage.removeItem('heum_autologin_id');
+  curStudent = null;
+  _navHistory.length = 0;
+  document.querySelectorAll('[id^="sc-"]').forEach(el => el.classList.add('hidden'));
+  document.getElementById('sc-main').classList.remove('hidden');
+}
 let sCpwStep = 1, sCpwFirst = '';
 function initStudentChangePw() {
   sCpwStep = 1; sCpwFirst = '';
@@ -3676,6 +4955,373 @@ function hideWeekTip() {
 function showErr(id,msg){document.getElementById(id).textContent=msg;}
 
 
+// ── 채팅 ─────────────────────────────────────────────────────
+
+// ─ 모르겠어요 바텀 시트 ─
+let _hwQSelectedTitle = '';
+
+function openHwQuestion() {
+  if (!curStudent) return;
+  const s = loadStudents().find(x => x.id === curStudent.id);
+  if (!s) return;
+  const pending = (s.homework || []).filter(h => !h.done);
+
+  // 리스트 렌더
+  const listEl = document.getElementById('hw-q-list');
+  const ICONS = ['ph-music-notes','ph-guitar','ph-metronome','ph-wave-sine','ph-star'];
+  if (!pending.length) {
+    listEl.innerHTML = `<div class="hw-q-empty">
+      아직 남은 숙제가 없어요 🎉<br>
+      <span style="font-size:12px;color:var(--text3);">숙제를 모두 완료했거나 아직 숙제가 없습니다.</span>
+    </div>`;
+  } else {
+    // onclick에서 문자열 직접 삽입 시 따옴표 충돌 → 전역 배열로 우회
+    window._hwQPending = pending;
+    listEl.innerHTML = pending.map((h, i) => {
+      const ic = ICONS[i % ICONS.length];
+      return `<div class="hw-q-item" onclick="hwQSelectItem(${i})">
+        <div class="hw-q-item-icon"><i class="ph-bold ${ic}" style="color:var(--gold);"></i></div>
+        <span class="hw-q-item-text">${h.text.replace(/</g,'&lt;')}</span>
+        <i class="ph-bold ph-caret-right" style="font-size:14px;color:var(--text3);flex-shrink:0;"></i>
+      </div>`;
+    }).join('');
+  }
+
+  // Step 1 상태로 초기화
+  document.getElementById('hw-q-sheet-title').textContent = '어떤 숙제가 어려우신가요?';
+  document.getElementById('hw-q-list').classList.remove('hidden');
+  document.getElementById('hw-q-compose').classList.add('hidden');
+  document.getElementById('hw-q-msg').value = '';
+
+  // 시트 열기
+  document.getElementById('hw-q-overlay').classList.add('open');
+  requestAnimationFrame(() => document.getElementById('hw-q-sheet').classList.add('open'));
+  haptic('light');
+}
+
+function hwQSelectItem(idx) {
+  const pending = window._hwQPending || [];
+  const item    = pending[idx];
+  if (!item) return;
+  const title = item.text;
+  _hwQSelectedTitle = title;
+  document.getElementById('hw-q-badge-text').textContent = title;
+  document.getElementById('hw-q-sheet-title').textContent = '질문 내용을 입력해주세요';
+  document.getElementById('hw-q-list').classList.add('hidden');
+  document.getElementById('hw-q-compose').classList.remove('hidden');
+  // 텍스트 영역 포커스
+  setTimeout(() => document.getElementById('hw-q-msg').focus(), 180);
+  haptic('light');
+}
+
+function hwQGoBack() {
+  document.getElementById('hw-q-sheet-title').textContent = '어떤 숙제가 어려우신가요?';
+  document.getElementById('hw-q-compose').classList.add('hidden');
+  document.getElementById('hw-q-list').classList.remove('hidden');
+  _hwQSelectedTitle = '';
+}
+
+function hwQSend() {
+  if (!curStudent || !_hwQSelectedTitle) return;
+  const msgEl = document.getElementById('hw-q-msg');
+  const extra  = msgEl ? msgEl.value.trim() : '';
+
+  // Firebase에 메시지 전송 (text가 없으면 카테고리명만)
+  _chatRef(curStudent.id).push({
+    text:       extra || '',
+    hwCategory: _hwQSelectedTitle,
+    sender:     'student',
+    senderName: curStudent.name,
+    ts:         Date.now(),
+    read:       false
+  });
+
+  closeHwQuestion();
+  haptic('success');
+
+  // 채팅 화면으로 이동
+  setTimeout(() => openStudentChat(), 120);
+}
+
+function closeHwQuestion() {
+  const sheet = document.getElementById('hw-q-sheet');
+  const overlay = document.getElementById('hw-q-overlay');
+  sheet.classList.remove('open');
+  overlay.classList.remove('open');
+  _hwQSelectedTitle = '';
+}
+
+// Firebase 경로: heum/chat/{studentId}/messages
+let _chatListener      = null;  // 현재 열린 채팅 리스너
+let _chatListListeners = {};    // 강사용 목록 리스너 {sid: unsubFn}
+let _curChatStudentId  = null;  // 강사가 현재 보고 있는 학생 id
+let _teacherChatUnread = {};    // {sid: count}
+
+// ─ 유틸 ─
+function _chatRef(sid) { return _db.ref('heum/chat/' + sid + '/messages'); }
+function _chatFmtTime(ts) {
+  const d = new Date(ts);
+  const h = d.getHours(), m = String(d.getMinutes()).padStart(2,'0');
+  return `${h}:${m}`;
+}
+function _chatFmtDate(ts) {
+  const d = new Date(ts);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const msgDay = new Date(d); msgDay.setHours(0,0,0,0);
+  const diff = (today - msgDay) / 86400000;
+  if (diff < 1) return '오늘';
+  if (diff < 2) return '어제';
+  return `${d.getMonth()+1}월 ${d.getDate()}일`;
+}
+function _chatScrollBottom(id) {
+  const el = document.getElementById(id);
+  if (el) setTimeout(()=>{ el.scrollTop = el.scrollHeight; }, 50);
+}
+
+// ─ 메시지 렌더링 ─
+function _renderChatMessages(containerId, emptyId, messages, myRole) {
+  const container = document.getElementById(containerId);
+  const emptyEl   = document.getElementById(emptyId);
+  if (!container) return;
+  const arr = messages || [];
+  if (!arr.length) {
+    if (emptyEl) emptyEl.style.display = 'flex';
+    container.querySelectorAll('.chat-bubble-wrap, .chat-date-divider').forEach(el=>el.remove());
+    return;
+  }
+  if (emptyEl) emptyEl.style.display = 'none';
+  container.querySelectorAll('.chat-bubble-wrap, .chat-date-divider').forEach(el=>el.remove());
+  let lastDateLabel = '';
+  arr.forEach(msg => {
+    const isMine  = msg.sender === myRole;
+    const dateLabel = _chatFmtDate(msg.ts);
+    if (dateLabel !== lastDateLabel) {
+      const div = document.createElement('div');
+      div.className = 'chat-date-divider';
+      div.textContent = dateLabel;
+      container.appendChild(div);
+      lastDateLabel = dateLabel;
+    }
+    const wrap = document.createElement('div');
+    wrap.className = 'chat-bubble-wrap ' + (isMine ? 'mine' : 'theirs');
+    if (!isMine) {
+      const lbl = document.createElement('div');
+      lbl.className = 'chat-sender-label';
+      lbl.textContent = msg.sender === 'teacher' ? 'HEUM 강사' : msg.senderName || '레슨생';
+      wrap.appendChild(lbl);
+    }
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-bubble ' + (isMine ? 'mine' : 'theirs');
+    // 숙제 카테고리 뱃지가 있으면 버블 안에 먼저 렌더
+    if (msg.hwCategory) {
+      const badge = document.createElement('div');
+      badge.className = 'chat-hw-badge';
+      badge.innerHTML = `<i class="ph-bold ph-books" style="font-size:12px;flex-shrink:0;"></i>${msg.hwCategory}`;
+      bubble.appendChild(badge);
+    }
+    const textNode = document.createElement('div');
+    textNode.style.cssText = msg.hwCategory ? 'margin-top:2px;' : '';
+    textNode.textContent = msg.text || '(내용 없음)';
+    bubble.appendChild(textNode);
+    wrap.appendChild(bubble);
+    const ts = document.createElement('div');
+    ts.className = 'chat-ts';
+    ts.textContent = _chatFmtTime(msg.ts);
+    wrap.appendChild(ts);
+    container.appendChild(wrap);
+  });
+  _chatScrollBottom(containerId);
+}
+
+// ─ 레슨생: 채팅 열기 ─
+function openStudentChat() {
+  if (!curStudent) return;
+  const sid = curStudent.id;
+
+  // 이전 리스너 정확하게 해제 (콜백 호출이 아닌 .off() 사용)
+  if (_chatListener) {
+    _chatRef(sid).off('value', _chatListener);
+    _chatListener = null;
+  }
+
+  goScreen('sc-student-chat');
+  _markChatRead(sid, 'teacher');
+  _updateStudentChatBadge(0);
+
+  // 즉시 1회 렌더 — 화면 전환 중에도 메시지가 바로 표시되도록
+  _chatRef(sid).limitToLast(200).once('value', snap => {
+    const msgs = snap.exists() ? Object.values(snap.val()).sort((a,b)=>a.ts-b.ts) : [];
+    _renderChatMessages('s-chat-messages', 's-chat-empty', msgs, 'student');
+  });
+
+  // 실시간 리스너 — 이후 새 메시지 도착 시 갱신
+  _chatListener = _chatRef(sid).limitToLast(200).on('value', snap => {
+    const msgs = snap.exists() ? Object.values(snap.val()).sort((a,b)=>a.ts-b.ts) : [];
+    _renderChatMessages('s-chat-messages', 's-chat-empty', msgs, 'student');
+  });
+}
+function closeStudentChat() {
+  if (_chatListener) { _db.ref('heum/chat/' + curStudent.id + '/messages').off('value', _chatListener); _chatListener = null; }
+  goBack();
+}
+function sendStudentMsg() {
+  const inp = document.getElementById('s-chat-input');
+  const text = inp ? inp.value.trim() : '';
+  if (!text || !curStudent) return;
+  inp.value = ''; inp.style.height = 'auto';
+  _chatRef(curStudent.id).push({
+    text, sender:'student', senderName: curStudent.name,
+    ts: Date.now(), read: false
+  });
+}
+
+// ─ 레슨생: 강사 메시지 읽음 처리 ─
+function _markChatRead(sid, senderToMark) {
+  _chatRef(sid).orderByChild('sender').equalTo(senderToMark).once('value', snap => {
+    if (!snap.exists()) return;
+    const updates = {};
+    snap.forEach(ch => { if (!ch.val().read) updates[ch.key + '/read'] = true; });
+    if (Object.keys(updates).length) _chatRef(sid).update(updates);
+  });
+}
+
+// ─ 레슨생: 채팅 배지 업데이트 ─
+function _updateStudentChatBadge(count) {
+  const badge = document.getElementById('s-nav-chat-badge');
+  if (!badge) return;
+  badge.textContent = count > 9 ? '9+' : String(count);
+  badge.classList.toggle('hidden', count === 0);
+}
+
+// ─ 레슨생 입장 시 채팅 배지 초기화 ─
+function _initStudentChatBadge(sid) {
+  _chatRef(sid).on('value', snap => {
+    if (!snap.exists()) { _updateStudentChatBadge(0); return; }
+    const msgs = Object.values(snap.val());
+    const unread = msgs.filter(m => m.sender === 'teacher' && !m.read).length;
+    _updateStudentChatBadge(unread);
+  });
+}
+
+// ─ 강사: 채팅 목록 열기 ─
+function openTeacherChatList() {
+  goScreen('sc-teacher-chat-list');
+  _renderTeacherChatList();
+}
+function _renderTeacherChatList() {
+  const students = loadStudents();
+  const container = document.getElementById('t-chat-list-inner');
+  if (!container) return;
+  if (!students.length) {
+    container.innerHTML = '<div style="padding:20px;text-align:center;"><p class="small muted">등록된 레슨생이 없습니다</p></div>';
+    return;
+  }
+  // 각 학생의 마지막 메시지/안읽은 수 비동기 로드
+  container.innerHTML = students.map(s =>
+    `<div class="chat-list-item" id="t-cl-${s.id}" onclick="openTeacherChat(${s.id},'${s.name.replace(/'/g,"\\'")}')">
+      <div class="chat-list-avatar">${s.name.slice(0,2)}</div>
+      <div class="chat-list-info">
+        <div class="chat-list-name">${s.name}</div>
+        <div class="chat-list-preview muted" id="t-cl-preview-${s.id}">대화 없음</div>
+      </div>
+      <div class="chat-list-meta">
+        <div class="chat-list-time" id="t-cl-time-${s.id}"></div>
+        <div id="t-cl-dot-${s.id}"></div>
+      </div>
+    </div>`
+  ).join('');
+
+  // 비동기로 각 학생 마지막 메시지 로드
+  students.forEach(s => {
+    _chatRef(s.id).limitToLast(1).once('value', snap => {
+      const previewEl = document.getElementById('t-cl-preview-' + s.id);
+      const timeEl    = document.getElementById('t-cl-time-' + s.id);
+      const dotEl     = document.getElementById('t-cl-dot-' + s.id);
+      if (!snap.exists()) return;
+      const msgs = Object.values(snap.val());
+      if (!msgs.length) return;
+      const last = msgs[0];
+      if (previewEl) {
+        const prefix = last.sender === 'teacher' ? '나: ' : '';
+        const cat = last.hwCategory ? `[${last.hwCategory}] ` : '';
+        previewEl.textContent = prefix + cat + (last.text || '');
+      }
+      if (timeEl)    timeEl.textContent    = _chatFmtTime(last.ts);
+      // 안읽은 메시지 (student가 보낸 것 중 read:false)
+      _chatRef(s.id).orderByChild('sender').equalTo('student').once('value', allSnap => {
+        if (!allSnap.exists()) return;
+        const unread = Object.values(allSnap.val()).filter(m=>!m.read).length;
+        if (dotEl && unread > 0) {
+          dotEl.innerHTML = `<div class="chat-unread-dot"></div>`;
+        }
+      });
+    });
+  });
+}
+
+// ─ 강사: 학생 채팅창 열기 ─
+function openTeacherChat(sid, sname) {
+  _curChatStudentId = sid;
+  document.getElementById('t-chat-student-name').textContent = sname || '레슨생';
+
+  // 이전 리스너 정확하게 해제
+  if (_chatListener) {
+    _chatRef(_curChatStudentId).off('value', _chatListener);
+    _chatListener = null;
+  }
+
+  goScreen('sc-teacher-chat');
+  _markChatRead(sid, 'student');
+
+  // 즉시 1회 렌더
+  _chatRef(sid).limitToLast(200).once('value', snap => {
+    const msgs = snap.exists() ? Object.values(snap.val()).sort((a,b)=>a.ts-b.ts) : [];
+    _renderChatMessages('t-chat-messages', 't-chat-empty', msgs, 'teacher');
+  });
+
+  // 실시간 리스너
+  _chatListener = _chatRef(sid).limitToLast(200).on('value', snap => {
+    const msgs = snap.exists() ? Object.values(snap.val()).sort((a,b)=>a.ts-b.ts) : [];
+    _renderChatMessages('t-chat-messages', 't-chat-empty', msgs, 'teacher');
+    _updateTeacherChatBadge();
+  });
+}
+function sendTeacherMsg() {
+  const inp  = document.getElementById('t-chat-input');
+  const text = inp ? inp.value.trim() : '';
+  if (!text || !_curChatStudentId) return;
+  inp.value = ''; inp.style.height = 'auto';
+  _chatRef(_curChatStudentId).push({
+    text, sender:'teacher', senderName:'HEUM 강사',
+    ts: Date.now(), read: false
+  });
+}
+
+// ─ 강사 대시보드 전체 미읽 수 ─
+function _updateTeacherChatBadge() {
+  const students = loadStudents();
+  const el = document.getElementById('t-chat-unread-total');
+  if (!el) return;
+  let total = 0;
+  let pending = students.length;
+  if (!pending) { el.style.display='none'; return; }
+  students.forEach(s => {
+    _chatRef(s.id).orderByChild('sender').equalTo('student').once('value', snap => {
+      if (snap.exists()) total += Object.values(snap.val()).filter(m=>!m.read).length;
+      pending--;
+      if (pending === 0) {
+        el.textContent = total > 0 ? `${total}개 미읽` : '';
+        el.style.display = total > 0 ? '' : 'none';
+        // 새 대시보드 채팅 점 업데이트
+        ['td-m-chat-dot','td-d-chat-dot','td-d-bell-dot','tdg-chat-dot'].forEach(id => {
+          const dot = document.getElementById(id);
+          if (dot) dot.style.display = total > 0 ? '' : 'none';
+        });
+      }
+    });
+  });
+}
+
 // ── iOS :active 즉시 반응 픽스 ──────────────────────────────
 document.addEventListener('touchstart', function() {}, {passive: true});
 // ── 방향 전환 / 리사이즈 시 스케줄 탭 재렌더링 ────────────────
@@ -3714,6 +5360,10 @@ document.addEventListener('touchstart', function() {}, {passive: true});
             <span id="s-theme-label" style="font-size:12px;color:var(--text2);"></span>
             <span class="item-arrow">›</span>
           </div>
+        </div>
+        <div class="menu-item" onclick="studentLogout()" style="cursor:pointer;">
+          <div class="item-left"><div class="item-dot" style="background:var(--red);box-shadow:0 0 6px rgba(196,92,74,0.4);"></div><p class="item-label" style="color:var(--red);">로그아웃</p></div>
+          <span class="item-arrow" style="color:var(--red);">›</span>
         </div>
       </div>
     </div>
@@ -3788,6 +5438,96 @@ document.addEventListener('touchstart', function() {}, {passive: true});
     <textarea id="import-text" style="width:100%;height:180px;font-size:11px;font-family:monospace;background:var(--surface3);border:0.5px solid var(--border2);border-radius:10px;color:var(--text);padding:10px;resize:none;line-height:1.4;" placeholder="여기에 붙여넣기..."></textarea>
     <p class="err-msg" id="import-err" style="text-align:left;margin-top:6px;min-height:16px;"></p>
     <button onclick="submitImportText()" style="margin-top:6px;width:100%;padding:13px;background:var(--gold);border:none;border-radius:12px;color:#111;font-size:14px;font-weight:500;cursor:pointer;">복원하기</button>
+  </div>
+</div>
+
+<!-- 모르겠어요 바텀 시트 -->
+<div id="hw-q-overlay" class="hw-q-overlay" onclick="closeHwQuestion()"></div>
+<div id="hw-q-sheet" class="hw-q-sheet">
+  <div class="hw-q-handle"></div>
+  <div class="hw-q-header">
+    <p class="hw-q-title" id="hw-q-sheet-title">어떤 숙제가 어려우신가요?</p>
+    <button class="hw-q-close" onclick="closeHwQuestion()">×</button>
+  </div>
+  <!-- Step 1: 숙제 리스트 -->
+  <div class="hw-q-list" id="hw-q-list"></div>
+  <!-- Step 2: 메시지 작성 -->
+  <div class="hw-q-compose hidden" id="hw-q-compose">
+    <div class="hw-q-category-badge" id="hw-q-badge">
+      <i class="ph-bold ph-books" style="font-size:14px;flex-shrink:0;"></i>
+      <span id="hw-q-badge-text" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+      <button class="hw-q-category-change" onclick="hwQGoBack()">변경</button>
+    </div>
+    <textarea class="hw-q-textarea" id="hw-q-msg"
+      placeholder="추가로 하고 싶은 말을 입력하세요 (선택사항)"
+      oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,160)+'px';"></textarea>
+    <button class="hw-q-send-btn" onclick="hwQSend()">
+      <i class="ph-bold ph-paper-plane-tilt" style="margin-right:6px;"></i>질문 전송
+    </button>
+  </div>
+</div>
+
+<!-- 레슨생 채팅 화면 -->
+<div id="sc-student-chat" class="hidden">
+  <div class="chat-screen">
+    <div class="chat-topbar">
+      <button class="btn-ghost" onclick="closeStudentChat()">← 돌아가기</button>
+      <p class="bold">HEUM 강사</p>
+      <div style="width:60px;"></div>
+    </div>
+    <div class="chat-messages" id="s-chat-messages">
+      <div class="chat-empty" id="s-chat-empty">
+        <i class="ph-bold ph-chat-dots" style="font-size:36px;opacity:0.4;"></i>
+        <p style="font-size:13px;">첫 메시지를 보내보세요</p>
+      </div>
+    </div>
+    <div class="chat-input-bar">
+      <textarea class="chat-input" id="s-chat-input" placeholder="메시지 입력..." rows="1"
+        oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendStudentMsg();}"></textarea>
+      <button class="chat-send-btn" onclick="sendStudentMsg()">
+        <i class="ph-bold ph-paper-plane-tilt"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- 강사 채팅 목록 -->
+<div id="sc-teacher-chat-list" class="hidden">
+  <div class="screen">
+    <div class="topbar">
+      <button class="btn-ghost" onclick="goBack()">← 돌아가기</button>
+      <p class="bold">채팅</p>
+      <div style="width:60px;"></div>
+    </div>
+    <div class="content" style="padding:0;">
+      <div id="t-chat-list-inner" style="border-radius:2rem;overflow:hidden;box-shadow:var(--sh-out);margin:0 16px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 강사 채팅창 -->
+<div id="sc-teacher-chat" class="hidden">
+  <div class="chat-screen">
+    <div class="chat-topbar">
+      <button class="btn-ghost" onclick="goBack()">← 돌아가기</button>
+      <p class="bold" id="t-chat-student-name"></p>
+      <div style="width:60px;"></div>
+    </div>
+    <div class="chat-messages" id="t-chat-messages">
+      <div class="chat-empty" id="t-chat-empty">
+        <i class="ph-bold ph-chat-dots" style="font-size:36px;opacity:0.4;"></i>
+        <p style="font-size:13px;">아직 대화가 없어요</p>
+      </div>
+    </div>
+    <div class="chat-input-bar">
+      <textarea class="chat-input" id="t-chat-input" placeholder="메시지 입력..." rows="1"
+        oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendTeacherMsg();}"></textarea>
+      <button class="chat-send-btn" onclick="sendTeacherMsg()">
+        <i class="ph-bold ph-paper-plane-tilt"></i>
+      </button>
+    </div>
   </div>
 </div>
 
