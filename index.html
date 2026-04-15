@@ -261,14 +261,14 @@
     background: var(--bg); border: none;
     box-shadow: var(--sh-out-sm);
     display:flex; align-items:center; justify-content:center; cursor:pointer;
-    transition: box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  .hw-check:active { box-shadow: var(--sh-in-sm); transform: scale(0.88); }
+  .hw-check.pressing { box-shadow: var(--sh-in-sm); transform: scale(0.88); }
   .hw-check.done {
-    background: linear-gradient(135deg, #d4b05c, #C9A84C);
-    box-shadow: -2px -2px 5px rgba(255,255,255,0.5), 2px 2px 5px rgba(163,177,198,0.6), 0 0 8px rgba(201,168,76,0.35);
+    background: var(--bg);
+    box-shadow: var(--sh-in-sm);
   }
-  .hw-check.done::after { content:''; width:8px; height:5px; border-left:1.5px solid #fff; border-bottom:1.5px solid #fff; transform:rotate(-45deg) translate(1px,-1px); display:block; }
+  .hw-check.done::after { content:''; width:8px; height:5px; border-left:1.5px solid var(--gold); border-bottom:1.5px solid var(--gold); transform:rotate(-45deg) translate(1px,-1px); display:block; }
   .hw-meta { display:flex; flex-direction:column; gap:2px; flex:1; min-width:0; }
   .hw-text { font-size:13px; line-height:1.5; }
   .hw-text.done { color:var(--text3); text-decoration:line-through; }
@@ -732,7 +732,7 @@
     display:flex; align-items:center; gap:20px;
     transition: all 0.2s ease;
   }
-  .s-hw-row.done { opacity:0.55; }
+  .s-hw-row.done { }
   .s-hw-row-icon {
     width:56px; height:56px; border-radius:16px; flex-shrink:0;
     box-shadow:var(--sh-in); display:flex; align-items:center; justify-content:center;
@@ -746,12 +746,16 @@
     width:40px; height:40px; border-radius:50%; flex-shrink:0;
     background:var(--bg); border:none; box-shadow:var(--sh-out);
     display:flex; align-items:center; justify-content:center; cursor:pointer;
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease;
   }
-  .s-hw-check-btn:active { box-shadow:var(--sh-in-sm); transform:scale(0.9); }
+  .s-hw-check-btn.pressing { box-shadow:var(--sh-in-sm); transform:scale(0.9); }
   .s-hw-check-done {
     width:40px; height:40px; border-radius:50%; flex-shrink:0;
-    background:var(--surface3); display:flex; align-items:center; justify-content:center;
+    background:var(--bg); box-shadow:var(--sh-in); display:flex; align-items:center; justify-content:center;
+  }
+  .s-hw-check-btn.done {
+    background:var(--bg);
+    box-shadow:var(--sh-in);
   }
   /* 이번주 일정 요일 원 */
   .s-week-day-wrap { display:flex; flex-direction:column; align-items:center; gap:5px; }
@@ -765,6 +769,24 @@
   .s-week-day-circle.wdc-lesson { background:linear-gradient(135deg,#d4b05c,#C9A84C); color:#fff; box-shadow:0 2px 8px rgba(201,168,76,0.35); }
   .s-week-day-circle.wdc-today-lesson { background:linear-gradient(135deg,#d4b05c,#C9A84C); color:#fff; box-shadow:0 2px 8px rgba(201,168,76,0.4); }
   .s-week-day-dot { width:5px; height:5px; border-radius:50%; background:var(--gold); }
+
+  /* 이번주 일정 — 수업 상세 펼침 */
+  .s-week-detail-wrap {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.45s cubic-bezier(0.4,0,0.2,1), opacity 0.35s ease;
+    opacity: 0;
+  }
+  .s-week-detail-wrap.open {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+  .s-week-detail-inner {
+    overflow: hidden;
+    min-height: 0;
+  }
+  .s-week-day-circle.wdc-lesson,
+  .s-week-day-circle.wdc-today-lesson { cursor: pointer; }
 
   /* 새 홈 2열 카드 버튼 */
   .s-home-grid-btn {
@@ -821,17 +843,19 @@
     box-shadow: var(--sh-out-sm);
   }
 
-  /* 강사 채팅창 — 버블 스타일 재정의
-     강사 메세지: 뉴모피즘 볼록(raised) / 레슨생 메세지: 오목(pressed) */
+  /* 강사/레슨생 채팅창 — 버블 스타일 재정의
+     내 메세지: 뉴모피즘 볼록(raised) / 상대방 메세지: 오목(pressed) */
   #sc-teacher-chat .chat-bubble.mine,
-  .sc-chat-dt-panel .chat-bubble.mine {
+  .sc-chat-dt-panel .chat-bubble.mine,
+  #sc-student-chat .chat-bubble.mine {
     background: var(--bg);
     box-shadow: var(--sh-out-sm);
     color: var(--text);
     border-radius: 20px 20px 4px 20px;
   }
   #sc-teacher-chat .chat-bubble.theirs,
-  .sc-chat-dt-panel .chat-bubble.theirs {
+  .sc-chat-dt-panel .chat-bubble.theirs,
+  #sc-student-chat .chat-bubble.theirs {
     background: var(--bg);
     box-shadow: var(--sh-in-sm);
     color: var(--text);
@@ -2296,7 +2320,9 @@
       자동로그인
     </label>
     <p class="err-msg" id="sl-err" style="text-align:left;"></p>
-    <button class="btn-primary" style="padding:15px;font-size:14px;" onclick="submitStudentLogin()">확인</button>
+    <button class="btn-primary" style="padding:15px;font-size:14px;"
+      ontouchend="event.preventDefault();submitStudentLogin();"
+      onclick="submitStudentLogin()">확인</button>
   </div>
   <button class="btn-ghost mt12 small" onclick="goBack()">← 돌아가기</button>
 </div>
@@ -2619,6 +2645,24 @@ function _initScreen(id) {
   if (id === 'sc-student-change-pw') initStudentChangePw();
 }
 
+// ── 체크 버튼 pressing 클래스 (깜빡임 방지) ─────────────────
+(function() {
+  const SELECTORS = '.hw-check, .s-hw-check-btn';
+  function addPressing(e) {
+    const el = e.target.closest('.hw-check, .s-hw-check-btn');
+    if (el) el.classList.add('pressing');
+  }
+  function removePressing() {
+    document.querySelectorAll('.hw-check.pressing, .s-hw-check-btn.pressing')
+      .forEach(el => el.classList.remove('pressing'));
+  }
+  document.addEventListener('touchstart',  addPressing,    { passive: true });
+  document.addEventListener('touchend',    removePressing, { passive: true });
+  document.addEventListener('touchcancel', removePressing, { passive: true });
+  document.addEventListener('mousedown',   addPressing,    { passive: true });
+  document.addEventListener('mouseup',     removePressing, { passive: true });
+})();
+
 // ── 햅틱 헬퍼 ───────────────────────────────────────────────
 function haptic(type) {
   if (!navigator.vibrate) return;
@@ -2636,7 +2680,8 @@ function goScreen(id, _back) {
   if (_back) _tdgUpdateActiveBtn(id);
 
   haptic('medium');
-  const allSc = Array.from(document.querySelectorAll('[id^="sc-"]'));
+  // body 직계 자식만 탐색 — 내부 중첩 요소(sc-info-dt-* 등)가 cur로 오인되는 버그 방지
+  const allSc = Array.from(document.querySelectorAll('body > [id^="sc-"]'));
   const cur = allSc.find(el => !el.classList.contains('hidden'));
   const next = document.getElementById(id);
   if (!next || next === cur) return;
@@ -3977,6 +4022,7 @@ function startEnterPw(cachedPw) {
 
 let _hwCardOpen = false;
 let _learnedOpen = false;
+let _activeWeekDay = null;
 let _notYetLevel = null;
 let _notYetDrawerOpen = false;
 
@@ -4161,6 +4207,7 @@ function _initWeekWidgetDrag() {
 function enterStudent() {
   _hwCardOpen = false;
   _learnedOpen = false;
+  _activeWeekDay = null;
   // 스케줄 달력 초기화
   const _now = new Date();
   _sCalYear = _now.getFullYear();
@@ -4197,10 +4244,8 @@ function enterStudent() {
     _hwBadge.textContent = _pend > 9 ? '9+' : String(_pend);
     _hwBadge.classList.toggle('hidden', _pend === 0);
   }
-  // 홈 탭 활성화 상태 복원
-  document.querySelectorAll('#sc-student .s-nav-btn').forEach(b=>b.classList.remove('active'));
-  const _navHome = document.getElementById('s-nav-home');
-  if (_navHome) _navHome.classList.add('active');
+  // 홈 탭 활성화 상태 복원 (스케줄 모드 포함 완전 리셋)
+  switchStudentTab('home', document.getElementById('s-nav-home'));
 
   // 진도 링 퍼센트 계산
   const ringCirc = 339.29;
@@ -4353,6 +4398,9 @@ function renderStudentNewHome(s) {
         <h4 style="font-size:12px;font-weight:700;color:var(--text2);letter-spacing:0.12em;text-transform:uppercase;">이번주 일정</h4>
       </div>
       <div style="display:flex;justify-content:space-between;" id="s-home-week-row"></div>
+      <div class="s-week-detail-wrap" id="s-home-week-detail">
+        <div class="s-week-detail-inner" id="s-home-week-detail-inner"></div>
+      </div>
     </div>
 
     <!-- ② 오늘 숙제 진행 카드 (4:3 비율) -->
@@ -4413,7 +4461,7 @@ function renderStudentNewHome(s) {
             <i class="ph-bold ph-pencil" style="color:#60a5fa;font-size:20px;"></i>
           </div>
           <div>
-            <h4 style="font-size:13px;font-weight:700;color:var(--text);">다음 배울 곡</h4>
+            <h4 style="font-size:13px;font-weight:700;color:var(--text);">곡 리스트</h4>
             <p style="font-size:10px;font-weight:600;color:var(--text2);margin-top:3px;">${canLearnCnt}곡 준비됨</p>
           </div>
         </div>
@@ -4446,19 +4494,18 @@ function _renderHomeHwRows(s) {
   el.innerHTML = s.homework.map((h, i) => {
     const ic = ICONS[i % ICONS.length];
     if (h.done) {
-      return `<div class="s-hw-row done">
+      return `<div class="s-hw-row done" data-hw-key="${s.id}-${i}">
         <div class="s-hw-row-icon"><i class="ph-bold ${ic}" style="color:var(--text3);"></i></div>
         <div class="s-hw-row-info">
           <p class="s-hw-row-title done">${h.text}</p>
           <p class="s-hw-row-sub">${h.week ? h.week+'주차' : '완료'}</p>
         </div>
-        <button class="s-hw-check-btn" onclick="event.stopPropagation();toggleStudentHw(${s.id},${i})"
-          style="background:linear-gradient(135deg,#d4b05c,#C9A84C);box-shadow:none;">
-          <i class="ph-bold ph-check" style="color:#fff;font-size:16px;"></i>
+        <button class="s-hw-check-btn done" onclick="event.stopPropagation();toggleStudentHw(${s.id},${i})">
+          <i class="ph-bold ph-check" style="color:var(--gold);font-size:16px;"></i>
         </button>
       </div>`;
     } else {
-      return `<div class="s-hw-row">
+      return `<div class="s-hw-row" data-hw-key="${s.id}-${i}">
         <div class="s-hw-row-icon"><i class="ph-bold ${ic}" style="color:var(--gold);"></i></div>
         <div class="s-hw-row-info">
           <p class="s-hw-row-title">${h.text}</p>
@@ -4494,11 +4541,41 @@ function _renderHomeWeekRow(s) {
     else if (isToday)         cls = 'wdc-today';
     else if (hasLesson)       cls = 'wdc-lesson';
     const dot = hasLesson ? '<div class="s-week-day-dot"></div>' : '';
+    const click = hasLesson ? `onclick="toggleWeekDayDetail('${ds}')"` : '';
     return `<div class="s-week-day-wrap">
-      <div class="s-week-day-circle ${cls}">${label}</div>
+      <div class="s-week-day-circle ${cls}" ${click}>${label}</div>
       ${dot}
     </div>`;
   }).join('');
+}
+
+function toggleWeekDayDetail(ds) {
+  const wrap  = document.getElementById('s-home-week-detail');
+  const inner = document.getElementById('s-home-week-detail-inner');
+  if (!wrap || !inner) return;
+  // 같은 날짜 재클릭 → 닫기
+  if (_activeWeekDay === ds) {
+    _activeWeekDay = null;
+    wrap.classList.remove('open');
+    return;
+  }
+  _activeWeekDay = ds;
+  const s = curStudent ? loadStudents().find(x => x.id === curStudent.id) : null;
+  if (!s) return;
+  const events = (s.events || []).filter(e => e.date === ds);
+  const d = new Date(ds + 'T00:00:00');
+  const DOW = ['일','월','화','수','목','금','토'];
+  const dateLabel = `${d.getMonth()+1}월 ${d.getDate()}일 (${DOW[d.getDay()]})`;
+  inner.innerHTML = `
+    <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:2px;">
+      <p style="font-size:11px;font-weight:700;color:var(--text2);letter-spacing:0.08em;margin-bottom:10px;">${dateLabel}</p>
+      ${events.map(ev => `
+        <div style="display:flex;flex-direction:column;gap:4px;padding:10px 14px;border-radius:14px;background:var(--surface3);margin-bottom:6px;">
+          <p style="font-size:13px;font-weight:700;color:var(--text);">${ev.time||'시간 미정'}${ev.week?' · '+ev.week+'주차':''}</p>
+          ${ev.memo?`<p style="font-size:12px;color:var(--text2);line-height:1.5;">${ev.memo}</p>`:''}
+        </div>`).join('')}
+    </div>`;
+  wrap.classList.add('open');
 }
 
 // 진행 링 + 카운터 업데이트 (숙제 토글 후 호출)
@@ -4519,13 +4596,50 @@ function _updateHomeRing(s) {
 function toggleStudentHw(sid,idx) {
   haptic('light');
   const students=loadStudents(); const s=students.find(x=>x.id===sid);
-  s.homework[idx].done=!s.homework[idx].done; saveStudents(students);
-  renderStudentHwTab(s);
-  _renderHwCardBody(s);
-  // 홈 화면 실시간 업데이트
-  _renderHomeHwRows(s);
+  s.homework[idx].done=!s.homework[idx].done;
+  const isDone = s.homework[idx].done;
+  const hw = s.homework[idx];
+  saveStudents(students);
+
+  // ── 타겟 DOM 업데이트 (전체 재렌더 없이 애니메이션 유지) ──
+  const key = `${sid}-${idx}`;
+
+  // 숙제탭·확장카드의 hw-check 원
+  document.querySelectorAll(`.hw-check[data-hw-key="${key}"]`).forEach(el => {
+    el.classList.toggle('done', isDone);
+  });
+  // hw-text 취소선/색상
+  document.querySelectorAll(`.hw-text[data-hw-key="${key}"]`).forEach(el => {
+    el.classList.toggle('done', isDone);
+  });
+  // 홈 화면 s-hw-row
+  const row = document.querySelector(`.s-hw-row[data-hw-key="${key}"]`);
+  if (row) {
+    row.classList.toggle('done', isDone);
+    const icon = row.querySelector('.s-hw-row-icon i');
+    if (icon) icon.style.color = isDone ? 'var(--text3)' : 'var(--gold)';
+    const titleEl = row.querySelector('.s-hw-row-title');
+    if (titleEl) titleEl.classList.toggle('done', isDone);
+    const subEl = row.querySelector('.s-hw-row-sub');
+    if (subEl) subEl.textContent = isDone ? (hw.week ? hw.week+'주차' : '완료') : (hw.week ? hw.week+'주차' : '');
+    const btn = row.querySelector('.s-hw-check-btn');
+    if (btn) {
+      btn.classList.toggle('done', isDone);
+      const ic = btn.querySelector('i');
+      if (ic) ic.style.color = isDone ? 'var(--gold)' : '#7189ff';
+    }
+  }
+
+  // 숙제탭 카운터
+  const doneCount = s.homework.filter(h=>h.done).length;
+  const tabCount = document.getElementById('s-hw-tab-count');
+  if (tabCount) tabCount.textContent = `${doneCount}/${s.homework.length}`;
+
+  // 확장 카드는 구조 변경(미완료 목록에서 사라짐)이므로 애니메이션 후 재렌더
+  setTimeout(() => _renderHwCardBody(s), 220);
+
+  // 진행 링 + 하단 배지
   _updateHomeRing(s);
-  // 하단 네비 배지 업데이트
   const _nb = document.getElementById('s-nav-hw-badge');
   if (_nb) {
     const pc = s.homework.filter(h=>!h.done).length;
@@ -4543,7 +4657,7 @@ function _renderHwCardBody(s) {
   if (pending.length > 0) {
     bodyHtml = pending.map(h => {
       const realIdx = s.homework.indexOf(h);
-      return `<div class="hw-item"><div class="hw-check${h.done?' done':''}" onclick="event.stopPropagation();toggleStudentHw(${s.id},${realIdx})"></div><div class="hw-meta"><p class="hw-text${h.done?' done':''}">${h.text}</p>${h.week?`<p class="hw-week">${h.week}주차</p>`:''}</div></div>`;
+      return `<div class="hw-item"><div class="hw-check${h.done?' done':''}" data-hw-key="${s.id}-${realIdx}" onclick="event.stopPropagation();toggleStudentHw(${s.id},${realIdx})"></div><div class="hw-meta"><p class="hw-text${h.done?' done':''}" data-hw-key="${s.id}-${realIdx}">${h.text}</p>${h.week?`<p class="hw-week">${h.week}주차</p>`:''}</div></div>`;
     }).join('');
   } else if (s.homework.length > 0) {
     bodyHtml = `<div style="text-align:center;padding:8px 0;"><p style="font-size:22px;margin-bottom:8px;">✓</p><p class="bold">이번 주 숙제 모두 완료!</p><p class="small muted mt4">다음 레슨이 기대돼요</p></div>`;
@@ -4566,11 +4680,11 @@ function _renderHwCardBody(s) {
 function renderStudentHwTab(s) {
   const done=s.homework.filter(h=>h.done).length;
   document.getElementById('s-homework').innerHTML=`<div class="card">
-    <div class="row mb12"><p class="section-title" style="margin:0;">이번 주 숙제</p><span class="small gold">${done}/${s.homework.length}</span></div>
+    <div class="row mb12"><p class="section-title" style="margin:0;">이번 주 숙제</p><span class="small gold" id="s-hw-tab-count">${done}/${s.homework.length}</span></div>
     ${s.homework.length?s.homework.map((h,i)=>`
       <div class="hw-item">
-        <div class="hw-check${h.done?' done':''}" onclick="toggleStudentHw(${s.id},${i})"></div>
-        <div class="hw-meta"><p class="hw-text${h.done?' done':''}">${h.text}</p>${h.week?`<p class="hw-week">${h.week}주차</p>`:''}</div>
+        <div class="hw-check${h.done?' done':''}" data-hw-key="${s.id}-${i}" onclick="toggleStudentHw(${s.id},${i})"></div>
+        <div class="hw-meta"><p class="hw-text${h.done?' done':''}" data-hw-key="${s.id}-${i}">${h.text}</p>${h.week?`<p class="hw-week">${h.week}주차</p>`:''}</div>
       </div>`).join(''):'<p class="small muted" style="padding:12px 0;text-align:center;">아직 숙제가 없습니다</p>'}
   </div>`;
 }
@@ -4946,9 +5060,9 @@ function buildCalendarGridHTML(dayData, gridBodyId) {
   let hourLines = '';
   for (let h = CGRID_H_START; h <= CGRID_H_END; h++) {
     const top = (h - CGRID_H_START) * CGRID_HOUR_H;
-    hourLines += `<div style="position:absolute;top:${top}px;left:0;right:0;border-top:0.5px solid var(--border);pointer-events:none;"></div>`;
+    hourLines += `<div style="position:absolute;top:${top}px;left:0;right:0;border-top:1.5px solid var(--border2);pointer-events:none;"></div>`;
     const htop = top + CGRID_HOUR_H / 2;
-    hourLines += `<div style="position:absolute;top:${htop}px;left:0;right:0;border-top:0.5px dashed var(--border);opacity:0.4;pointer-events:none;"></div>`;
+    hourLines += `<div style="position:absolute;top:${htop}px;left:0;right:0;border-top:1px dashed var(--border2);opacity:0.55;pointer-events:none;"></div>`;
   }
 
   // Current time indicator
@@ -4989,7 +5103,7 @@ function buildCalendarGridHTML(dayData, gridBodyId) {
     }
 
     const todayBg = isToday ? 'rgba(201,168,76,0.04)' : 'var(--surface)';
-    return `<div style="position:relative;flex:0 0 ${dayW}px;height:${TOTAL_H+16}px;border-left:0.5px solid var(--border);background:${todayBg};">
+    return `<div style="position:relative;flex:0 0 ${dayW}px;height:${TOTAL_H+16}px;border-left:1.5px solid var(--border2);background:${todayBg};">
       ${hourLines}
       ${isToday ? nowLine : ''}
       ${evHtml}
@@ -4999,14 +5113,14 @@ function buildCalendarGridHTML(dayData, gridBodyId) {
   return {
     html: `
       <div style="display:flex;flex-direction:column;flex:1;overflow:visible;">
-        <div style="display:flex;flex-shrink:0;background:var(--surface);border-bottom:0.5px solid var(--border2);">
+        <div style="display:flex;flex-shrink:0;background:var(--surface);border-bottom:2px solid var(--border2);">
           <div style="width:${CGRID_TIME_W}px;flex-shrink:0;"></div>
           <div style="display:flex;overflow:hidden;flex:1;" id="${gridBodyId}-hdr">
             ${dayHeaders}
           </div>
         </div>
         <div style="flex:1;overflow:auto;display:flex;min-height:0;background:var(--surface);-webkit-overflow-scrolling:touch;" id="${gridBodyId}">
-          <div style="position:sticky;left:0;z-index:10;width:${CGRID_TIME_W}px;flex-shrink:0;background:var(--surface);border-right:0.5px solid var(--border);">
+          <div style="position:sticky;left:0;z-index:10;width:${CGRID_TIME_W}px;flex-shrink:0;background:var(--surface);border-right:1.5px solid var(--border2);">
             <div style="position:relative;height:${TOTAL_H+16}px;">${timeHtml}</div>
           </div>
           <div style="display:flex;min-width:${dayW * numDays}px;">${dayCols}</div>
@@ -5535,20 +5649,27 @@ function _renderChatMessages(containerId, emptyId, messages, myRole) {
   arr.forEach((msg, idx) => {
     const isMine  = msg.sender === myRole;
     const dateLabel = _chatFmtDate(msg.ts);
+    let dateChanged = false;
     if (dateLabel !== lastDateLabel) {
       const div = document.createElement('div');
       div.className = 'chat-date-divider';
       div.textContent = dateLabel;
       container.appendChild(div);
       lastDateLabel = dateLabel;
+      dateChanged = true;
     }
     const wrap = document.createElement('div');
     wrap.className = 'chat-bubble-wrap ' + (isMine ? 'mine' : 'theirs');
+    // 발신자 레이블은 발신자 그룹의 첫 메시지에만 표시
     if (!isMine) {
-      const lbl = document.createElement('div');
-      lbl.className = 'chat-sender-label';
-      lbl.textContent = msg.sender === 'teacher' ? 'HEUM 강사' : msg.senderName || '레슨생';
-      wrap.appendChild(lbl);
+      const prevMsg = idx > 0 ? arr[idx - 1] : null;
+      const senderChanged = !prevMsg || prevMsg.sender !== msg.sender;
+      if (dateChanged || senderChanged) {
+        const lbl = document.createElement('div');
+        lbl.className = 'chat-sender-label';
+        lbl.textContent = msg.sender === 'teacher' ? 'HEUM 강사' : msg.senderName || '레슨생';
+        wrap.appendChild(lbl);
+      }
     }
     const bubble = document.createElement('div');
     bubble.className = 'chat-bubble ' + (isMine ? 'mine' : 'theirs');
