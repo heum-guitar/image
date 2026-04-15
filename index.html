@@ -820,6 +820,24 @@
     border-bottom-left-radius:6px;
     box-shadow: var(--sh-out-sm);
   }
+
+  /* 강사 채팅창 — 버블 스타일 재정의
+     강사 메세지: 뉴모피즘 볼록(raised) / 레슨생 메세지: 오목(pressed) */
+  #sc-teacher-chat .chat-bubble.mine,
+  .sc-chat-dt-panel .chat-bubble.mine {
+    background: var(--bg);
+    box-shadow: var(--sh-out-sm);
+    color: var(--text);
+    border-radius: 20px 20px 4px 20px;
+  }
+  #sc-teacher-chat .chat-bubble.theirs,
+  .sc-chat-dt-panel .chat-bubble.theirs {
+    background: var(--bg);
+    box-shadow: var(--sh-in-sm);
+    color: var(--text);
+    border-radius: 20px 20px 20px 4px;
+  }
+
   .chat-ts { font-size:10px; color:var(--text3); padding:0 4px; }
   .chat-sender-label { font-size:11px; color:var(--text2); font-weight:600; padding:0 4px; margin-bottom:2px; }
   .chat-input-bar {
@@ -1508,6 +1526,234 @@
     width: 9px; height: 9px; background: #f87171;
     border-radius: 50%; border: 2px solid var(--bg);
   }
+
+  /* ═══════════════════════════════════════════════════
+     레슨생 정보 관리 — 데스크탑 레이아웃
+  ═══════════════════════════════════════════════════ */
+  .sc-info-mobile-only { display:flex; flex-direction:column; min-height:100vh; }
+  .sc-info-dt-layout   { display:none; height:100dvh; height:100vh; background:var(--bg); }
+
+  @media (min-width: 768px) {
+    body.heum-teacher-mode #sc-info { overflow:hidden; height:100dvh; height:100vh; }
+    body.heum-teacher-mode #sc-info .sc-info-mobile-only { display:none; }
+    body.heum-teacher-mode #sc-info .sc-info-dt-layout   { display:flex; }
+  }
+
+  /* Sidebar */
+  .sc-info-dt-sidebar {
+    width:300px; flex-shrink:0; height:100%; overflow:hidden;
+    display:flex; flex-direction:column; gap:14px;
+    padding:28px 16px 28px 20px;
+  }
+  .sc-info-dt-sidebar-hd {
+    display:flex; align-items:center; justify-content:space-between; padding:0 4px; flex-shrink:0;
+  }
+  .sc-info-dt-title    { font-size:20px; font-weight:800; color:var(--text); letter-spacing:-0.02em; }
+  .sc-info-dt-subtitle { font-size:10px; color:var(--text2); font-weight:600; margin-top:2px; }
+  .sc-info-dt-add-btn {
+    width:36px; height:36px; border-radius:11px; border:none;
+    background:var(--bg); box-shadow:var(--sh-out-sm);
+    display:flex; align-items:center; justify-content:center;
+    color:#818cf8; font-size:15px; cursor:pointer;
+    transition:box-shadow 0.15s,transform 0.15s;
+  }
+  .sc-info-dt-add-btn:active { box-shadow:var(--sh-in-sm); transform:scale(0.95); }
+
+  .sc-info-dt-search-bar {
+    display:flex; align-items:center; gap:10px; height:44px; border-radius:14px;
+    padding:0 14px; background:var(--bg); box-shadow:var(--sh-in-sm); flex-shrink:0;
+  }
+  .sc-info-dt-search-bar i { color:var(--text2); font-size:14px; flex-shrink:0; }
+  .sc-info-dt-search-bar input {
+    background:transparent; border:none; outline:none; flex:1;
+    font-size:13px; color:var(--text); box-shadow:none; padding:0; border-radius:0;
+  }
+  .sc-info-dt-search-bar input::placeholder { color:var(--text3); }
+
+  .sc-info-dt-filters { display:flex; gap:6px; flex-shrink:0; }
+  .sc-info-dt-filter {
+    padding:5px 14px; border-radius:10px; border:none; font-size:11px; font-weight:700;
+    background:var(--bg); box-shadow:var(--sh-out-sm); color:var(--text2); cursor:pointer;
+    transition:box-shadow 0.15s,color 0.15s;
+  }
+  .sc-info-dt-filter:active { box-shadow:var(--sh-in-sm); }
+  .sc-info-dt-filter.active { box-shadow:var(--sh-in-sm); color:#818cf8; }
+
+  .sc-info-dt-list {
+    flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:8px; padding-right:2px;
+  }
+  .sc-info-dt-list::-webkit-scrollbar { width:4px; }
+  .sc-info-dt-list::-webkit-scrollbar-thumb { background:var(--text3); border-radius:4px; }
+
+  .sc-info-dt-stu-card {
+    border-radius:16px; padding:12px 14px;
+    display:flex; align-items:center; gap:12px; cursor:pointer;
+    background:var(--bg); box-shadow:var(--sh-out-sm);
+    transition:box-shadow 0.15s,transform 0.15s;
+  }
+  .sc-info-dt-stu-card:active { box-shadow:var(--sh-in-sm); transform:scale(0.98); }
+  .sc-info-dt-stu-card.sel { box-shadow:var(--sh-in); border-left:3px solid #818cf8; }
+  .sc-info-dt-stu-av {
+    width:40px; height:40px; border-radius:12px; flex-shrink:0;
+    background:var(--bg); box-shadow:var(--sh-out-sm);
+    display:flex; align-items:center; justify-content:center;
+    font-size:13px; font-weight:800; color:#818cf8; position:relative;
+  }
+  .sc-info-dt-av-dot {
+    position:absolute; top:-3px; right:-3px;
+    width:9px; height:9px; border-radius:50%; border:2px solid var(--bg);
+  }
+  .sc-info-dt-av-dot.green { background:#34d399; }
+  .sc-info-dt-av-dot.gray  { background:var(--text3); }
+  .sc-info-dt-stu-info { flex:1; min-width:0; }
+  .sc-info-dt-stu-name { font-size:13px; font-weight:700; color:var(--text); }
+  .sc-info-dt-stu-sub  { font-size:11px; color:var(--text2); margin-top:1px; }
+  .sc-info-dt-stu-caret { color:var(--text3); font-size:13px; flex-shrink:0; }
+
+  /* Main panel */
+  .sc-info-dt-main {
+    flex:1; height:100%; overflow-y:auto;
+    padding:28px 24px 28px 8px; display:flex; flex-direction:column; gap:16px;
+  }
+  .sc-info-dt-main::-webkit-scrollbar { width:5px; }
+  .sc-info-dt-main::-webkit-scrollbar-thumb { background:var(--text3); border-radius:5px; }
+
+  .sc-info-dt-panel { border-radius:2rem; padding:28px; background:var(--bg); box-shadow:var(--sh-out); }
+  .sc-info-dt-panel-hd { display:flex; align-items:center; gap:14px; margin-bottom:24px; }
+  .sc-info-dt-panel-icon {
+    width:42px; height:42px; border-radius:13px; flex-shrink:0;
+    background:var(--bg); box-shadow:var(--sh-in);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .sc-info-dt-panel-title { font-size:16px; font-weight:700; color:var(--text); }
+  .sc-info-dt-panel-sub   { font-size:11px; color:var(--text2); margin-top:2px; }
+
+  .sc-info-dt-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px 28px; margin-bottom:18px; }
+  .sc-info-dt-field { display:flex; flex-direction:column; gap:7px; }
+  .sc-info-dt-label {
+    font-size:10px; font-weight:700; color:var(--text2);
+    text-transform:uppercase; letter-spacing:0.05em; padding-left:4px;
+  }
+  .sc-info-dt-input-wrap {
+    height:46px; border-radius:13px; background:var(--bg); box-shadow:var(--sh-in-sm);
+    display:flex; align-items:center; padding:0 14px; gap:10px;
+  }
+  .sc-info-dt-input-wrap i { color:var(--text2); font-size:14px; flex-shrink:0; }
+  .sc-info-dt-input-wrap input,
+  .sc-info-dt-input-wrap select {
+    background:transparent; border:none; outline:none; flex:1;
+    font-size:14px; font-weight:600; color:var(--text);
+    box-shadow:none; padding:0; border-radius:0;
+  }
+  .sc-info-dt-input-wrap input::placeholder { color:var(--text3); font-weight:400; }
+  .sc-info-dt-form-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:4px; }
+
+  /* ═══════════════════════════════════════════════════
+     강사 채팅 — 데스크탑 레이아웃
+  ═══════════════════════════════════════════════════ */
+  .sc-chat-mobile-only { display:flex; flex-direction:column; min-height:100vh; }
+  .sc-chat-dt-layout   { display:none; height:100dvh; height:100vh; background:var(--bg); }
+
+  @media (min-width: 768px) {
+    body.heum-teacher-mode #sc-teacher-chat-list { overflow:hidden; height:100dvh; height:100vh; }
+    body.heum-teacher-mode #sc-teacher-chat-list .sc-chat-mobile-only { display:none; }
+    body.heum-teacher-mode #sc-teacher-chat-list .sc-chat-dt-layout   { display:flex; }
+  }
+
+  /* Chat sidebar */
+  .sc-chat-dt-sidebar {
+    width:300px; flex-shrink:0; height:100%; overflow:hidden;
+    display:flex; flex-direction:column; gap:14px;
+    padding:28px 16px 28px 20px;
+  }
+  .sc-chat-dt-sidebar-hd { padding:0 4px; flex-shrink:0; }
+  .sc-chat-dt-title    { font-size:20px; font-weight:800; color:var(--text); letter-spacing:-0.02em; }
+  .sc-chat-dt-subtitle { font-size:10px; color:var(--text2); font-weight:600; margin-top:3px; }
+
+  .sc-chat-dt-search {
+    display:flex; align-items:center; gap:10px; height:44px; border-radius:14px;
+    padding:0 14px; background:var(--bg); box-shadow:var(--sh-in-sm); flex-shrink:0;
+  }
+  .sc-chat-dt-search i { color:var(--text2); font-size:14px; flex-shrink:0; }
+  .sc-chat-dt-search input {
+    background:transparent; border:none; outline:none; flex:1;
+    font-size:13px; color:var(--text); box-shadow:none; padding:0; border-radius:0;
+  }
+  .sc-chat-dt-search input::placeholder { color:var(--text3); }
+
+  .sc-chat-dt-list {
+    flex:1; overflow-y:auto; display:flex; flex-direction:column;
+    border-radius:1.5rem; background:var(--bg); box-shadow:var(--sh-out); overflow:hidden;
+  }
+  .sc-chat-dt-list::-webkit-scrollbar { display:none; }
+  .sc-chat-dt-list .chat-list-item { border-bottom:1px solid var(--border); }
+  .sc-chat-dt-list .chat-list-item:last-child { border-bottom:none; }
+  .sc-chat-dt-list .chat-list-item.active-chat { background:var(--surface3); }
+
+  /* Chat main */
+  .sc-chat-dt-main {
+    flex:1; height:100%; display:flex; flex-direction:column;
+    padding:28px 24px 28px 4px; min-width:0;
+  }
+  .sc-chat-dt-panel {
+    flex:1; border-radius:2rem; overflow:hidden;
+    background:var(--bg); box-shadow:var(--sh-out); display:flex; flex-direction:column;
+  }
+  .sc-chat-dt-header {
+    height:68px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 24px; border-bottom:1px solid var(--border);
+  }
+  .sc-chat-dt-header-left { display:flex; align-items:center; gap:12px; }
+  .sc-chat-dt-av {
+    width:40px; height:40px; border-radius:12px;
+    background:var(--bg); box-shadow:var(--sh-out-sm);
+    display:flex; align-items:center; justify-content:center;
+    font-size:13px; font-weight:700; color:var(--text2);
+  }
+  .sc-chat-dt-name   { font-size:16px; font-weight:800; color:var(--text); }
+  .sc-chat-dt-status { font-size:11px; font-weight:600; color:var(--text2); margin-top:1px; }
+  .sc-chat-dt-header-actions { display:flex; gap:8px; }
+  .sc-chat-dt-action-btn {
+    width:38px; height:38px; border-radius:11px; border:none;
+    background:var(--bg); box-shadow:var(--sh-out-sm);
+    display:flex; align-items:center; justify-content:center;
+    color:var(--text2); font-size:16px; cursor:pointer;
+    transition:box-shadow 0.15s,transform 0.15s;
+  }
+  .sc-chat-dt-action-btn:active { box-shadow:var(--sh-in-sm); transform:scale(0.95); }
+
+  .sc-chat-dt-messages {
+    flex:1; overflow-y:auto; padding:20px 24px;
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .sc-chat-dt-messages::-webkit-scrollbar { width:4px; }
+  .sc-chat-dt-messages::-webkit-scrollbar-thumb { background:var(--text3); border-radius:4px; }
+
+  .sc-chat-dt-empty-state {
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:10px; color:var(--text3); text-align:center;
+  }
+  .sc-chat-dt-empty-state p { font-size:13px; font-weight:600; }
+  .sc-chat-dt-empty-state p:last-child { font-size:11px; color:var(--text3); font-weight:400; margin-top:-4px; }
+
+  .sc-chat-dt-input-bar {
+    display:flex; align-items:flex-end; gap:10px;
+    padding:14px 20px 18px; border-top:1px solid var(--border); flex-shrink:0;
+  }
+  .sc-chat-dt-input {
+    flex:1; resize:none; border-radius:14px; min-height:44px; max-height:120px;
+    font-size:13px; padding:11px 14px; line-height:1.4;
+    background:var(--bg); color:var(--text); border:none;
+    box-shadow:var(--sh-in-sm); outline:none;
+  }
+  .sc-chat-dt-send {
+    width:42px; height:42px; border-radius:13px; flex-shrink:0;
+    background:linear-gradient(135deg,#d4b05c,#C9A84C); border:none;
+    color:#fff; font-size:17px; display:flex; align-items:center; justify-content:center;
+    box-shadow:var(--sh-out-sm); cursor:pointer; transition:box-shadow 0.15s,transform 0.15s;
+  }
+  .sc-chat-dt-send:active { box-shadow:var(--sh-in-sm); transform:scale(0.94); }
 </style>
 </head>
 <body>
@@ -1889,7 +2135,107 @@
 
 <!-- 레슨생 정보 관리 -->
 <div id="sc-info" class="hidden">
-  <div class="screen">
+
+  <!-- ── 데스크탑 레이아웃 ── -->
+  <div class="sc-info-dt-layout">
+
+    <!-- 좌측: 레슨생 목록 사이드바 -->
+    <aside class="sc-info-dt-sidebar">
+      <div class="sc-info-dt-sidebar-hd">
+        <div>
+          <p class="sc-info-dt-title">레슨생 관리</p>
+          <p class="sc-info-dt-subtitle" id="sc-info-dt-count">로딩 중...</p>
+        </div>
+        <button class="sc-info-dt-add-btn" title="레슨생 추가" onclick="_toggleInfoAddPanel()">
+          <i class="ph-bold ph-plus"></i>
+        </button>
+      </div>
+      <div class="sc-info-dt-search-bar">
+        <i class="ph-bold ph-magnifying-glass"></i>
+        <input type="text" placeholder="이름으로 검색..." id="sc-info-dt-q" oninput="_filterDtStudentList(this.value)">
+      </div>
+      <div class="sc-info-dt-filters">
+        <button class="sc-info-dt-filter active" onclick="_filterDtStatus('all',this)">전체</button>
+        <button class="sc-info-dt-filter" onclick="_filterDtStatus('active',this)">수강중</button>
+        <button class="sc-info-dt-filter" onclick="_filterDtStatus('ended',this)">종료</button>
+      </div>
+      <div class="sc-info-dt-list" id="sc-info-dt-student-list">
+        <!-- JS가 렌더 -->
+      </div>
+    </aside>
+
+    <!-- 우측: 추가 폼 / 삭제 패널 -->
+    <main class="sc-info-dt-main">
+
+      <!-- 추가 패널 -->
+      <section class="sc-info-dt-panel" id="sc-info-dt-add-panel">
+        <div class="sc-info-dt-panel-hd">
+          <div class="sc-info-dt-panel-icon">
+            <i class="ph-fill ph-user-plus" style="color:#818cf8;font-size:17px;"></i>
+          </div>
+          <div>
+            <p class="sc-info-dt-panel-title">새 레슨생 추가</p>
+            <p class="sc-info-dt-panel-sub">레슨생 정보를 입력하고 추가하기를 눌러주세요</p>
+          </div>
+        </div>
+        <div class="sc-info-dt-form-grid">
+          <div class="sc-info-dt-field">
+            <label class="sc-info-dt-label">이름 (Name)</label>
+            <div class="sc-info-dt-input-wrap">
+              <input type="text" id="add-name-dt" placeholder="이름 입력">
+            </div>
+          </div>
+          <div class="sc-info-dt-field">
+            <label class="sc-info-dt-label">레벨 (Level)</label>
+            <div class="sc-info-dt-input-wrap">
+              <select id="add-level-dt">
+                <option value="초급">초급</option>
+                <option value="중급">중급</option>
+                <option value="고급">고급</option>
+              </select>
+            </div>
+          </div>
+          <div class="sc-info-dt-field">
+            <label class="sc-info-dt-label">생년월일 (YYMMDD)</label>
+            <div class="sc-info-dt-input-wrap">
+              <i class="ph-bold ph-calendar"></i>
+              <input type="tel" id="add-birth-dt" maxlength="6" placeholder="예: 991201" oninput="this.value=this.value.replace(/\D/g,'')">
+            </div>
+          </div>
+          <div class="sc-info-dt-field">
+            <label class="sc-info-dt-label">수업 시작일 (Start Date)</label>
+            <div class="sc-info-dt-input-wrap">
+              <i class="ph-bold ph-calendar-blank"></i>
+              <input type="date" id="add-start-dt">
+            </div>
+          </div>
+        </div>
+        <p class="err-msg" id="add-err-dt" style="margin-bottom:12px;text-align:left;min-height:16px;"></p>
+        <div class="sc-info-dt-form-actions">
+          <button class="btn" style="padding:11px 22px;" onclick="_toggleInfoAddPanel()">취소</button>
+          <button class="btn-primary" style="padding:11px 26px;font-size:14px;" onclick="addStudentDt()">추가하기</button>
+        </div>
+      </section>
+
+      <!-- 삭제 패널 -->
+      <section class="sc-info-dt-panel">
+        <div class="sc-info-dt-panel-hd">
+          <div class="sc-info-dt-panel-icon">
+            <i class="ph-fill ph-trash" style="color:var(--red);font-size:17px;"></i>
+          </div>
+          <div>
+            <p class="sc-info-dt-panel-title">레슨생 삭제</p>
+            <p class="sc-info-dt-panel-sub">삭제 후 복구가 불가능합니다</p>
+          </div>
+        </div>
+        <div id="info-delete-list-dt"></div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ── 모바일 레이아웃 (기존) ── -->
+  <div class="screen sc-info-mobile-only">
     <div class="topbar">
       <button class="btn-ghost" onclick="goBack()">← 돌아가기</button>
       <p class="bold">레슨생 정보 관리</p>
@@ -1909,6 +2255,7 @@
       <div class="card mt8"><p class="section-title">레슨생 삭제</p><div id="info-delete-list"></div></div>
     </div>
   </div>
+
 </div>
 
 <!-- 학생 상세 (강사) -->
@@ -2857,6 +3204,31 @@ function renderInfoScreen() {
   document.getElementById('info-delete-list').innerHTML = students.map(s =>
     `<div class="info-row" id="del-row-${s.id}"><p class="info-name" style="flex:1;">${s.name}</p><span class="item-badge" style="margin-right:8px;">${s.level}</span><button class="btn-del-sm" onclick="confirmDelete(${s.id},'${s.name}')">삭제</button></div>`
   ).join('') || '<p class="small muted">등록된 레슨생이 없습니다</p>';
+
+  // ── 데스크탑 레이아웃 업데이트 ──
+  const _dtCount = document.getElementById('sc-info-dt-count');
+  if (_dtCount) _dtCount.textContent = students.length ? `총 ${students.length}명 수강 중` : '등록된 레슨생 없음';
+
+  const _dtList = document.getElementById('sc-info-dt-student-list');
+  if (_dtList) {
+    _dtList.innerHTML = students.length ? students.map(s =>
+      `<div class="sc-info-dt-stu-card" onclick="openDetail(${s.id})">
+        <div class="sc-info-dt-stu-av">${s.name.slice(0,2)}<span class="sc-info-dt-av-dot green"></span></div>
+        <div class="sc-info-dt-stu-info">
+          <div class="sc-info-dt-stu-name">${s.name}</div>
+          <div class="sc-info-dt-stu-sub">${s.level}</div>
+        </div>
+        <i class="ph-bold ph-caret-right sc-info-dt-stu-caret"></i>
+      </div>`
+    ).join('') : '<p style="text-align:center;color:var(--text2);font-size:13px;padding:20px 0;">등록된 레슨생이 없습니다</p>';
+  }
+
+  const _dtDel = document.getElementById('info-delete-list-dt');
+  if (_dtDel) {
+    _dtDel.innerHTML = students.map(s =>
+      `<div class="info-row" id="del-row-dt-${s.id}"><p class="info-name" style="flex:1;">${s.name}</p><span class="item-badge" style="margin-right:8px;">${s.level}</span><button class="btn-del-sm" onclick="confirmDeleteDt(${s.id},'${s.name}')">삭제</button></div>`
+    ).join('') || '<p style="text-align:center;color:var(--text2);font-size:13px;padding:12px 0;">등록된 레슨생이 없습니다</p>';
+  }
 }
 function unlockStudent(id) {
   clearLockOut('student_' + id);
@@ -5160,7 +5532,7 @@ function _renderChatMessages(containerId, emptyId, messages, myRole) {
   if (emptyEl) emptyEl.style.display = 'none';
   container.querySelectorAll('.chat-bubble-wrap, .chat-date-divider').forEach(el=>el.remove());
   let lastDateLabel = '';
-  arr.forEach(msg => {
+  arr.forEach((msg, idx) => {
     const isMine  = msg.sender === myRole;
     const dateLabel = _chatFmtDate(msg.ts);
     if (dateLabel !== lastDateLabel) {
@@ -5192,10 +5564,16 @@ function _renderChatMessages(containerId, emptyId, messages, myRole) {
     textNode.textContent = msg.text || '(내용 없음)';
     bubble.appendChild(textNode);
     wrap.appendChild(bubble);
-    const ts = document.createElement('div');
-    ts.className = 'chat-ts';
-    ts.textContent = _chatFmtTime(msg.ts);
-    wrap.appendChild(ts);
+    // 같은 분(minute)의 마지막 메세지에만 시간 표시
+    const curTime  = _chatFmtTime(msg.ts);
+    const nextMsg  = arr[idx + 1];
+    const nextTime = nextMsg ? _chatFmtTime(nextMsg.ts) : null;
+    if (nextTime !== curTime) {
+      const ts = document.createElement('div');
+      ts.className = 'chat-ts';
+      ts.textContent = curTime;
+      wrap.appendChild(ts);
+    }
     container.appendChild(wrap);
   });
   _chatScrollBottom(containerId);
@@ -5277,46 +5655,59 @@ function openTeacherChatList() {
   _renderTeacherChatList();
 }
 function _renderTeacherChatList() {
-  const students = loadStudents();
-  const container = document.getElementById('t-chat-list-inner');
-  if (!container) return;
-  if (!students.length) {
-    container.innerHTML = '<div style="padding:20px;text-align:center;"><p class="small muted">등록된 레슨생이 없습니다</p></div>';
-    return;
-  }
-  // 각 학생의 마지막 메시지/안읽은 수 비동기 로드
-  container.innerHTML = students.map(s =>
-    `<div class="chat-list-item" id="t-cl-${s.id}" data-ts="0" onclick="openTeacherChat(${s.id},'${s.name.replace(/'/g,"\\'")}')">
+  const students  = loadStudents();
+  const container  = document.getElementById('t-chat-list-inner');   // 데스크탑
+  const containerM = document.getElementById('t-chat-list-inner-m'); // 모바일
+
+  const makeItem = (s, pfx) =>
+    `<div class="chat-list-item" id="t-cl-${pfx}${s.id}" data-ts="0" onclick="openTeacherChat(${s.id},'${s.name.replace(/'/g,"\\'")}')">
       <div class="chat-list-avatar">${s.name.slice(0,2)}</div>
       <div class="chat-list-info">
         <div class="chat-list-name">${s.name}</div>
-        <div class="chat-list-preview muted" id="t-cl-preview-${s.id}">대화 없음</div>
+        <div class="chat-list-preview muted" id="t-cl-preview-${pfx}${s.id}">대화 없음</div>
       </div>
       <div class="chat-list-meta">
-        <div class="chat-list-time" id="t-cl-time-${s.id}"></div>
-        <div id="t-cl-dot-${s.id}"></div>
+        <div class="chat-list-time" id="t-cl-time-${pfx}${s.id}"></div>
+        <div id="t-cl-dot-${pfx}${s.id}"></div>
       </div>
-    </div>`
-  ).join('');
+    </div>`;
+
+  const emptyHtml = '<div style="padding:20px;text-align:center;"><p class="small muted">등록된 레슨생이 없습니다</p></div>';
+  if (!students.length) {
+    if (container)  container.innerHTML  = emptyHtml;
+    if (containerM) containerM.innerHTML = emptyHtml;
+    return;
+  }
+
+  if (container)  container.innerHTML  = students.map(s => makeItem(s, '')).join('');
+  if (containerM) containerM.innerHTML = students.map(s => makeItem(s, 'm-')).join('');
 
   // 비동기로 각 학생 마지막 메시지 로드 + 타임스탬프 기준 정렬
   students.forEach(s => {
     _chatRef(s.id).limitToLast(1).once('value', snap => {
-      const previewEl = document.getElementById('t-cl-preview-' + s.id);
-      const timeEl    = document.getElementById('t-cl-time-' + s.id);
-      const dotEl     = document.getElementById('t-cl-dot-' + s.id);
-      const itemEl    = document.getElementById('t-cl-' + s.id);
       if (!snap.exists()) return;
       const msgs = Object.values(snap.val());
       if (!msgs.length) return;
       const last = msgs[0];
-      if (previewEl) {
-        const prefix = last.sender === 'teacher' ? '나: ' : '';
-        const cat = last.hwCategory ? `[${last.hwCategory}] ` : '';
-        previewEl.textContent = prefix + cat + (last.text || '');
-      }
-      if (timeEl) timeEl.textContent = _chatFmtTime(last.ts);
-      // 타임스탬프 저장 후 목록 재정렬 (최근순)
+      const prefix  = last.sender === 'teacher' ? '나: ' : '';
+      const cat     = last.hwCategory ? `[${last.hwCategory}] ` : '';
+      const preview = prefix + cat + (last.text || '');
+      const time    = _chatFmtTime(last.ts);
+
+      // 데스크탑 업데이트
+      const previewEl = document.getElementById('t-cl-preview-' + s.id);
+      const timeEl    = document.getElementById('t-cl-time-' + s.id);
+      const dotEl     = document.getElementById('t-cl-dot-' + s.id);
+      const itemEl    = document.getElementById('t-cl-' + s.id);
+      if (previewEl) previewEl.textContent = preview;
+      if (timeEl)    timeEl.textContent    = time;
+      // 모바일 업데이트
+      const previewElM = document.getElementById('t-cl-preview-m-' + s.id);
+      const timeElM    = document.getElementById('t-cl-time-m-' + s.id);
+      if (previewElM) previewElM.textContent = preview;
+      if (timeElM)    timeElM.textContent    = time;
+
+      // 타임스탬프 저장 후 데스크탑 목록 재정렬 (최근순)
       if (itemEl) {
         itemEl.dataset.ts = String(last.ts);
         const c = document.getElementById('t-chat-list-inner');
@@ -5329,10 +5720,8 @@ function _renderTeacherChatList() {
       // 안읽은 메시지 (student가 보낸 것 중 read:false)
       _chatRef(s.id).orderByChild('sender').equalTo('student').once('value', allSnap => {
         if (!allSnap.exists()) return;
-        const unread = Object.values(allSnap.val()).filter(m=>!m.read).length;
-        if (dotEl && unread > 0) {
-          dotEl.innerHTML = `<div class="chat-unread-dot"></div>`;
-        }
+        const unread = Object.values(allSnap.val()).filter(m => !m.read).length;
+        if (dotEl && unread > 0) dotEl.innerHTML = `<div class="chat-unread-dot"></div>`;
       });
     });
   });
@@ -5340,28 +5729,61 @@ function _renderTeacherChatList() {
 
 // ─ 강사: 학생 채팅창 열기 ─
 function openTeacherChat(sid, sname) {
-  _curChatStudentId = sid;
-  document.getElementById('t-chat-student-name').textContent = sname || '레슨생';
-
-  // 이전 리스너 정확하게 해제
-  if (_chatListener) {
+  // 이전 리스너 해제
+  if (_chatListener && _curChatStudentId) {
     _chatRef(_curChatStudentId).off('value', _chatListener);
     _chatListener = null;
   }
-
-  goScreen('sc-teacher-chat');
+  _curChatStudentId = sid;
   _markChatRead(sid, 'student');
+
+  // ── 데스크탑 모드 ──
+  if (window.innerWidth >= 768 && document.body.classList.contains('heum-teacher-mode')) {
+    _curChatStudentIdDt = sid;
+    const nameEl   = document.getElementById('t-chat-dt-name');
+    const avEl     = document.getElementById('t-chat-dt-av');
+    const emptySel = document.getElementById('t-chat-dt-empty-select');
+    const header   = document.getElementById('t-chat-dt-header');
+    const msgs     = document.getElementById('t-chat-dt-messages');
+    const inputBar = document.getElementById('t-chat-dt-input-bar');
+    if (nameEl)   nameEl.textContent = sname || '레슨생';
+    if (avEl)     avEl.textContent   = (sname || '레').slice(0, 2);
+    if (emptySel) emptySel.style.display = 'none';
+    if (header)   header.style.display   = '';
+    if (msgs)     msgs.style.display     = '';
+    if (inputBar) inputBar.style.display = '';
+    // 활성 항목 표시
+    document.querySelectorAll('#t-chat-list-inner .chat-list-item').forEach(el => el.classList.remove('active-chat'));
+    const activeItem = document.getElementById('t-cl-' + sid);
+    if (activeItem) activeItem.classList.add('active-chat');
+    // 즉시 렌더
+    _chatRef(sid).limitToLast(200).once('value', snap => {
+      const messages = snap.exists() ? Object.values(snap.val()).sort((a,b)=>a.ts-b.ts) : [];
+      _renderChatMessages('t-chat-dt-messages', 't-chat-dt-empty-msg', messages, 'teacher');
+    });
+    // 실시간 리스너
+    _chatListener = _chatRef(sid).limitToLast(200).on('value', snap => {
+      const messages = snap.exists() ? Object.values(snap.val()).sort((a,b)=>a.ts-b.ts) : [];
+      _renderChatMessages('t-chat-dt-messages', 't-chat-dt-empty-msg', messages, 'teacher');
+      _updateTeacherChatBadge();
+    });
+    return;
+  }
+
+  // ── 모바일 모드 ──
+  document.getElementById('t-chat-student-name').textContent = sname || '레슨생';
+  goScreen('sc-teacher-chat');
 
   // 즉시 1회 렌더
   _chatRef(sid).limitToLast(200).once('value', snap => {
-    const msgs = snap.exists() ? Object.values(snap.val()).sort((a,b)=>a.ts-b.ts) : [];
-    _renderChatMessages('t-chat-messages', 't-chat-empty', msgs, 'teacher');
+    const messages = snap.exists() ? Object.values(snap.val()).sort((a,b)=>a.ts-b.ts) : [];
+    _renderChatMessages('t-chat-messages', 't-chat-empty', messages, 'teacher');
   });
 
   // 실시간 리스너
   _chatListener = _chatRef(sid).limitToLast(200).on('value', snap => {
-    const msgs = snap.exists() ? Object.values(snap.val()).sort((a,b)=>a.ts-b.ts) : [];
-    _renderChatMessages('t-chat-messages', 't-chat-empty', msgs, 'teacher');
+    const messages = snap.exists() ? Object.values(snap.val()).sort((a,b)=>a.ts-b.ts) : [];
+    _renderChatMessages('t-chat-messages', 't-chat-empty', messages, 'teacher');
     _updateTeacherChatBadge();
   });
 }
@@ -5371,6 +5793,85 @@ function sendTeacherMsg() {
   if (!text || !_curChatStudentId) return;
   inp.value = ''; inp.style.height = 'auto';
   _chatRef(_curChatStudentId).push({
+    text, sender:'teacher', senderName:'HEUM 강사',
+    ts: Date.now(), read: false
+  });
+}
+
+// ── 레슨생 관리 데스크탑 헬퍼 ────────────────────────────────
+function addStudentDt() {
+  const nameEl  = document.getElementById('add-name-dt');
+  const levelEl = document.getElementById('add-level-dt');
+  const birthEl = document.getElementById('add-birth-dt');
+  const startEl = document.getElementById('add-start-dt');
+  const errEl   = document.getElementById('add-err-dt');
+  const name  = nameEl  ? nameEl.value.trim()  : '';
+  const level = levelEl ? levelEl.value        : '초급';
+  const birth = birthEl ? birthEl.value.trim() : '';
+  const start = startEl ? startEl.value        : '';
+  if (!name)          { if (errEl) errEl.textContent = '이름을 입력하세요'; return; }
+  if (birth.length !== 6) { if (errEl) errEl.textContent = '생년월일 6자리를 입력하세요 (예: 991201)'; return; }
+  if (errEl) errEl.textContent = '';
+  const students = loadStudents();
+  students.push({ id:nextId(students), name, level, birthdate:birth, startDate:start||null, progress:0, module:'수업 준비 중', currentWeek:1, nextLesson:'', homework:[], songs:{canLearn:[],notYet:[],wantToLearn:[],learned:[]}, events:[] });
+  saveStudents(students);
+  if (nameEl)  nameEl.value  = '';
+  if (birthEl) birthEl.value = '';
+  if (startEl) startEl.value = '';
+  if (errEl)   errEl.textContent = '';
+  renderInfoScreen();
+  alert(`${name} 레슨생이 추가됐습니다`);
+}
+
+function _toggleInfoAddPanel() {
+  const panel = document.getElementById('sc-info-dt-add-panel');
+  if (!panel) return;
+  panel.style.display = (panel.style.display === 'none') ? '' : 'none';
+}
+
+function confirmDeleteDt(id, name) {
+  const row = document.getElementById('del-row-dt-' + id);
+  if (!row) return;
+  row.innerHTML = `<p class="info-name" style="flex:1;color:var(--red);font-size:13px;">${name} 삭제할까요?</p>
+    <button class="btn-del-sm" style="margin-right:6px;" onclick="deleteStudent(${id},'${name}')">확인</button>
+    <button class="btn-del-sm" style="border-color:var(--border2);color:var(--text2);" onclick="renderInfoScreen()">취소</button>`;
+}
+
+function _filterDtStudentList(q) {
+  document.querySelectorAll('#sc-info-dt-student-list .sc-info-dt-stu-card').forEach(c => {
+    const name = c.querySelector('.sc-info-dt-stu-name')?.textContent || '';
+    c.style.display = name.includes(q) ? '' : 'none';
+  });
+}
+
+function _filterDtStatus(status, btn) {
+  document.querySelectorAll('.sc-info-dt-filter').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('#sc-info-dt-student-list .sc-info-dt-stu-card').forEach(c => {
+    c.style.display = '';
+  });
+}
+
+// ── 채팅 데스크탑 헬퍼 ────────────────────────────────────────
+let _curChatStudentIdDt = null;
+
+function _filterDtChatList(q) {
+  document.querySelectorAll('#t-chat-list-inner .chat-list-item').forEach(item => {
+    const name = item.querySelector('.chat-list-name')?.textContent || '';
+    item.style.display = name.includes(q) ? '' : 'none';
+  });
+}
+
+function _openDetailFromChat() {
+  if (_curChatStudentIdDt) openDetail(_curChatStudentIdDt);
+}
+
+function _sendTeacherMsgDt() {
+  const inp  = document.getElementById('t-chat-dt-input');
+  const text = inp ? inp.value.trim() : '';
+  if (!text || !_curChatStudentIdDt) return;
+  inp.value = ''; inp.style.height = 'auto';
+  _chatRef(_curChatStudentIdDt).push({
     text, sender:'teacher', senderName:'HEUM 강사',
     ts: Date.now(), read: false
   });
@@ -5573,16 +6074,89 @@ document.addEventListener('touchstart', function() {}, {passive: true});
 
 <!-- 강사 채팅 목록 -->
 <div id="sc-teacher-chat-list" class="hidden">
-  <div class="screen">
+
+  <!-- ── 데스크탑 레이아웃 ── -->
+  <div class="sc-chat-dt-layout">
+
+    <!-- 좌측: 채팅 목록 사이드바 -->
+    <aside class="sc-chat-dt-sidebar">
+      <div class="sc-chat-dt-sidebar-hd">
+        <p class="sc-chat-dt-title">메세지</p>
+        <p class="sc-chat-dt-subtitle">레슨생과 대화하기</p>
+      </div>
+      <div class="sc-chat-dt-search">
+        <i class="ph-bold ph-magnifying-glass"></i>
+        <input type="text" placeholder="대화 상대 찾기..." oninput="_filterDtChatList(this.value)">
+      </div>
+      <div class="sc-chat-dt-list" id="t-chat-list-inner">
+        <!-- JS가 렌더 -->
+      </div>
+    </aside>
+
+    <!-- 우측: 채팅창 -->
+    <main class="sc-chat-dt-main">
+      <div class="sc-chat-dt-panel">
+
+        <!-- 빈 상태 (학생 선택 전) -->
+        <div class="sc-chat-dt-empty-state" id="t-chat-dt-empty-select">
+          <i class="ph-bold ph-chat-dots" style="font-size:52px;"></i>
+          <p>레슨생을 선택하여 대화를 시작하세요</p>
+          <p>왼쪽 목록에서 대화할 레슨생을 선택해주세요</p>
+        </div>
+
+        <!-- 채팅 헤더 (학생 선택 후) -->
+        <div class="sc-chat-dt-header" id="t-chat-dt-header" style="display:none;">
+          <div class="sc-chat-dt-header-left">
+            <div class="sc-chat-dt-av" id="t-chat-dt-av">—</div>
+            <div>
+              <p class="sc-chat-dt-name" id="t-chat-dt-name"></p>
+              <p class="sc-chat-dt-status">레슨생</p>
+            </div>
+          </div>
+          <div class="sc-chat-dt-header-actions">
+            <button class="sc-chat-dt-action-btn" title="상세보기" onclick="_openDetailFromChat()">
+              <i class="ph-bold ph-user-circle"></i>
+            </button>
+            <button class="sc-chat-dt-action-btn" title="더보기">
+              <i class="ph-bold ph-dots-three-outline-vertical"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 메시지 영역 -->
+        <div class="sc-chat-dt-messages" id="t-chat-dt-messages" style="display:none;">
+          <div class="chat-empty" id="t-chat-dt-empty-msg" style="display:none;">
+            <i class="ph-bold ph-chat-dots" style="font-size:32px;opacity:0.4;"></i>
+            <p style="font-size:13px;">아직 대화가 없어요</p>
+          </div>
+        </div>
+
+        <!-- 입력 바 -->
+        <div class="sc-chat-dt-input-bar" id="t-chat-dt-input-bar" style="display:none;">
+          <textarea class="sc-chat-dt-input" id="t-chat-dt-input" placeholder="메시지를 입력하세요..." rows="1"
+            oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();_sendTeacherMsgDt();}"></textarea>
+          <button class="sc-chat-dt-send" onclick="_sendTeacherMsgDt()">
+            <i class="ph-bold ph-paper-plane-tilt"></i>
+          </button>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ── 모바일 레이아웃 (기존) ── -->
+  <div class="screen sc-chat-mobile-only">
     <div class="topbar">
       <button class="btn-ghost" onclick="goBack()">← 돌아가기</button>
       <p class="bold">채팅</p>
       <div style="width:60px;"></div>
     </div>
     <div class="content" style="padding:0;">
-      <div id="t-chat-list-inner" style="border-radius:2rem;overflow:hidden;box-shadow:var(--sh-out);margin:0 16px;"></div>
+      <div id="t-chat-list-inner-m" style="border-radius:2rem;overflow:hidden;box-shadow:var(--sh-out);margin:0 16px;"></div>
     </div>
   </div>
+
 </div>
 
 <!-- 강사 채팅창 -->
