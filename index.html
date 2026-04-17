@@ -3891,12 +3891,20 @@ function renderProgressTab(s,months,pct) {
         if (ci < 0) ci = _JP_STAGES.length - 1;
         return _JP_STAGES.map((st, i) => {
           const isCur = i === ci;
-          return `
+          const isAdvStage = st.adv === true;
+          const numColor = isCur ? 'var(--gold)' : (isAdvStage ? '#f87171' : 'var(--text2)');
+          const divider = i === 10 ? `
+            <div style="display:flex;align-items:center;gap:8px;margin:12px 0 10px;">
+              <div style="flex:1;height:1px;background:rgba(248,113,113,0.3);"></div>
+              <span style="font-size:9px;font-weight:800;color:#f87171;letter-spacing:0.1em;">ADVANCED LEVEL · 11~20단계</span>
+              <div style="flex:1;height:1px;background:rgba(248,113,113,0.3);"></div>
+            </div>` : '';
+          return divider + `
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-              <div style="width:28px;height:28px;border-radius:8px;background:var(--bg);box-shadow:var(--sh-in-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                <span style="font-size:10px;font-weight:700;color:${isCur?'var(--gold)':'var(--text2)'};">${i+1}</span>
+              <div style="width:28px;height:28px;border-radius:8px;background:var(--bg);box-shadow:${isAdvStage?'var(--sh-in-sm), inset 0 0 0 1px rgba(248,113,113,0.25)':'var(--sh-in-sm)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <span style="font-size:10px;font-weight:700;color:${numColor};">${i+1}</span>
               </div>
-              <input type="text" id="d-stage-${i}" value="${((s.journeyStages && s.journeyStages[i]) || st.name).replace(/"/g,'&quot;')}" placeholder="${st.name}" style="font-size:13px;padding:8px 12px;">
+              <input type="text" id="d-stage-${i}" value="${((s.journeyStages && s.journeyStages[i]) || st.name).replace(/"/g,'&quot;')}" placeholder="${st.name}" style="font-size:13px;padding:8px 12px;${isAdvStage?'box-shadow:var(--sh-in-sm), inset 0 0 0 1px rgba(248,113,113,0.15);':''}">
               <button onclick="setCurrentStage(${s.id},${i})" title="${isCur?'현재 단계':'이 단계로 설정'}"
                 style="flex-shrink:0;width:34px;height:34px;border-radius:10px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:box-shadow 0.15s,transform 0.15s;${isCur?'background:var(--gold);box-shadow:var(--sh-out-sm);color:#fff;':'background:var(--bg);box-shadow:var(--sh-out-sm);color:var(--text3);'}">
                 <i class="ph-${isCur?'fill':'bold'} ph-map-pin" style="font-size:14px;"></i>
@@ -4200,18 +4208,30 @@ function deleteEvent(date, idx) {
 // ── 레슨생 성장 여정 탭 ───────────────────────────────────────
 const _JP_D = 'M 30,40 C 30,98 297,98 297,155 C 297,218 42,218 42,280 C 42,345 272,345 272,410 C 272,475 32,475 32,540 C 32,594 299,594 299,648 C 299,712 38,712 38,775 C 38,837 283,837 283,898 C 283,954 163,954 163,1010 C 163,1065 163,1065 163,1120';
 const _JP_STAGES = [
-  { name:'기초 다지기',  icon:'ph-flag',        color:'#4ade80', border:'rgba(74,222,128,0.35)',   maxWeek:4,   svgX:30,  svgY:40,   size:56, shape:'sq', top:'START' },
-  { name:'기본 코드',    icon:'ph-guitar',      color:'#C9A84C', border:'rgba(201,168,76,0.35)',   maxWeek:8,   svgX:297, svgY:155,  size:48, shape:'ci', top:'' },
-  { name:'리듬 & 반주', icon:'ph-music-notes', color:'#818cf8', border:'rgba(129,140,248,0.4)',   maxWeek:12,  svgX:42,  svgY:280,  size:56, shape:'sq', top:'' },
-  { name:'멜로디 연주', icon:'ph-music-note',  color:'#60a5fa', border:'rgba(96,165,250,0.35)',   maxWeek:16,  svgX:272, svgY:410,  size:48, shape:'ci', top:'MID' },
-  { name:'코드 심화',   icon:'ph-lightning',   color:'#f472b6', border:'rgba(244,114,182,0.35)',  maxWeek:20,  svgX:32,  svgY:540,  size:56, shape:'sq', top:'' },
-  { name:'즉흥 연주',   icon:'ph-metronome',   color:'#f59e0b', border:'rgba(245,158,11,0.35)',   maxWeek:24,  svgX:299, svgY:648,  size:48, shape:'ci', top:'' },
-  { name:'고급 리듬',   icon:'ph-wave-sine',   color:'#34d399', border:'rgba(52,211,153,0.35)',   maxWeek:28,  svgX:38,  svgY:775,  size:56, shape:'sq', top:'' },
-  { name:'복합 주법',   icon:'ph-star',        color:'#a78bfa', border:'rgba(167,139,250,0.35)',  maxWeek:32,  svgX:283, svgY:898,  size:48, shape:'ci', top:'' },
-  { name:'작곡 & 편곡', icon:'ph-pencil',      color:'#fb923c', border:'rgba(251,146,60,0.35)',   maxWeek:36,  svgX:163, svgY:1010, size:48, shape:'ci', top:'' },
-  { name:'자유 연주',   icon:'ph-crown',       color:'#C9A84C', border:'rgba(201,168,76,0.4)',    maxWeek:999, svgX:163, svgY:1120, size:56, shape:'sq', top:'GOAL' },
+  // ── 1~10단계: 기본 과정 (보라색 계열) ──
+  { name:'기초 다지기',  icon:'ph-flag',        color:'#4ade80', border:'rgba(74,222,128,0.35)',   maxWeek:4,   svgX:30,  svgY:40,   size:56, shape:'sq', top:'START', adv:false },
+  { name:'기본 코드',    icon:'ph-guitar',      color:'#C9A84C', border:'rgba(201,168,76,0.35)',   maxWeek:8,   svgX:297, svgY:155,  size:48, shape:'ci', top:'',      adv:false },
+  { name:'리듬 & 반주', icon:'ph-music-notes', color:'#818cf8', border:'rgba(129,140,248,0.4)',   maxWeek:12,  svgX:42,  svgY:280,  size:56, shape:'sq', top:'',      adv:false },
+  { name:'멜로디 연주', icon:'ph-music-note',  color:'#60a5fa', border:'rgba(96,165,250,0.35)',   maxWeek:16,  svgX:272, svgY:410,  size:48, shape:'ci', top:'MID',   adv:false },
+  { name:'코드 심화',   icon:'ph-lightning',   color:'#f472b6', border:'rgba(244,114,182,0.35)',  maxWeek:20,  svgX:32,  svgY:540,  size:56, shape:'sq', top:'',      adv:false },
+  { name:'즉흥 연주',   icon:'ph-metronome',   color:'#f59e0b', border:'rgba(245,158,11,0.35)',   maxWeek:24,  svgX:299, svgY:648,  size:48, shape:'ci', top:'',      adv:false },
+  { name:'고급 리듬',   icon:'ph-wave-sine',   color:'#34d399', border:'rgba(52,211,153,0.35)',   maxWeek:28,  svgX:38,  svgY:775,  size:56, shape:'sq', top:'',      adv:false },
+  { name:'복합 주법',   icon:'ph-star',        color:'#a78bfa', border:'rgba(167,139,250,0.35)',  maxWeek:32,  svgX:283, svgY:898,  size:48, shape:'ci', top:'',      adv:false },
+  { name:'작곡 & 편곡', icon:'ph-pencil',      color:'#fb923c', border:'rgba(251,146,60,0.35)',   maxWeek:36,  svgX:163, svgY:1010, size:48, shape:'ci', top:'',      adv:false },
+  { name:'자유 연주',   icon:'ph-crown',       color:'#C9A84C', border:'rgba(201,168,76,0.4)',    maxWeek:40,  svgX:163, svgY:1120, size:56, shape:'sq', top:'LV.1',  adv:false },
+  // ── 11~20단계: 고급 과정 (빨간색 계열) ──
+  { name:'고급 시작',   icon:'ph-fire',        color:'#f87171', border:'rgba(248,113,113,0.35)',  maxWeek:44,  svgX:30,  svgY:40,   size:56, shape:'sq', top:'ADV',   adv:true },
+  { name:'전문 코드',   icon:'ph-guitar',      color:'#ef4444', border:'rgba(239,68,68,0.35)',    maxWeek:48,  svgX:297, svgY:155,  size:48, shape:'ci', top:'',      adv:true },
+  { name:'고급 리듬',   icon:'ph-metronome',   color:'#fb7185', border:'rgba(251,113,133,0.35)',  maxWeek:52,  svgX:42,  svgY:280,  size:56, shape:'sq', top:'',      adv:true },
+  { name:'전문 연주',   icon:'ph-music-note',  color:'#f43f5e', border:'rgba(244,63,94,0.35)',    maxWeek:56,  svgX:272, svgY:410,  size:48, shape:'ci', top:'MID',   adv:true },
+  { name:'창작 표현',   icon:'ph-pen-nib',     color:'#e11d48', border:'rgba(225,29,72,0.35)',    maxWeek:60,  svgX:32,  svgY:540,  size:56, shape:'sq', top:'',      adv:true },
+  { name:'무대 연주',   icon:'ph-microphone',  color:'#f87171', border:'rgba(248,113,113,0.4)',   maxWeek:64,  svgX:299, svgY:648,  size:48, shape:'ci', top:'',      adv:true },
+  { name:'편곡 기법',   icon:'ph-sliders-horizontal', color:'#fb923c', border:'rgba(251,146,60,0.35)', maxWeek:68, svgX:38,  svgY:775, size:56, shape:'sq', top:'',  adv:true },
+  { name:'마스터 기술', icon:'ph-lightning',   color:'#f97316', border:'rgba(249,115,22,0.35)',   maxWeek:72,  svgX:283, svgY:898,  size:48, shape:'ci', top:'',      adv:true },
+  { name:'완성 단계',   icon:'ph-trophy',      color:'#ea580c', border:'rgba(234,88,12,0.35)',    maxWeek:76,  svgX:163, svgY:1010, size:48, shape:'ci', top:'',      adv:true },
+  { name:'마스터',      icon:'ph-crown',       color:'#dc2626', border:'rgba(220,38,38,0.4)',     maxWeek:999, svgX:163, svgY:1120, size:56, shape:'sq', top:'GOAL',  adv:true },
 ];
-const _JP_W = 327, _JP_H = 1160, _JP_TOTAL = 36;
+const _JP_W = 327, _JP_H = 1160, _JP_TOTAL = 76;
 
 function renderJourneyTab(s) {
   const week = s.currentWeek || 1;
@@ -4254,41 +4274,94 @@ function renderJourneyTab(s) {
          <p style="font-size:12px;color:var(--text2);">남은 과제가 없어요 🎉</p>
        </div>`;
 
-  // 단계 노드 생성
-  const nodesHtml = stages.map((st, i) => {
-    if (i === ci) return ''; // 아바타로 대체
-    const lp = (st.svgX / _JP_W * 100).toFixed(2);
-    const tp = (st.svgY / _JP_H * 100).toFixed(2);
-    const isCompleted = i < ci;
-    const isGoal = i === stages.length - 1;
-    const br = st.shape === 'sq' ? '18px' : '50%';
-    let boxStyle, iconHtml;
-    if (isCompleted) {
-      boxStyle = 'background:var(--bg);box-shadow:var(--sh-in-sm);';
-      iconHtml = `<i class="ph-bold ph-check" style="color:#4ade80;font-size:${st.shape==='sq'?'20':'17'}px;"></i>
-                  ${st.top?`<span style="font-size:7px;font-weight:800;color:var(--text2);">${st.top}</span>`:''}`;
-    } else if (isGoal) {
-      boxStyle = 'background:var(--bg);box-shadow:var(--sh-out);filter:grayscale(0.85);opacity:0.6;';
-      iconHtml = `<i class="ph-fill ph-crown" style="color:var(--text3);font-size:20px;"></i>
-                  <span style="font-size:7px;font-weight:800;color:var(--text3);">GOAL</span>`;
-    } else {
-      boxStyle = 'background:var(--bg);box-shadow:var(--sh-out);opacity:0.55;';
-      iconHtml = `<i class="ph-bold ph-lock-key" style="color:var(--text3);font-size:17px;"></i>`;
-    }
-    const labelCol = isCompleted ? 'var(--text)' : 'var(--text3)';
-    const labelSz  = st.shape === 'sq' ? '10' : '9';
-    return `<div style="position:absolute;left:calc(${lp}% - ${st.size/2}px);top:calc(${tp}% - ${st.size/2}px);width:${st.size}px;display:flex;flex-direction:column;align-items:center;z-index:5;">
-      <div style="width:${st.size}px;height:${st.size}px;border-radius:${br};${boxStyle}display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;">
-        ${iconHtml}
-      </div>
-      <span style="font-size:${labelSz}px;font-weight:700;color:${labelCol};margin-top:5px;white-space:nowrap;">${st.name}</span>
-    </div>`;
-  }).join('');
+  // ── 기본 과정 노드 (stages 0~9) ──
+  const stages1 = stages.slice(0, 10);
+  const stages2 = stages.slice(10, 20);
+  const isAdv = ci >= 10; // 고급 과정 진입 여부
+  const ci1 = isAdv ? -1 : ci;        // 기본 맵에서 현재 단계 (-1이면 모두 완료)
+  const ci2 = isAdv ? ci - 10 : -2;   // 고급 맵에서 현재 단계 (-2이면 아직 미진입)
 
-  // 아바타 위치
-  const avL = (cur.svgX / _JP_W * 100).toFixed(2);
-  const avT = (cur.svgY / _JP_H * 100).toFixed(2);
+  function buildNodes(stList, localCi, isAdvMap) {
+    const totalLen = stList.length;
+    const accentColor = isAdvMap ? '#f87171' : '#818cf8';
+    return stList.map((st, i) => {
+      if (i === localCi) return ''; // 아바타로 대체
+      const lp = (st.svgX / _JP_W * 100).toFixed(2);
+      const tp = (st.svgY / _JP_H * 100).toFixed(2);
+      const isCompleted = localCi === -1 || i < localCi; // -1이면 전부 완료
+      const isGoal = i === totalLen - 1;
+      const br = st.shape === 'sq' ? '18px' : '50%';
+      let boxStyle, iconHtml;
+      const checkColor = isAdvMap ? '#f87171' : '#4ade80';
+      if (isCompleted) {
+        boxStyle = 'background:var(--bg);box-shadow:var(--sh-in-sm);';
+        iconHtml = `<i class="ph-bold ph-check" style="color:${checkColor};font-size:${st.shape==='sq'?'20':'17'}px;"></i>
+                    ${st.top?`<span style="font-size:7px;font-weight:800;color:var(--text2);">${st.top}</span>`:''}`;
+      } else if (isGoal && localCi < totalLen - 1) {
+        const goalColor = isAdvMap ? 'rgba(220,38,38,0.7)' : 'var(--text3)';
+        boxStyle = 'background:var(--bg);box-shadow:var(--sh-out);filter:grayscale(0.85);opacity:0.6;';
+        iconHtml = `<i class="ph-fill ph-crown" style="color:${goalColor};font-size:20px;"></i>
+                    <span style="font-size:7px;font-weight:800;color:${goalColor};">GOAL</span>`;
+      } else {
+        boxStyle = 'background:var(--bg);box-shadow:var(--sh-out);opacity:0.55;';
+        iconHtml = `<i class="ph-bold ph-lock-key" style="color:var(--text3);font-size:17px;"></i>`;
+      }
+      const labelCol = isCompleted ? 'var(--text)' : 'var(--text3)';
+      const labelSz  = st.shape === 'sq' ? '10' : '9';
+      return `<div style="position:absolute;left:calc(${lp}% - ${st.size/2}px);top:calc(${tp}% - ${st.size/2}px);width:${st.size}px;display:flex;flex-direction:column;align-items:center;z-index:5;">
+        <div style="width:${st.size}px;height:${st.size}px;border-radius:${br};${boxStyle}display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;">
+          ${iconHtml}
+        </div>
+        <span style="font-size:${labelSz}px;font-weight:700;color:${labelCol};margin-top:5px;white-space:nowrap;">${st.name}</span>
+      </div>`;
+    }).join('');
+  }
+
+  const nodesHtml1 = buildNodes(stages1, ci1, false);
+  const nodesHtml2 = buildNodes(stages2, ci2, true);
+
+  // 아바타 위치 계산
   const initials = (s.name || '??').slice(0, 2);
+
+  // 기본 맵 아바타 (ci1 >= 0일 때)
+  const avCur1 = ci1 >= 0 ? stages1[ci1] : null;
+  const avatarHtml1 = avCur1 ? (() => {
+    const avL = (avCur1.svgX / _JP_W * 100).toFixed(2);
+    const avT = (avCur1.svgY / _JP_H * 100).toFixed(2);
+    return `<div style="position:absolute;left:calc(${avL}% - 32px);top:calc(${avT}% - 44px);width:64px;display:flex;flex-direction:column;align-items:center;z-index:10;">
+      <div style="position:relative;width:64px;height:64px;display:flex;align-items:center;justify-content:center;">
+        <div style="position:absolute;inset:0;background:rgba(129,140,248,0.22);border-radius:50%;filter:blur(10px);animation:journeyPulse 2.2s ease-in-out infinite;"></div>
+        <div style="width:56px;height:56px;background:var(--bg);box-shadow:var(--sh-out);border-radius:18px;border:2px solid rgba(129,140,248,0.5);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:var(--text);position:relative;z-index:2;">${initials}</div>
+        <div style="position:absolute;top:-3px;right:-3px;width:20px;height:20px;background:#818cf8;border-radius:50%;border:2px solid var(--bg);display:flex;align-items:center;justify-content:center;z-index:3;">
+          <i class="ph-bold ph-navigation-arrow" style="color:#fff;font-size:8px;"></i>
+        </div>
+      </div>
+      <div style="margin-top:6px;background:#818cf8;padding:4px 10px;border-radius:20px;box-shadow:0 2px 8px rgba(129,140,248,0.4);">
+        <p style="font-size:9px;font-weight:700;color:#fff;white-space:nowrap;">현재: ${avCur1.name}</p>
+      </div>
+    </div>`;
+  })() : '';
+
+  // 고급 맵 아바타 (ci2 >= 0일 때)
+  const avCur2 = ci2 >= 0 ? stages2[ci2] : null;
+  const avatarHtml2 = avCur2 ? (() => {
+    const avL = (avCur2.svgX / _JP_W * 100).toFixed(2);
+    const avT = (avCur2.svgY / _JP_H * 100).toFixed(2);
+    return `<div style="position:absolute;left:calc(${avL}% - 32px);top:calc(${avT}% - 44px);width:64px;display:flex;flex-direction:column;align-items:center;z-index:10;">
+      <div style="position:relative;width:64px;height:64px;display:flex;align-items:center;justify-content:center;">
+        <div style="position:absolute;inset:0;background:rgba(248,113,113,0.22);border-radius:50%;filter:blur(10px);animation:journeyPulse 2.2s ease-in-out infinite;"></div>
+        <div style="width:56px;height:56px;background:var(--bg);box-shadow:var(--sh-out);border-radius:18px;border:2px solid rgba(248,113,113,0.5);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:var(--text);position:relative;z-index:2;">${initials}</div>
+        <div style="position:absolute;top:-3px;right:-3px;width:20px;height:20px;background:#f87171;border-radius:50%;border:2px solid var(--bg);display:flex;align-items:center;justify-content:center;z-index:3;">
+          <i class="ph-bold ph-navigation-arrow" style="color:#fff;font-size:8px;"></i>
+        </div>
+      </div>
+      <div style="margin-top:6px;background:#f87171;padding:4px 10px;border-radius:20px;box-shadow:0 2px 8px rgba(248,113,113,0.4);">
+        <p style="font-size:9px;font-weight:700;color:#fff;white-space:nowrap;">현재: ${avCur2.name}</p>
+      </div>
+    </div>`;
+  })() : '';
+
+  const curNameColor = isAdv ? '#f87171' : '#818cf8';
 
   document.getElementById('s-homework').innerHTML = `
   <div style="padding-bottom:32px;">
@@ -4297,7 +4370,7 @@ function renderJourneyTab(s) {
       <div style="position:relative;width:64px;height:64px;flex-shrink:0;">
         <svg width="64" height="64" viewBox="0 0 64 64" style="transform:rotate(-90deg);">
           <circle cx="32" cy="32" r="26" stroke="var(--border2)" stroke-width="8" fill="transparent"/>
-          <circle cx="32" cy="32" r="26" stroke="#818cf8" stroke-width="8" fill="transparent"
+          <circle cx="32" cy="32" r="26" stroke="${curNameColor}" stroke-width="8" fill="transparent"
             stroke-dasharray="${ringC}" stroke-dashoffset="${ringOff}" stroke-linecap="round"/>
         </svg>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
@@ -4311,81 +4384,111 @@ function renderJourneyTab(s) {
           </div>
           <span style="font-size:10px;font-weight:700;color:var(--text2);letter-spacing:0.08em;text-transform:uppercase;">현재 수업 단계</span>
         </div>
-        <p style="font-size:14px;font-weight:800;color:#818cf8;line-height:1.35;">${cur.name}</p>
+        <p style="font-size:14px;font-weight:800;color:${curNameColor};line-height:1.35;">${cur.name}</p>
         <p style="font-size:11px;font-weight:600;color:var(--text2);margin-top:2px;">${week}주차 진행 중</p>
       </div>
     </div>
 
-    <!-- 여정 경로 -->
+    <!-- ── 1~10단계 여정 경로 ── -->
     <div id="journey-path-container" style="position:relative;width:100%;max-width:327px;margin:0 auto 24px;height:960px;">
       <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 327 1160" preserveAspectRatio="none">
-        <!-- 배경 회색 경로 -->
         <path id="journey-main-path" d="${_JP_D}"
           fill="none" stroke="#d1d9e6" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"
           style="filter:drop-shadow(2px 3px 4px rgba(163,177,198,0.5));"/>
-        <!-- 내부 밝은 선 (레인) -->
         <path d="${_JP_D}"
           fill="none" stroke="#e8ecf2" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
-        <!-- 진행 표시 (인디고) -->
         <path id="journey-progress-path" d="${_JP_D}"
           fill="none" stroke="#818cf8" stroke-width="6" stroke-linecap="round"
-          stroke-dasharray="0 9999"
+          stroke-dasharray="${isAdv ? '9999' : '0'} 9999"
           style="filter:drop-shadow(0 0 5px rgba(129,140,248,0.55));"/>
       </svg>
-
-      <!-- 단계 노드들 -->
-      ${nodesHtml}
-
-      <!-- 현재 위치 아바타 -->
-      <div style="position:absolute;left:calc(${avL}% - 32px);top:calc(${avT}% - 44px);width:64px;display:flex;flex-direction:column;align-items:center;z-index:10;">
-        <div style="position:relative;width:64px;height:64px;display:flex;align-items:center;justify-content:center;">
-          <div style="position:absolute;inset:0;background:rgba(129,140,248,0.22);border-radius:50%;filter:blur(10px);animation:journeyPulse 2.2s ease-in-out infinite;"></div>
-          <div style="width:56px;height:56px;background:var(--bg);box-shadow:var(--sh-out);border-radius:18px;border:2px solid rgba(129,140,248,0.5);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:var(--text);position:relative;z-index:2;">
-            ${initials}
-          </div>
-          <div style="position:absolute;top:-3px;right:-3px;width:20px;height:20px;background:#818cf8;border-radius:50%;border:2px solid var(--bg);display:flex;align-items:center;justify-content:center;z-index:3;">
-            <i class="ph-bold ph-navigation-arrow" style="color:#fff;font-size:8px;"></i>
-          </div>
-        </div>
-        <div style="margin-top:6px;background:#818cf8;padding:4px 10px;border-radius:20px;box-shadow:0 2px 8px rgba(129,140,248,0.4);">
-          <p style="font-size:9px;font-weight:700;color:#fff;white-space:nowrap;">현재: ${cur.name}</p>
-        </div>
-      </div>
+      ${nodesHtml1}
+      ${avatarHtml1}
     </div>
 
     <!-- 이번 주 과제 카드 -->
-    <div style="background:var(--bg);box-shadow:var(--sh-out);border-radius:24px;padding:18px 20px;">
+    <div style="background:var(--bg);box-shadow:var(--sh-out);border-radius:24px;padding:18px 20px;margin-bottom:24px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <h3 style="font-size:13px;font-weight:700;color:var(--text);">이번 주 과제</h3>
         <span style="font-size:10px;font-weight:700;color:var(--text2);">${done}/${total} 완료</span>
       </div>
       ${missionHtml}
     </div>
+
+    <!-- ── 고급 과정 구분 배너 ── -->
+    <div style="background:var(--bg);box-shadow:var(--sh-out);border-radius:20px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px;border-left:3px solid #f87171;">
+      <div style="width:36px;height:36px;border-radius:12px;background:var(--bg);box-shadow:var(--sh-in-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i class="ph-fill ph-fire" style="color:#f87171;font-size:18px;"></i>
+      </div>
+      <div>
+        <p style="font-size:12px;font-weight:800;color:#f87171;letter-spacing:0.06em;">ADVANCED LEVEL</p>
+        <p style="font-size:10px;color:var(--text2);margin-top:2px;">11~20단계 · 고급 과정</p>
+      </div>
+    </div>
+
+    <!-- ── 11~20단계 여정 경로 ── -->
+    <div id="journey-path-container-adv" style="position:relative;width:100%;max-width:327px;margin:0 auto;height:960px;">
+      <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 327 1160" preserveAspectRatio="none">
+        <!-- 배경 경로 (빨간색 계열) -->
+        <path id="journey-main-path-adv" d="${_JP_D}"
+          fill="none" stroke="#fecaca" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"
+          style="filter:drop-shadow(2px 3px 4px rgba(248,113,113,0.3));"/>
+        <path d="${_JP_D}"
+          fill="none" stroke="#fee2e2" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- 진행 표시 (빨간색) -->
+        <path id="journey-progress-path-adv" d="${_JP_D}"
+          fill="none" stroke="#f87171" stroke-width="6" stroke-linecap="round"
+          stroke-dasharray="0 9999"
+          style="filter:drop-shadow(0 0 5px rgba(248,113,113,0.55));"/>
+      </svg>
+      ${nodesHtml2}
+      ${avatarHtml2}
+    </div>
   </div>`;
 
-  // 진행 경로 길이 업데이트 (DOM 렌더 후)
-  // 현재 단계(ci) 노드와 다음 단계 노드 사이 중간 y에 해당하는 path 길이를 이진 탐색으로 구함
-  requestAnimationFrame(() => {
-    try {
-      const pathEl = document.getElementById('journey-main-path');
-      if (!pathEl) return;
-      const tLen = pathEl.getTotalLength();
-      const progEl = document.getElementById('journey-progress-path');
-      if (!progEl) return;
+  // ── 기본 과정 진행 경로 애니메이션 (ci1 >= 0일 때만) ──
+  if (ci1 >= 0) {
+    requestAnimationFrame(() => {
+      try {
+        const pathEl = document.getElementById('journey-main-path');
+        if (!pathEl) return;
+        const tLen = pathEl.getTotalLength();
+        const progEl = document.getElementById('journey-progress-path');
+        if (!progEl) return;
+        const stY = stages1[ci1].svgY;
+        const nxY = ci1 < stages1.length - 1 ? stages1[ci1 + 1].svgY : _JP_H;
+        const tgY = (stY + nxY) / 2;
+        let lo = 0, hi = tLen;
+        for (let k = 0; k < 28; k++) {
+          const m = (lo + hi) / 2;
+          pathEl.getPointAtLength(m).y < tgY ? (lo = m) : (hi = m);
+        }
+        progEl.setAttribute('stroke-dasharray', `${((lo + hi) / 2).toFixed(1)} 9999`);
+      } catch(e) {}
+    });
+  }
 
-      const stY = _JP_STAGES[ci].svgY;
-      const nxY = ci < _JP_STAGES.length - 1 ? _JP_STAGES[ci + 1].svgY : _JP_H;
-      const tgY = (stY + nxY) / 2;
-
-      // path는 위→아래로 y가 단조 증가하므로 이진 탐색 가능
-      let lo = 0, hi = tLen;
-      for (let k = 0; k < 28; k++) {
-        const m = (lo + hi) / 2;
-        pathEl.getPointAtLength(m).y < tgY ? (lo = m) : (hi = m);
-      }
-      progEl.setAttribute('stroke-dasharray', `${((lo + hi) / 2).toFixed(1)} 9999`);
-    } catch(e) {}
-  });
+  // ── 고급 과정 진행 경로 애니메이션 (ci2 >= 0일 때만) ──
+  if (ci2 >= 0) {
+    requestAnimationFrame(() => {
+      try {
+        const pathEl = document.getElementById('journey-main-path-adv');
+        if (!pathEl) return;
+        const tLen = pathEl.getTotalLength();
+        const progEl = document.getElementById('journey-progress-path-adv');
+        if (!progEl) return;
+        const stY = stages2[ci2].svgY;
+        const nxY = ci2 < stages2.length - 1 ? stages2[ci2 + 1].svgY : _JP_H;
+        const tgY = (stY + nxY) / 2;
+        let lo = 0, hi = tLen;
+        for (let k = 0; k < 28; k++) {
+          const m = (lo + hi) / 2;
+          pathEl.getPointAtLength(m).y < tgY ? (lo = m) : (hi = m);
+        }
+        progEl.setAttribute('stroke-dasharray', `${((lo + hi) / 2).toFixed(1)} 9999`);
+      } catch(e) {}
+    });
+  }
 }
 
 function renderHomeworkTab(s,done) {
