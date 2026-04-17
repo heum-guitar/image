@@ -21,7 +21,7 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; -webkit-user-drag: none; }
-  html { height: 100%; overflow: hidden; }
+  html { height: 100%; overflow: hidden; background: var(--bg); }
 
   /* ── 다크 뉴모피즘 — 스페이스 그레이 (기본) ── */
   /*
@@ -275,8 +275,11 @@
   .hw-week { font-size:10px; color:var(--text3); }
 
   /* ── Songs ── */
-  .song-item { display:flex; gap:8px; align-items:center; padding:9px 0; border-bottom: 1px solid var(--border); }
+  .song-item { display:flex; gap:8px; align-items:center; padding:9px 0; border-bottom: 1px solid var(--border); transition: opacity 0.15s; }
   .song-item:last-child { border-bottom:none; }
+  .song-drop-zone { border-radius: 12px; transition: background 0.18s, box-shadow 0.18s; padding: 4px; margin: -4px; }
+  .song-drop-zone.drag-over { background: rgba(201,168,76,0.10); box-shadow: inset 0 0 0 2px rgba(201,168,76,0.45); }
+  .song-item[draggable="true"] { -webkit-user-drag: element; cursor: grab; }
   .dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
   .dot-gold { background:var(--gold); box-shadow: 0 0 5px rgba(201,168,76,0.5); }
   .dot-green { background:var(--green); }
@@ -423,6 +426,11 @@
     50% { color: #f0c96a; text-shadow: 0 0 14px rgba(201,168,76,0.9), 0 0 28px rgba(201,168,76,0.4); }
   }
   .song-match { animation: goldGlow 2.2s ease-in-out infinite; font-weight: 500; }
+
+  @keyframes journeyPulse {
+    0%, 100% { transform: scale(1); opacity: 0.65; }
+    50% { transform: scale(1.4); opacity: 0.25; }
+  }
 
   /* Screen transitions */
   .sc-in-fwd, .sc-out-fwd, .sc-in-bwd, .sc-out-bwd { /* 애니메이션 없음 — 즉시 전환 */ }
@@ -786,7 +794,7 @@
     min-height: 0;
   }
   .s-week-day-circle.wdc-lesson,
-  .s-week-day-circle.wdc-today-lesson { cursor: pointer; }
+  .s-week-day-circle.wdc-today-lesson { cursor: default; }
 
   /* 새 홈 2열 카드 버튼 */
   .s-home-grid-btn {
@@ -1102,6 +1110,16 @@
   .td-stat-label { font-size: 9px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 2px; }
   .td-stat-val { font-size: 20px; font-weight: 800; color: var(--text); }
 
+  /* 주간 일정 토글 패널 — 기본 숨김 (JS가 인라인 스타일로 전환 제어) */
+  .td-sched-pane {
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    pointer-events: none;
+    margin-top: 0;
+  }
+  #td-sched-hdr:active { opacity: 0.75; }
+
   /* 주간 차트 카드 */
   .td-card {
     border-radius: 28px;
@@ -1117,19 +1135,20 @@
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
-    height: 100px;
-    padding: 0 4px;
+    height: 140px;
+    padding: 16px 4px 4px;
     gap: 6px;
+    overflow: visible;
   }
-  .td-bar-col { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1; }
+  .td-bar-col { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; cursor: pointer; overflow: visible; }
   .td-bar-track {
-    width: 8px;
+    width: 10px;
     border-radius: 10px;
     background: var(--bg);
     box-shadow: var(--sh-in-sm);
     display: flex;
     align-items: flex-end;
-    overflow: hidden;
+    overflow: visible;
   }
   .td-bar-fill {
     width: 100%;
@@ -1195,14 +1214,25 @@
 
   /* 모바일 바텀 네비 */
   .td-m-nav {
-    position: absolute; bottom: 20px; left: 20px; right: 20px;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 40px);
+    max-width: 440px;
     height: 60px;
     border-radius: 20px;
     background: var(--bg);
     box-shadow: var(--sh-out);
-    display: flex; align-items: center; justify-content: space-around;
+    display: none;
+    align-items: center; justify-content: space-around;
     padding: 0 8px;
     z-index: 50;
+  }
+  body.heum-teacher-mode .td-m-nav { display: flex; }
+  body.heum-teacher-mode .td-m-nav.td-nav-hidden { display: none; }
+  @media (min-width: 768px) {
+    body.heum-teacher-mode .td-m-nav { display: none; }
   }
   .td-m-nav-btn {
     width: 40px; height: 40px;
@@ -1778,6 +1808,11 @@
     box-shadow:var(--sh-out-sm); cursor:pointer; transition:box-shadow 0.15s,transform 0.15s;
   }
   .sc-chat-dt-send:active { box-shadow:var(--sh-in-sm); transform:scale(0.94); }
+
+  /* ── 강사 모바일 하단 nav 여백 ── */
+  body.heum-teacher-mode #tsched-body { padding-bottom: 80px; }
+  body.heum-teacher-mode #sc-info .sc-info-mobile-only .content { padding-bottom: 100px; }
+  body.heum-teacher-mode #sc-teacher-chat-list .sc-chat-mobile-only .content { padding-bottom: 100px; }
 </style>
 </head>
 <body>
@@ -1879,6 +1914,33 @@
     </div>
 
     <div class="td-m-scroll">
+      <!-- 주간 일정 (맨 위, 누르면 월 달력으로 펼쳐짐) -->
+      <div class="td-card" id="td-m-schedule-card">
+        <div class="td-card-header" id="td-sched-hdr" onclick="toggleScheduleCard()"
+          style="cursor:pointer;margin-bottom:0;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;">
+          <div>
+            <p class="td-card-title">주간 일정</p>
+            <p class="td-card-sub" id="td-sched-sub">이번 주 수업 현황</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span id="td-sched-badge" style="font-size:10px;font-weight:700;color:#818cf8;text-transform:uppercase;">이번 주</span>
+            <i class="ph-bold ph-caret-down" id="td-sched-chevron"
+              style="font-size:14px;color:var(--text2);transition:transform 0.38s cubic-bezier(0.4,0,0.2,1);display:block;"></i>
+          </div>
+        </div>
+        <!-- 컨텐츠 래퍼: 높이 자체가 함께 전환됨 -->
+        <div id="td-sched-body" style="position:relative;overflow:hidden;height:162px;margin-top:18px;transition:height 0.42s cubic-bezier(0.4,0,0.2,1);">
+          <!-- 주간 바 차트 -->
+          <div id="td-sched-weekly" style="opacity:1;pointer-events:auto;transition:opacity 0.28s ease;overflow:visible;">
+            <div class="td-bar-chart" id="td-m-bar-chart"><!-- JS로 렌더 --></div>
+          </div>
+          <!-- 월간 달력: 절대 위치, 위에서 내려옴 -->
+          <div id="td-sched-monthly" style="position:absolute;top:0;left:0;right:0;opacity:0;transform:translateY(-20px);pointer-events:none;transition:opacity 0.36s ease,transform 0.42s cubic-bezier(0.25,0.46,0.45,0.94);">
+            <div id="td-m-monthly-cal"></div>
+          </div>
+        </div>
+      </div>
+
       <!-- 스탯 카드 (2×2 그리드) -->
       <div class="td-stat-row" id="td-m-stats">
         <div class="td-stat-card">
@@ -1908,20 +1970,6 @@
             <p class="td-stat-label">총 곡 수</p>
             <h3 class="td-stat-val" id="td-m-songs-count">—</h3>
           </div>
-        </div>
-      </div>
-
-      <!-- 주간 일정 차트 -->
-      <div class="td-card">
-        <div class="td-card-header">
-          <div>
-            <p class="td-card-title">주간 일정</p>
-            <p class="td-card-sub">이번 주 수업 현황</p>
-          </div>
-          <span style="font-size:10px;font-weight:700;color:#818cf8;text-transform:uppercase;">이번 주</span>
-        </div>
-        <div class="td-bar-chart" id="td-m-bar-chart">
-          <!-- JS로 렌더 -->
         </div>
       </div>
 
@@ -1978,13 +2026,27 @@
     </div>
 
     <!-- 바텀 네비 -->
-    <nav class="td-m-nav">
-      <button class="td-m-nav-btn active"><i class="ph-fill ph-squares-four"></i></button>
-      <button class="td-m-nav-btn" onclick="goScreen('sc-teacher-schedule-view')"><i class="ph-bold ph-calendar-blank"></i></button>
-      <button class="td-m-nav-center" onclick="goScreen('sc-info')"><i class="ph-bold ph-plus"></i></button>
-      <button class="td-m-nav-btn" onclick="openTeacherChatList()"><i class="ph-bold ph-chat-circle-text"></i></button>
-      <button class="td-m-nav-btn" onclick="toggleTeacherTheme()"><i class="ph-bold ph-gear-six"></i></button>
-    </nav>
+  </div>
+
+  <!-- ── 주간 일정 상세 팝업 ── -->
+  <div id="sched-popup-overlay"
+    style="display:none;position:fixed;inset:0;z-index:600;
+           background:rgba(0,0,0,0.28);
+           backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+           transition:opacity 0.25s ease;opacity:0;"
+    onclick="closeSchedPopup(event)">
+    <div id="sched-popup-card"
+      onclick="event.stopPropagation()"
+      style="position:absolute;top:50%;left:50%;
+             transform:translate(-50%,-50%) scale(0.82);
+             opacity:0;
+             transition:transform 0.34s cubic-bezier(0.34,1.46,0.64,1), opacity 0.26s ease;
+             will-change:transform,opacity;
+             background:var(--bg);border-radius:28px;padding:22px 20px;
+             width:calc(100% - 40px);max-width:380px;
+             box-shadow:var(--sh-out-lg);
+             max-height:82vh;overflow-y:auto;-webkit-overflow-scrolling:touch;">
+    </div>
   </div>
 
   <!-- ── 데스크탑 레이아웃 ── -->
@@ -2391,9 +2453,8 @@
         <!-- 숙제 -->
         <button class="s-nav-btn neu-button" id="s-nav-homework" onclick="switchStudentTab('homework',this)"
           style="width:54px;height:54px;border-radius:18px;border:none;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;-webkit-tap-highlight-color:transparent;position:relative;">
-          <i class="ph-bold ph-file-text" style="font-size:24px;"></i>
-          <span class="s-nav-badge hidden" id="s-nav-hw-badge"></span>
-          <span class="s-nav-label">숙제</span>
+          <i class="ph-bold ph-chart-line-up" style="font-size:24px;"></i>
+          <span class="s-nav-label">진도</span>
         </button>
 
         <!-- 채팅 -->
@@ -2678,6 +2739,7 @@ function goScreen(id, _back) {
   // 사이드바 active는 mousedown에서 이미 처리됨.
   // goBack() 경유 시에는 여기서 직접 갱신
   if (_back) _tdgUpdateActiveBtn(id);
+  _updateMobileNav(id);
 
   haptic('medium');
   // body 직계 자식만 탐색 — 내부 중첩 요소(sc-info-dt-* 등)가 cur로 오인되는 버그 방지
@@ -2695,6 +2757,14 @@ function goScreen(id, _back) {
     cur.classList.add('hidden');
   }
   next.classList.remove('hidden');
+  // 앞으로 이동 시 스크롤 초기화 (뒤로가기는 위치 유지)
+  if (!isBack) next.scrollTop = 0;
+  // iOS PWA 상단 테마색 강제 갱신 (돌아올 때 색상 버그 방지)
+  const _tcMeta = document.getElementById('meta-theme-color');
+  if (_tcMeta) {
+    const _theme = localStorage.getItem('heum_theme') || 'light';
+    _tcMeta.content = _theme === 'light' ? '#e0e5ec' : '#3a3a3c';
+  }
   document.body.style.pointerEvents = '';
 }
 
@@ -2718,6 +2788,36 @@ function _tdgUpdateActiveBtn(screenId) {
   const target = _TDG_BTN_MAP[screenId];
   if (target) {
     const el = document.getElementById(target);
+    if (el) el.classList.add('active');
+  }
+}
+
+// ── 모바일 하단 nav 활성 버튼 동기화 ──────────────────────────
+const _MOBILE_NAV_MAP = {
+  'sc-teacher':               'td-m-nav-home',
+  'sc-teacher-schedule-view': 'td-m-nav-schedule',
+  'sc-info':                  'td-m-nav-students',
+  'sc-detail':                'td-m-nav-students',
+  'sc-teacher-chat-list':     'td-m-nav-chat',
+  'sc-teacher-chat':          'td-m-nav-chat',
+};
+// 개인 채팅창에서는 입력바 충돌 방지를 위해 nav 숨김
+const _MOBILE_NAV_HIDE = new Set(['sc-teacher-chat']);
+
+function _updateMobileNav(screenId) {
+  const nav = document.getElementById('td-m-nav-global');
+  if (!nav) return;
+  // 숨김 처리
+  if (_MOBILE_NAV_HIDE.has(screenId)) {
+    nav.classList.add('td-nav-hidden');
+    return;
+  }
+  nav.classList.remove('td-nav-hidden');
+  // active 버튼 갱신 (td-m-nav-btn만 대상, td-m-nav-center 제외)
+  nav.querySelectorAll('.td-m-nav-btn').forEach(btn => btn.classList.remove('active'));
+  const targetId = _MOBILE_NAV_MAP[screenId];
+  if (targetId) {
+    const el = document.getElementById(targetId);
     if (el) el.classList.add('active');
   }
 }
@@ -2971,6 +3071,335 @@ function renderTeacherMenu() {
   renderTeacherDashboard();
 }
 
+// ── 주간 일정 카드 토글 (주간 ↔ 월간) ─────────────────────
+let _schedExpanded = false;
+let _schedBusy = false;
+const _SCHED_WEEKLY_H = 162;
+
+function toggleScheduleCard() {
+  if (_schedBusy) return;
+  _schedBusy = true;
+  _schedExpanded = !_schedExpanded;
+
+  const body    = document.getElementById('td-sched-body');
+  const weekly  = document.getElementById('td-sched-weekly');
+  const monthly = document.getElementById('td-sched-monthly');
+  const chevron = document.getElementById('td-sched-chevron');
+  const badge   = document.getElementById('td-sched-badge');
+  const sub     = document.getElementById('td-sched-sub');
+  if (!body || !weekly || !monthly) { _schedBusy = false; return; }
+
+  haptic && haptic('light');
+  chevron.style.transition = 'transform 0.4s cubic-bezier(0.4,0,0.2,1)';
+
+  if (_schedExpanded) {
+    // ── 주간 → 월간 ──────────────────────────────
+    chevron.style.transform = 'rotate(180deg)';
+    badge.textContent = '이번 달';
+    sub.textContent   = '월간 수업 달력';
+
+    // 월간 transition 없이 초기 위치 세팅 후 렌더
+    monthly.style.transition = 'none';
+    monthly.style.opacity    = '0';
+    monthly.style.transform  = 'translateY(-20px)';
+    renderDashboardMonthlyCal();
+
+    // 리플로우로 실제 콘텐츠 높이 측정
+    void monthly.offsetHeight;
+    const calH = (document.getElementById('td-m-monthly-cal') || {}).scrollHeight || 260;
+
+    // 다음 프레임: 주간 페이드아웃 + 카드 펼침 + 월간 슬라이드인 — 모두 동시
+    requestAnimationFrame(() => {
+      monthly.style.transition   = 'opacity 0.38s ease, transform 0.44s cubic-bezier(0.25,0.46,0.45,0.94)';
+      body.style.height          = calH + 'px';      // 아래로 펼쳐짐
+      weekly.style.opacity       = '0';               // 주간 서서히 사라짐
+      weekly.style.pointerEvents = 'none';
+      monthly.style.opacity      = '1';               // 월간 서서히 나타남
+      monthly.style.transform    = 'translateY(0)';   // 위→아래 슬라이드
+      monthly.style.pointerEvents = 'auto';
+      setTimeout(() => { _schedBusy = false; }, 460);
+    });
+
+  } else {
+    // ── 월간 → 주간 ──────────────────────────────
+    chevron.style.transform = '';
+    badge.textContent = '이번 주';
+    sub.textContent   = '이번 주 수업 현황';
+
+    // 모두 동시 전환
+    monthly.style.transition   = 'opacity 0.28s ease, transform 0.38s cubic-bezier(0.4,0,0.2,1)';
+    body.style.height          = _SCHED_WEEKLY_H + 'px'; // 위로 접힘
+    monthly.style.opacity      = '0';
+    monthly.style.transform    = 'translateY(-20px)';
+    monthly.style.pointerEvents = 'none';
+    weekly.style.opacity       = '1';                     // 주간 다시 나타남
+    weekly.style.pointerEvents = 'auto';
+    setTimeout(() => { _schedBusy = false; }, 420);
+  }
+}
+
+let _dashCalSelectedDate = null; // 강사 대시보드 월간 달력 선택 날짜
+
+function renderDashboardMonthlyCal() {
+  const cal = document.getElementById('td-m-monthly-cal');
+  if (!cal) return;
+  const today    = new Date();
+  const year     = today.getFullYear();
+  const month    = today.getMonth();
+  const todayStr = today.toISOString().slice(0,10);
+  const prefix   = year + '-' + String(month+1).padStart(2,'0');
+
+  // 이번 달 수업이 있는 날짜와 이벤트 수집
+  const lessonDates = {};
+  const lessonEvents = {}; // dateStr → [{studentName, time, content, week}]
+  loadStudents().forEach(s => {
+    (s.events||[]).forEach(ev => {
+      if (ev.date && ev.date.startsWith(prefix)) {
+        lessonDates[ev.date] = (lessonDates[ev.date]||0) + 1;
+        if (!lessonEvents[ev.date]) lessonEvents[ev.date] = [];
+        lessonEvents[ev.date].push({ studentName: s.name, time: ev.time||'', content: ev.content||'', week: ev.week||0 });
+      }
+    });
+  });
+
+  const firstDow   = new Date(year, month, 1).getDay(); // 0=일
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const MONTH_KO   = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  const DOW        = ['일','월','화','수','목','금','토'];
+
+  const hdrs = DOW.map(d =>
+    `<div style="font-size:9px;font-weight:700;color:var(--text3);text-align:center;padding:4px 0 6px;">${d}</div>`
+  ).join('');
+
+  let cells = '';
+  for (let i=0; i<firstDow; i++) cells += '<div style="aspect-ratio:1;"></div>';
+  for (let d=1; d<=daysInMonth; d++) {
+    const ds  = prefix + '-' + String(d).padStart(2,'0');
+    const cnt = lessonDates[ds] || 0;
+    const isT = ds === todayStr;
+    const isSel = ds === _dashCalSelectedDate;
+    const isSun = (firstDow + d - 1) % 7 === 0;
+    const isSat = (firstDow + d - 1) % 7 === 6;
+    const textCol = isT ? '#fff' : isSun ? 'var(--red)' : isSat ? '#818cf8' : 'var(--text)';
+    const selStyle = isSel && !isT ? 'box-shadow:inset 3px 3px 7px rgba(0,0,0,0.15),inset -3px -3px 7px rgba(255,255,255,0.06);' : '';
+    cells += `<div onclick="_dashCalDayClick('${ds}')" style="position:relative;aspect-ratio:1;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;${isT?'background:#818cf8;':cnt?'background:rgba(129,140,248,0.13);':''}${selStyle}">
+      <span style="font-size:12px;font-weight:${isT||cnt?700:400};color:${textCol};line-height:1;">${d}</span>
+      ${cnt && !isT ? `<div style="position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:${isSel?'var(--gold)':'#818cf8'};"></div>` : ''}
+    </div>`;
+  }
+
+  cal.innerHTML = `
+    <p style="font-size:12px;font-weight:700;color:var(--text2);text-align:center;margin-bottom:8px;">${year}년 ${MONTH_KO[month]}</p>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;">${hdrs}${cells}</div>
+    <div id="td-cal-detail-wrap" style="overflow:hidden;height:0;margin-top:0;"></div>`;
+
+  // 선택된 날짜가 있으면 상세 내용 채우고 즉시 오픈
+  if (_dashCalSelectedDate) {
+    _dashCalRenderDetail(_dashCalSelectedDate, lessonEvents);
+  }
+}
+
+function _dashCalDetailInnerHtml(ds, lessonEvents) {
+  const KO_MO = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  const KO_DOW = ['일','월','화','수','목','금','토'];
+  const selD = new Date(ds + 'T00:00:00');
+  const dateLabel = `${KO_MO[selD.getMonth()]} ${selD.getDate()}일 (${KO_DOW[selD.getDay()]})`;
+  if (lessonEvents && lessonEvents[ds]) {
+    const evs = lessonEvents[ds].sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
+    const rows = evs.map(ev =>
+      `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+        <div style="width:32px;height:32px;border-radius:10px;background:rgba(129,140,248,0.15);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#818cf8;flex-shrink:0;">${ev.studentName.slice(0,2)}</div>
+        <div style="flex:1;min-width:0;">
+          <p style="font-size:13px;font-weight:700;color:var(--text);">${ev.studentName}</p>
+          <p style="font-size:11px;color:var(--text2);margin-top:2px;">${ev.time||'시간 미정'}${ev.week?' · '+ev.week+'주차':''}</p>
+          ${ev.content?`<p style="font-size:11px;color:var(--text3);margin-top:2px;">${ev.content}</p>`:''}
+        </div>
+      </div>`
+    ).join('');
+    return `<div style="border-top:1px solid var(--border2);padding-top:10px;margin-top:10px;">
+      <p style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px;">${dateLabel} · ${evs.length}건</p>
+      ${rows}
+    </div>`;
+  }
+  return `<div style="border-top:1px solid var(--border2);padding-top:10px;margin-top:10px;">
+    <p style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px;">${dateLabel}</p>
+    <p style="font-size:12px;color:var(--text3);text-align:center;padding:10px 0;">이 날 수업이 없습니다</p>
+  </div>`;
+}
+
+function _dashCalRenderDetail(ds, lessonEvents) {
+  const wrap = document.getElementById('td-cal-detail-wrap');
+  const body = document.getElementById('td-sched-body');
+  const cal  = document.getElementById('td-m-monthly-cal');
+  if (!wrap) return;
+
+  // 내용 렌더 — 이 시점엔 wrap.height=0 이므로 완전히 가려진 상태
+  wrap.innerHTML = `<div id="td-cal-detail-inner" style="transform:translateY(-100%);transition:transform 0.18s cubic-bezier(0.4,0,0.2,1);">${_dashCalDetailInnerHtml(ds, lessonEvents)}</div>`;
+
+  // wrap 높이를 내용 높이로 즉시 확장 (overflow:hidden 이 가리는 역할)
+  const inner = document.getElementById('td-cal-detail-inner');
+  wrap.style.transition = 'none';
+  wrap.style.height = inner.scrollHeight + 'px';
+  wrap.style.marginTop = '0';
+
+  // 다음 프레임에 inner를 위에서 아래로 슬라이드
+  requestAnimationFrame(() => {
+    inner.style.transform = 'translateY(0)';
+    if (body && cal) body.style.height = cal.scrollHeight + 'px';
+  });
+}
+
+function _dashCalDayClick(ds) {
+  const wasSelected = _dashCalSelectedDate;
+  if (_dashCalSelectedDate === ds) {
+    // 같은 날짜 재클릭 → 위로 슬라이드하며 닫기
+    _dashCalSelectedDate = null;
+    const wrap = document.getElementById('td-cal-detail-wrap');
+    const inner = document.getElementById('td-cal-detail-inner');
+    const body = document.getElementById('td-sched-body');
+    if (inner) {
+      inner.style.transition = 'transform 0.18s cubic-bezier(0.4,0,0.2,1)';
+      inner.style.transform  = 'translateY(-100%)';
+      setTimeout(() => {
+        if (wrap) wrap.style.height = '0';
+        renderDashboardMonthlyCal();
+        requestAnimationFrame(() => {
+          const cal = document.getElementById('td-m-monthly-cal');
+          if (body && cal) body.style.height = cal.scrollHeight + 'px';
+        });
+      }, 180);
+    } else {
+      renderDashboardMonthlyCal();
+    }
+    return;
+  }
+
+  const prevDate = _dashCalSelectedDate;
+  _dashCalSelectedDate = ds;
+
+  // 달력 그리드 재렌더 (selected 표시 업데이트)
+  renderDashboardMonthlyCal();
+
+  // 상세 패널: 이미 열려있었으면 내용만 교체(애니 없음), 처음 열리면 슬라이드
+  const lessonEvents = {};
+  loadStudents().forEach(s => {
+    const today = new Date();
+    const prefix = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0');
+    (s.events||[]).forEach(ev => {
+      if (ev.date && ev.date.startsWith(prefix)) {
+        if (!lessonEvents[ev.date]) lessonEvents[ev.date] = [];
+        lessonEvents[ev.date].push({ studentName: s.name, time: ev.time||'', content: ev.content||'', week: ev.week||0 });
+      }
+    });
+  });
+  _dashCalRenderDetail(ds, lessonEvents, !prevDate);
+}
+
+// 팝업용 전역 상태
+let _dashWeekDays = [];
+let _dashDayCounts = [];
+
+// ── 주간 일정 바 클릭 → 상세 팝업 ───────────────────────
+function openSchedPopup(dayIdx) {
+  const overlay = document.getElementById('sched-popup-overlay');
+  const card    = document.getElementById('sched-popup-card');
+  if (!overlay || !card || !_dashWeekDays.length) return;
+
+  const dateStr  = _dashWeekDays[dayIdx];
+  const LABELS   = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const KO_DAYS  = ['일','월','화','수','목','금','토'];
+  const KO_MO    = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  const date     = new Date(dateStr + 'T00:00:00');
+  const todayStr = new Date().toISOString().slice(0,10);
+  const isToday  = dateStr === todayStr;
+  const maxCnt   = Math.max(..._dashDayCounts, 1);
+
+  // ── 확대 바 차트 ──
+  const popBars = _dashWeekDays.map((ds, i) => {
+    const cnt   = _dashDayCounts[i];
+    const isSel = i === dayIdx;
+    const isTd  = ds === todayStr;
+    const h     = cnt ? Math.max(10, Math.round((cnt / maxCnt) * 120)) : 0;
+    return `<div class="td-bar-col" style="cursor:pointer;" onclick="openSchedPopup(${i});event.stopPropagation();">
+      <div class="td-bar-track" style="height:120px;${isSel?'width:14px;':''}">
+        <div style="width:100%;height:${h}px;border-radius:10px;transition:height 0.4s ease;
+          background:${isSel?'linear-gradient(to top,#818cf8,#c084fc)':'linear-gradient(to top,#818cf8,#a78bfa)'};
+          opacity:${isSel?1:0.45};
+          ${isSel?'box-shadow:0 0 12px rgba(129,140,248,0.55);':''}"></div>
+      </div>
+      <span style="font-size:${isSel?9:8}px;font-weight:${isSel?800:700};
+        color:${isSel?'#818cf8':'var(--text2)'};">${LABELS[i]}</span>
+    </div>`;
+  }).join('');
+
+  // ── 해당 요일 수업 목록 ──
+  const students  = loadStudents();
+  const dayEvents = [];
+  students.forEach(s => {
+    (s.events||[]).filter(ev => ev.date === dateStr).forEach(ev => {
+      dayEvents.push({ name: s.name, time: ev.time||'', week: ev.week, content: ev.content||'', memo: ev.memo||'' });
+    });
+  });
+  dayEvents.sort((a,b) => (a.time||'99:99').localeCompare(b.time||'99:99'));
+
+  const schedHtml = dayEvents.length
+    ? dayEvents.map(ev => `
+      <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);">
+        <div style="width:38px;height:38px;flex-shrink:0;border-radius:12px;background:var(--bg);
+          box-shadow:var(--sh-out-sm);display:flex;align-items:center;justify-content:center;
+          font-weight:700;font-size:13px;color:#818cf8;">${ev.name.slice(0,2)}</div>
+        <div style="flex:1;min-width:0;">
+          <p style="font-size:14px;font-weight:700;color:var(--text);">${ev.name}</p>
+          <p style="font-size:11px;color:var(--text2);margin-top:2px;">
+            ${ev.time||'시간 미정'}${ev.week ? ' · '+ev.week+'주차' : ''}
+          </p>
+          ${ev.content ? `<p style="font-size:11px;color:var(--text3);margin-top:3px;">${ev.content}</p>` : ''}
+        </div>
+      </div>`).join('')
+    : `<p style="font-size:12px;color:var(--text2);text-align:center;padding:20px 0;">이 날 수업이 없습니다</p>`;
+
+  card.innerHTML = `
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;">
+      <div>
+        <p style="font-size:20px;font-weight:800;color:var(--text);">${KO_DAYS[date.getDay()]}요일</p>
+        <p style="font-size:12px;color:var(--text2);margin-top:3px;">
+          ${KO_MO[date.getMonth()]} ${date.getDate()}일${isToday ? ' · 오늘' : ''}
+          &nbsp;·&nbsp; 수업 ${_dashDayCounts[dayIdx]}건
+        </p>
+      </div>
+      <button onclick="closeSchedPopup()"
+        style="background:var(--bg);border:none;width:34px;height:34px;border-radius:11px;
+          box-shadow:var(--sh-out-sm);display:flex;align-items:center;justify-content:center;
+          cursor:pointer;font-size:18px;color:var(--text2);flex-shrink:0;line-height:1;">×</button>
+    </div>
+    <div class="td-bar-chart" style="margin-bottom:20px;padding:4px 0;">${popBars}</div>
+    <p style="font-size:10px;font-weight:700;color:var(--text2);letter-spacing:0.07em;
+      text-transform:uppercase;margin-bottom:2px;">수업 일정</p>
+    ${schedHtml}`;
+
+  // 오버레이 표시 + 카드 스케일 인
+  overlay.style.display = 'block';
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    overlay.style.opacity = '1';
+    card.style.transform  = 'translate(-50%,-50%) scale(1)';
+    card.style.opacity    = '1';
+  }));
+  haptic && haptic('medium');
+}
+
+function closeSchedPopup(e) {
+  // 오버레이 배경 클릭 시에만 닫기 (카드 클릭은 무시)
+  if (e && e.currentTarget !== e.target) return;
+  const overlay = document.getElementById('sched-popup-overlay');
+  const card    = document.getElementById('sched-popup-card');
+  if (!overlay) return;
+  overlay.style.opacity = '0';
+  card.style.transform  = 'translate(-50%,-50%) scale(0.88)';
+  card.style.opacity    = '0';
+  setTimeout(() => { overlay.style.display = 'none'; }, 280);
+  haptic && haptic('light');
+}
+
 // ── 강사 뉴모피즘 대시보드 렌더 ──────────────────────────
 function renderTeacherDashboard() {
   const students = loadStudents();
@@ -3011,6 +3440,9 @@ function renderTeacherDashboard() {
     students.reduce((acc, s) => acc + (s.events||[]).filter(ev => ev.date === dateStr).length, 0)
   );
   const maxCount = Math.max(...dayCounts, 1);
+  // 팝업에서 접근 가능하도록 저장
+  _dashWeekDays = weekDays;
+  _dashDayCounts = dayCounts;
 
   // ── 모바일 UI 업데이트 ──
   function _set(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
@@ -3026,9 +3458,9 @@ function renderTeacherDashboard() {
     mBarChart.innerHTML = weekDays.map((dateStr, i) => {
       const count = dayCounts[i];
       const isToday = dateStr === todayStr;
-      const h = Math.max(8, Math.round((count / maxCount) * 90));
-      return `<div class="td-bar-col">
-        <div class="td-bar-track" style="height:90px;">
+      const h = Math.max(8, Math.round((count / maxCount) * 100));
+      return `<div class="td-bar-col" onclick="openSchedPopup(${i});event.stopPropagation();">
+        <div class="td-bar-track" style="height:100px;">
           <div class="td-bar-fill${isToday?' today':''}" style="height:${count?h:0}px;"></div>
         </div>
         <span class="td-bar-label${isToday?' today':''}">${LABELS[i]}</span>
@@ -3448,8 +3880,62 @@ function renderProgressTab(s,months,pct) {
       <div class="metric"><p class="metric-label">배울 수 있는 곡</p><p class="metric-val">${s.songs.canLearn.length}<span>곡</span></p></div>
       <div class="metric"><p class="metric-label">연습 필요한 곡</p><p class="metric-val">${(s.songs.notYetBeginner||[]).length+(s.songs.notYetIntermediate||[]).length}<span>곡</span></p></div>
     </div>
-    <div id="cal-container"></div>`;
+    <div id="cal-container"></div>
+
+    <!-- 진도 여정 관리 -->
+    <div class="card" style="margin-top:12px;">
+      <p class="card-label">진도 단계 이름 설정</p>
+      ${(() => {
+        const curW = s.currentWeek || 1;
+        let ci = _JP_STAGES.findIndex(st => curW <= st.maxWeek);
+        if (ci < 0) ci = _JP_STAGES.length - 1;
+        return _JP_STAGES.map((st, i) => {
+          const isCur = i === ci;
+          return `
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+              <div style="width:28px;height:28px;border-radius:8px;background:var(--bg);box-shadow:var(--sh-in-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <span style="font-size:10px;font-weight:700;color:${isCur?'var(--gold)':'var(--text2)'};">${i+1}</span>
+              </div>
+              <input type="text" id="d-stage-${i}" value="${((s.journeyStages && s.journeyStages[i]) || st.name).replace(/"/g,'&quot;')}" placeholder="${st.name}" style="font-size:13px;padding:8px 12px;">
+              <button onclick="setCurrentStage(${s.id},${i})" title="${isCur?'현재 단계':'이 단계로 설정'}"
+                style="flex-shrink:0;width:34px;height:34px;border-radius:10px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:box-shadow 0.15s,transform 0.15s;${isCur?'background:var(--gold);box-shadow:var(--sh-out-sm);color:#fff;':'background:var(--bg);box-shadow:var(--sh-out-sm);color:var(--text3);'}">
+                <i class="ph-${isCur?'fill':'bold'} ph-map-pin" style="font-size:14px;"></i>
+              </button>
+            </div>`;
+        }).join('');
+      })()}
+      <button class="save-btn" style="margin-top:4px;width:100%;padding:10px;" onclick="saveJourneyStages(${s.id})">단계 이름 저장</button>
+    </div>
+
+    <!-- 이번 주 과제 관리 -->
+    <div class="card" style="margin-top:12px;">
+      <div class="row mb12">
+        <p class="section-title" style="margin:0;">이번 주 과제</p>
+        <span class="small gold">${s.homework.filter(h=>h.done).length}/${s.homework.length} 완료</span>
+      </div>
+      ${s.homework.length ? s.homework.map((h,i)=>`
+        <div class="hw-item">
+          <div class="hw-check${h.done?' done':''}" onclick="toggleProgressTabHw(${s.id},${i})"></div>
+          <div class="hw-meta">
+            <p class="hw-text${h.done?' done':''}">${h.text}</p>
+            ${h.week?`<p class="hw-week">${h.week}주차</p>`:''}
+          </div>
+          <button class="btn-red" onclick="deleteHw(${s.id},${i})">×</button>
+        </div>`).join('')
+      : '<p class="small muted" style="padding:8px 0;text-align:center;">등록된 과제가 없습니다</p>'}
+      <button class="add-trigger" onclick="toggleProgressHwPanel()">+ 과제 추가</button>
+      <div class="add-panel hidden" id="progress-hw-panel">
+        <p class="add-panel-title">과제 추가</p>
+        <div class="form-group"><p class="form-label">과제 내용</p><textarea id="progress-hw-input" rows="2" placeholder="예: Am-G-C-F 코드 진행 10분 연습"></textarea></div>
+        <div class="form-group"><p class="form-label">주차 선택</p><div class="week-grid" id="progress-hw-week-grid"></div></div>
+        <div class="panel-actions">
+          <button class="panel-btn panel-btn-cancel" onclick="toggleProgressHwPanel()">취소</button>
+          <button class="panel-btn panel-btn-submit" onclick="submitProgressHw(${s.id})">추가</button>
+        </div>
+      </div>
+    </div>`;
   buildDWeekGrid(week);
+  buildProgressHwWeekGrid(week);
   renderCalendar(s);
 }
 function buildDWeekGrid(curWeek) {
@@ -3468,6 +3954,51 @@ function saveProgressSettings(sid) {
   s.nextLesson=document.getElementById('d-next-lesson').value.trim();
   saveStudents(students);
   renderDetailAll(sid); // 주차 배지 실시간 갱신
+}
+
+function saveJourneyStages(sid) {
+  const students=loadStudents(); const s=students.find(x=>x.id===sid);
+  s.journeyStages = _JP_STAGES.map((_,i) => {
+    const el=document.getElementById('d-stage-'+i);
+    return el ? (el.value.trim() || _JP_STAGES[i].name) : _JP_STAGES[i].name;
+  });
+  saveStudents(students);
+  renderDetailAll(sid);
+}
+function setCurrentStage(sid, stageIdx) {
+  haptic('light');
+  const students=loadStudents(); const s=students.find(x=>x.id===sid);
+  if (!s) return;
+  const newWeek = stageIdx === 0 ? 1 : _JP_STAGES[stageIdx - 1].maxWeek + 1;
+  s.currentWeek = newWeek;
+  saveStudents(students);
+  renderDetailAll(sid);
+}
+
+function buildProgressHwWeekGrid(curWeek) {
+  const g=document.getElementById('progress-hw-week-grid'); if(!g) return;
+  g.innerHTML=Array.from({length:4},(_,i)=>i+1).map(w=>
+    `<button class="week-chip${curWeek===w?' selected':''}" onclick="selectProgressHwWeek(${w})">${w}주차</button>`
+  ).join('');
+}
+function selectProgressHwWeek(w) {
+  document.querySelectorAll('#progress-hw-week-grid .week-chip').forEach((el,i)=>el.classList.toggle('selected',i+1===w));
+}
+
+function toggleProgressHwPanel() {
+  const panel=document.getElementById('progress-hw-panel'); if(!panel) return;
+  panel.classList.toggle('hidden');
+}
+
+function submitProgressHw(sid) {
+  const text=document.getElementById('progress-hw-input')?.value.trim();
+  if(!text) return;
+  const selChip=document.querySelector('#progress-hw-week-grid .week-chip.selected');
+  const week=selChip ? parseInt(selChip.textContent) : null;
+  const students=loadStudents(); const s=students.find(x=>x.id===sid);
+  s.homework.push({text, week, done:false});
+  saveStudents(students);
+  renderDetailAll(sid);
 }
 
 // ── 캘린더 ────────────────────────────────────────────────
@@ -3666,6 +4197,197 @@ function deleteEvent(date, idx) {
 }
 
 // ── 숙제 탭 (강사) ────────────────────────────────────────
+// ── 레슨생 성장 여정 탭 ───────────────────────────────────────
+const _JP_D = 'M 30,40 C 30,98 297,98 297,155 C 297,218 42,218 42,280 C 42,345 272,345 272,410 C 272,475 32,475 32,540 C 32,594 299,594 299,648 C 299,712 38,712 38,775 C 38,837 283,837 283,898 C 283,954 163,954 163,1010 C 163,1065 163,1065 163,1120';
+const _JP_STAGES = [
+  { name:'기초 다지기',  icon:'ph-flag',        color:'#4ade80', border:'rgba(74,222,128,0.35)',   maxWeek:4,   svgX:30,  svgY:40,   size:56, shape:'sq', top:'START' },
+  { name:'기본 코드',    icon:'ph-guitar',      color:'#C9A84C', border:'rgba(201,168,76,0.35)',   maxWeek:8,   svgX:297, svgY:155,  size:48, shape:'ci', top:'' },
+  { name:'리듬 & 반주', icon:'ph-music-notes', color:'#818cf8', border:'rgba(129,140,248,0.4)',   maxWeek:12,  svgX:42,  svgY:280,  size:56, shape:'sq', top:'' },
+  { name:'멜로디 연주', icon:'ph-music-note',  color:'#60a5fa', border:'rgba(96,165,250,0.35)',   maxWeek:16,  svgX:272, svgY:410,  size:48, shape:'ci', top:'MID' },
+  { name:'코드 심화',   icon:'ph-lightning',   color:'#f472b6', border:'rgba(244,114,182,0.35)',  maxWeek:20,  svgX:32,  svgY:540,  size:56, shape:'sq', top:'' },
+  { name:'즉흥 연주',   icon:'ph-metronome',   color:'#f59e0b', border:'rgba(245,158,11,0.35)',   maxWeek:24,  svgX:299, svgY:648,  size:48, shape:'ci', top:'' },
+  { name:'고급 리듬',   icon:'ph-wave-sine',   color:'#34d399', border:'rgba(52,211,153,0.35)',   maxWeek:28,  svgX:38,  svgY:775,  size:56, shape:'sq', top:'' },
+  { name:'복합 주법',   icon:'ph-star',        color:'#a78bfa', border:'rgba(167,139,250,0.35)',  maxWeek:32,  svgX:283, svgY:898,  size:48, shape:'ci', top:'' },
+  { name:'작곡 & 편곡', icon:'ph-pencil',      color:'#fb923c', border:'rgba(251,146,60,0.35)',   maxWeek:36,  svgX:163, svgY:1010, size:48, shape:'ci', top:'' },
+  { name:'자유 연주',   icon:'ph-crown',       color:'#C9A84C', border:'rgba(201,168,76,0.4)',    maxWeek:999, svgX:163, svgY:1120, size:56, shape:'sq', top:'GOAL' },
+];
+const _JP_W = 327, _JP_H = 1160, _JP_TOTAL = 36;
+
+function renderJourneyTab(s) {
+  const week = s.currentWeek || 1;
+  const pct  = Math.min(week / _JP_TOTAL, 1);
+  const disp = Math.round(pct * 100);
+
+  // 학생별 단계 이름 적용
+  const stages = _JP_STAGES.map((st, i) => ({
+    ...st,
+    name: (s.journeyStages && s.journeyStages[i]) || st.name
+  }));
+
+  // 현재 단계
+  let ci = stages.findIndex(st => week <= st.maxWeek);
+  if (ci < 0) ci = stages.length - 1;
+  const cur = stages[ci];
+
+  // 진행 링
+  const ringC = 163.3;
+  const ringOff = (ringC * (1 - pct)).toFixed(1);
+
+  // 숙제 현황
+  const hw    = s.homework || [];
+  const done  = hw.filter(h => h.done).length;
+  const total = hw.length;
+  const pending = hw.filter(h => !h.done);
+  const HW_ICONS = ['ph-music-notes','ph-guitar','ph-metronome','ph-wave-sine'];
+  const missionHtml = pending.length
+    ? pending.slice(0,2).map((h,i) => `
+        <div style="background:var(--bg);box-shadow:var(--sh-in-sm);border-radius:14px;padding:11px 14px;display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+          <div style="width:34px;height:34px;flex-shrink:0;border-radius:10px;box-shadow:var(--sh-out-sm);display:flex;align-items:center;justify-content:center;">
+            <i class="ph-bold ${HW_ICONS[i%HW_ICONS.length]}" style="color:#818cf8;font-size:15px;"></i>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <p style="font-size:12px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${h.text}</p>
+            ${h.week?`<p style="font-size:10px;color:var(--text2);margin-top:2px;">${h.week}주차 과제</p>`:''}
+          </div>
+        </div>`).join('')
+    : `<div style="background:var(--bg);box-shadow:var(--sh-in-sm);border-radius:14px;padding:14px;text-align:center;">
+         <p style="font-size:12px;color:var(--text2);">남은 과제가 없어요 🎉</p>
+       </div>`;
+
+  // 단계 노드 생성
+  const nodesHtml = stages.map((st, i) => {
+    if (i === ci) return ''; // 아바타로 대체
+    const lp = (st.svgX / _JP_W * 100).toFixed(2);
+    const tp = (st.svgY / _JP_H * 100).toFixed(2);
+    const isCompleted = i < ci;
+    const isGoal = i === stages.length - 1;
+    const br = st.shape === 'sq' ? '18px' : '50%';
+    let boxStyle, iconHtml;
+    if (isCompleted) {
+      boxStyle = 'background:var(--bg);box-shadow:var(--sh-in-sm);';
+      iconHtml = `<i class="ph-bold ph-check" style="color:#4ade80;font-size:${st.shape==='sq'?'20':'17'}px;"></i>
+                  ${st.top?`<span style="font-size:7px;font-weight:800;color:var(--text2);">${st.top}</span>`:''}`;
+    } else if (isGoal) {
+      boxStyle = 'background:var(--bg);box-shadow:var(--sh-out);filter:grayscale(0.85);opacity:0.6;';
+      iconHtml = `<i class="ph-fill ph-crown" style="color:var(--text3);font-size:20px;"></i>
+                  <span style="font-size:7px;font-weight:800;color:var(--text3);">GOAL</span>`;
+    } else {
+      boxStyle = 'background:var(--bg);box-shadow:var(--sh-out);opacity:0.55;';
+      iconHtml = `<i class="ph-bold ph-lock-key" style="color:var(--text3);font-size:17px;"></i>`;
+    }
+    const labelCol = isCompleted ? 'var(--text)' : 'var(--text3)';
+    const labelSz  = st.shape === 'sq' ? '10' : '9';
+    return `<div style="position:absolute;left:calc(${lp}% - ${st.size/2}px);top:calc(${tp}% - ${st.size/2}px);width:${st.size}px;display:flex;flex-direction:column;align-items:center;z-index:5;">
+      <div style="width:${st.size}px;height:${st.size}px;border-radius:${br};${boxStyle}display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;">
+        ${iconHtml}
+      </div>
+      <span style="font-size:${labelSz}px;font-weight:700;color:${labelCol};margin-top:5px;white-space:nowrap;">${st.name}</span>
+    </div>`;
+  }).join('');
+
+  // 아바타 위치
+  const avL = (cur.svgX / _JP_W * 100).toFixed(2);
+  const avT = (cur.svgY / _JP_H * 100).toFixed(2);
+  const initials = (s.name || '??').slice(0, 2);
+
+  document.getElementById('s-homework').innerHTML = `
+  <div style="padding-bottom:32px;">
+    <!-- 상단 진행 카드 -->
+    <div style="background:var(--bg);box-shadow:var(--sh-out);border-radius:24px;padding:18px 20px;display:flex;align-items:center;gap:16px;margin-bottom:24px;">
+      <div style="position:relative;width:64px;height:64px;flex-shrink:0;">
+        <svg width="64" height="64" viewBox="0 0 64 64" style="transform:rotate(-90deg);">
+          <circle cx="32" cy="32" r="26" stroke="var(--border2)" stroke-width="8" fill="transparent"/>
+          <circle cx="32" cy="32" r="26" stroke="#818cf8" stroke-width="8" fill="transparent"
+            stroke-dasharray="${ringC}" stroke-dashoffset="${ringOff}" stroke-linecap="round"/>
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+          <span style="font-size:12px;font-weight:800;color:var(--text);">${disp}%</span>
+        </div>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">
+          <div style="width:18px;height:18px;background:var(--bg);box-shadow:var(--sh-in-sm);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="ph-fill ph-lightning" style="color:var(--gold);font-size:9px;"></i>
+          </div>
+          <span style="font-size:10px;font-weight:700;color:var(--text2);letter-spacing:0.08em;text-transform:uppercase;">현재 수업 단계</span>
+        </div>
+        <p style="font-size:14px;font-weight:800;color:#818cf8;line-height:1.35;">${cur.name}</p>
+        <p style="font-size:11px;font-weight:600;color:var(--text2);margin-top:2px;">${week}주차 진행 중</p>
+      </div>
+    </div>
+
+    <!-- 여정 경로 -->
+    <div id="journey-path-container" style="position:relative;width:100%;max-width:327px;margin:0 auto 24px;height:960px;">
+      <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 327 1160" preserveAspectRatio="none">
+        <!-- 배경 회색 경로 -->
+        <path id="journey-main-path" d="${_JP_D}"
+          fill="none" stroke="#d1d9e6" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"
+          style="filter:drop-shadow(2px 3px 4px rgba(163,177,198,0.5));"/>
+        <!-- 내부 밝은 선 (레인) -->
+        <path d="${_JP_D}"
+          fill="none" stroke="#e8ecf2" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- 진행 표시 (인디고) -->
+        <path id="journey-progress-path" d="${_JP_D}"
+          fill="none" stroke="#818cf8" stroke-width="6" stroke-linecap="round"
+          stroke-dasharray="0 9999"
+          style="filter:drop-shadow(0 0 5px rgba(129,140,248,0.55));"/>
+      </svg>
+
+      <!-- 단계 노드들 -->
+      ${nodesHtml}
+
+      <!-- 현재 위치 아바타 -->
+      <div style="position:absolute;left:calc(${avL}% - 32px);top:calc(${avT}% - 44px);width:64px;display:flex;flex-direction:column;align-items:center;z-index:10;">
+        <div style="position:relative;width:64px;height:64px;display:flex;align-items:center;justify-content:center;">
+          <div style="position:absolute;inset:0;background:rgba(129,140,248,0.22);border-radius:50%;filter:blur(10px);animation:journeyPulse 2.2s ease-in-out infinite;"></div>
+          <div style="width:56px;height:56px;background:var(--bg);box-shadow:var(--sh-out);border-radius:18px;border:2px solid rgba(129,140,248,0.5);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:var(--text);position:relative;z-index:2;">
+            ${initials}
+          </div>
+          <div style="position:absolute;top:-3px;right:-3px;width:20px;height:20px;background:#818cf8;border-radius:50%;border:2px solid var(--bg);display:flex;align-items:center;justify-content:center;z-index:3;">
+            <i class="ph-bold ph-navigation-arrow" style="color:#fff;font-size:8px;"></i>
+          </div>
+        </div>
+        <div style="margin-top:6px;background:#818cf8;padding:4px 10px;border-radius:20px;box-shadow:0 2px 8px rgba(129,140,248,0.4);">
+          <p style="font-size:9px;font-weight:700;color:#fff;white-space:nowrap;">현재: ${cur.name}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 이번 주 과제 카드 -->
+    <div style="background:var(--bg);box-shadow:var(--sh-out);border-radius:24px;padding:18px 20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h3 style="font-size:13px;font-weight:700;color:var(--text);">이번 주 과제</h3>
+        <span style="font-size:10px;font-weight:700;color:var(--text2);">${done}/${total} 완료</span>
+      </div>
+      ${missionHtml}
+    </div>
+  </div>`;
+
+  // 진행 경로 길이 업데이트 (DOM 렌더 후)
+  // 현재 단계(ci) 노드와 다음 단계 노드 사이 중간 y에 해당하는 path 길이를 이진 탐색으로 구함
+  requestAnimationFrame(() => {
+    try {
+      const pathEl = document.getElementById('journey-main-path');
+      if (!pathEl) return;
+      const tLen = pathEl.getTotalLength();
+      const progEl = document.getElementById('journey-progress-path');
+      if (!progEl) return;
+
+      const stY = _JP_STAGES[ci].svgY;
+      const nxY = ci < _JP_STAGES.length - 1 ? _JP_STAGES[ci + 1].svgY : _JP_H;
+      const tgY = (stY + nxY) / 2;
+
+      // path는 위→아래로 y가 단조 증가하므로 이진 탐색 가능
+      let lo = 0, hi = tLen;
+      for (let k = 0; k < 28; k++) {
+        const m = (lo + hi) / 2;
+        pathEl.getPointAtLength(m).y < tgY ? (lo = m) : (hi = m);
+      }
+      progEl.setAttribute('stroke-dasharray', `${((lo + hi) / 2).toFixed(1)} 9999`);
+    } catch(e) {}
+  });
+}
+
 function renderHomeworkTab(s,done) {
   const hwItems = s.homework.length
     ? s.homework.map((h,i)=>`
@@ -3698,11 +4420,20 @@ function renderHomeworkTab(s,done) {
 function toggleHw(sid, idx) {
   haptic('light');
   const students=loadStudents(); const s=students.find(x=>x.id===sid);
+  if (!s || !s.homework[idx]) return;
   s.homework[idx].done = !s.homework[idx].done;
   saveStudents(students);
   const done=s.homework.filter(h=>h.done).length;
   renderHomeworkTab(s,done);
   updateHwPct(s);
+}
+function toggleProgressTabHw(sid, idx) {
+  haptic('light');
+  const students=loadStudents(); const s=students.find(x=>x.id===sid);
+  if (!s || !s.homework[idx]) return;
+  s.homework[idx].done = !s.homework[idx].done;
+  saveStudents(students);
+  renderDetailAll(sid);
 }
 function deleteHw(sid, idx) {
   if (!confirm('이 숙제를 삭제하시겠습니까?')) return;
@@ -3743,9 +4474,16 @@ function renderSongsTab(s) {
   function songRow(g, type, idx) {
     const dotCls = type==='canLearn'?'dot-gold':type==='learned'?'dot-green':'dot-dim';
     const nameCls = (type==='canLearn'||type==='learned')?'':'muted';
-    return `<div class="song-item">
-      <div class="dot ${dotCls}"></div>
+    const safeG = g.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    return `<div class="song-item" id="song-item-${type}-${idx}" draggable="true"
+      ondragstart="_songDragStart(event,'${type}',${idx})"
+      ondragend="_songDragEnd(event)"
+      ontouchstart="_songTouchStart(event,'${type}',${idx})"
+      ontouchmove="_songTouchMove(event)"
+      ontouchend="_songTouchEnd(event)">
+      <div class="dot ${dotCls}" style="cursor:grab;"></div>
       <p class="song-name ${nameCls}" style="flex:1;" onclick="openYoutube('${g.replace(/'/g,"\\'")}')">${g}</p>
+      <button class="btn-red" title="편집" onclick="editSongInline(${s.id},'${type}',${idx})"><i class="ph-bold ph-pencil-simple"></i></button>
       <button class="btn-red" onclick="deleteSong(${s.id},'${type}',${idx})">×</button>
     </div>`;
   }
@@ -3756,10 +4494,18 @@ function renderSongsTab(s) {
   const wantItems    = (s.songs.wantToLearn||[]).length
     ? s.songs.wantToLearn.map(g=>`<div class="song-item"><div class="dot dot-dim"></div><p class="song-name muted" style="flex:1;">${g}</p></div>`).join('')
     : '<p class="small muted" style="padding:10px 0;text-align:center;">레슨생이 아직 없음</p>';
+  function dropZoneAttrs(catType) {
+    return `class="song-drop-zone" data-cat-type="${catType}"
+      ondragover="_songDropZoneDragOver(event)"
+      ondragleave="_songDropZoneDragLeave(event)"
+      ondrop="_songDropZoneDrop(event,'${catType}')"`;
+  }
   document.getElementById('d-songs').innerHTML = `
     <div class="card">
-      <p class="section-title gold">지금 배울 수 있는 곡</p>
-      ${canItems}
+      <div ${dropZoneAttrs('canLearn')}>
+        <p class="section-title gold">지금 배울 수 있는 곡</p>
+        ${canItems}
+      </div>
       <button class="add-trigger" style="margin-top:10px;" onclick="toggleSongPanel('canLearn')">+ 곡 추가</button>
       <div class="add-panel hidden" id="song-panel-canLearn">
         <p class="add-panel-title">배울 수 있는 곡 추가</p>
@@ -3775,8 +4521,10 @@ function renderSongsTab(s) {
       ${wantItems}
     </div>
     <div class="card">
-      <p class="section-title muted">연습이 필요한 곡 — <span style="color:var(--text);">초급</span></p>
-      ${beginItems}
+      <div ${dropZoneAttrs('notYetBeginner')}>
+        <p class="section-title muted">연습이 필요한 곡 — <span style="color:var(--text);">초급</span></p>
+        ${beginItems}
+      </div>
       <button class="add-trigger" style="margin-top:10px;" onclick="toggleSongPanel('notYetBeginner')">+ 곡 추가</button>
       <div class="add-panel hidden" id="song-panel-notYetBeginner">
         <p class="add-panel-title">초급 곡 추가</p>
@@ -3788,8 +4536,10 @@ function renderSongsTab(s) {
       </div>
     </div>
     <div class="card">
-      <p class="section-title muted">연습이 필요한 곡 — <span style="color:var(--text);">중급</span></p>
-      ${interItems}
+      <div ${dropZoneAttrs('notYetIntermediate')}>
+        <p class="section-title muted">연습이 필요한 곡 — <span style="color:var(--text);">중급</span></p>
+        ${interItems}
+      </div>
       <button class="add-trigger" style="margin-top:10px;" onclick="toggleSongPanel('notYetIntermediate')">+ 곡 추가</button>
       <div class="add-panel hidden" id="song-panel-notYetIntermediate">
         <p class="add-panel-title">중급 곡 추가</p>
@@ -3801,8 +4551,10 @@ function renderSongsTab(s) {
       </div>
     </div>
     <div class="card">
-      <p class="section-title" style="color:var(--green);">지금까지 배운 곡</p>
-      ${learnedItems}
+      <div ${dropZoneAttrs('learned')}>
+        <p class="section-title" style="color:var(--green);">지금까지 배운 곡</p>
+        ${learnedItems}
+      </div>
       <button class="add-trigger" style="margin-top:10px;" onclick="toggleSongPanel('learned')">+ 곡 추가</button>
       <div class="add-panel hidden" id="song-panel-learned">
         <p class="add-panel-title">배운 곡 추가</p>
@@ -3819,6 +4571,171 @@ function deleteSong(sid,type,idx) {
   const students=loadStudents(); const s=students.find(x=>x.id===sid);
   s.songs[type].splice(idx,1); saveStudents(students); renderSongsTab(s);
 }
+
+// ── 곡 인라인 편집 ──────────────────────────────────────────
+function editSongInline(sid, type, idx) {
+  const item = document.getElementById(`song-item-${type}-${idx}`);
+  if (!item) return;
+  const nameEl = item.querySelector('.song-name');
+  if (!nameEl) return;
+  const currentName = nameEl.textContent;
+  // 이미 편집 중이면 무시
+  if (item.querySelector('input.song-edit-input')) return;
+
+  const inp = document.createElement('input');
+  inp.className = 'song-edit-input';
+  inp.value = currentName;
+  inp.style.cssText = 'flex:1;font-size:13px;padding:4px 8px;border-radius:8px;background:var(--bg);box-shadow:var(--sh-in-sm);border:none;color:var(--text);outline:none;font-family:inherit;min-width:0;';
+  nameEl.replaceWith(inp);
+  inp.focus();
+  inp.select();
+
+  // 편집 버튼을 저장 버튼으로 교체
+  const editBtn = item.querySelector('button[title="편집"]');
+  if (editBtn) {
+    editBtn.textContent = '✔';
+    editBtn.title = '저장';
+    editBtn.style.color = 'var(--green)';
+    editBtn.onclick = () => _saveSongEdit(sid, type, idx, inp);
+  }
+
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); _saveSongEdit(sid, type, idx, inp); }
+    if (e.key === 'Escape') { renderSongsTab(loadStudents().find(x=>x.id===sid)); }
+  });
+  inp.addEventListener('blur', () => {
+    // 저장 버튼 클릭 시 blur보다 click이 먼저 오도록 딜레이
+    setTimeout(() => {
+      const stillEditing = document.getElementById(`song-item-${type}-${idx}`)?.querySelector('input.song-edit-input');
+      if (stillEditing) renderSongsTab(loadStudents().find(x=>x.id===sid));
+    }, 180);
+  });
+}
+
+function _saveSongEdit(sid, type, idx, inp) {
+  const newName = inp.value.trim();
+  if (!newName) { inp.focus(); return; }
+  const students = loadStudents();
+  const s = students.find(x => x.id === sid);
+  if (!s) return;
+  s.songs[type][idx] = newName;
+  saveStudents(students);
+  renderSongsTab(s);
+}
+
+// ── 곡 드래그 & 드롭 (카테고리 간 이동) ────────────────────
+let _dragSongType = null, _dragSongIdx = null, _dragSongSid = null;
+// 터치 드래그용
+let _touchDragEl = null, _touchDragClone = null, _touchDragType = null, _touchDragIdx = null;
+
+const SONG_CATEGORIES = ['canLearn','notYetBeginner','notYetIntermediate','learned'];
+const SONG_CAT_LABELS = {
+  canLearn: '지금 배울 수 있는 곡',
+  notYetBeginner: '연습이 필요한 곡 — 초급',
+  notYetIntermediate: '연습이 필요한 곡 — 중급',
+  learned: '지금까지 배운 곡'
+};
+
+function _songDragStart(e, type, idx) {
+  _dragSongType = type;
+  _dragSongIdx  = idx;
+  _dragSongSid  = curDetailId;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', type + '|' + idx);
+  const item = e.currentTarget;
+  setTimeout(() => item.style.opacity = '0.4', 0);
+}
+
+function _songDragEnd(e) {
+  e.currentTarget.style.opacity = '';
+  _dragSongType = null; _dragSongIdx = null;
+  document.querySelectorAll('.song-drop-zone').forEach(z => z.classList.remove('drag-over'));
+}
+
+function _songDropZoneDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  e.currentTarget.classList.add('drag-over');
+}
+
+function _songDropZoneDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+
+function _songDropZoneDrop(e, targetType) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (!_dragSongType || _dragSongType === targetType) return;
+  const students = loadStudents();
+  const s = students.find(x => x.id === _dragSongSid);
+  if (!s) return;
+  const song = (s.songs[_dragSongType] || [])[_dragSongIdx];
+  if (song === undefined) return;
+  s.songs[_dragSongType].splice(_dragSongIdx, 1);
+  if (!s.songs[targetType]) s.songs[targetType] = [];
+  s.songs[targetType].push(song);
+  saveStudents(students);
+  renderSongsTab(s);
+}
+
+// 터치 드래그
+function _songTouchStart(e, type, idx) {
+  _touchDragType = type;
+  _touchDragIdx  = idx;
+  _touchDragEl   = e.currentTarget;
+  const touch = e.touches[0];
+  const clone = _touchDragEl.cloneNode(true);
+  clone.style.cssText = `position:fixed;left:${touch.clientX - 20}px;top:${touch.clientY - 20}px;opacity:0.75;pointer-events:none;z-index:9999;width:${_touchDragEl.offsetWidth}px;background:var(--bg);border-radius:12px;box-shadow:var(--sh-out);`;
+  document.body.appendChild(clone);
+  _touchDragClone = clone;
+  _touchDragEl.style.opacity = '0.3';
+}
+
+function _songTouchMove(e) {
+  if (!_touchDragClone) return;
+  e.preventDefault();
+  const touch = e.touches[0];
+  _touchDragClone.style.left = (touch.clientX - 20) + 'px';
+  _touchDragClone.style.top  = (touch.clientY - 20) + 'px';
+  // 드롭존 하이라이트
+  document.querySelectorAll('.song-drop-zone').forEach(z => {
+    const r = z.getBoundingClientRect();
+    const inside = touch.clientX >= r.left && touch.clientX <= r.right && touch.clientY >= r.top && touch.clientY <= r.bottom;
+    z.classList.toggle('drag-over', inside);
+  });
+}
+
+function _songTouchEnd(e) {
+  if (!_touchDragClone) return;
+  const touch = e.changedTouches[0];
+  if (_touchDragEl) _touchDragEl.style.opacity = '';
+  _touchDragClone.remove();
+  _touchDragClone = null;
+
+  // 드롭 위치의 드롭존 찾기
+  const dropZone = document.elementsFromPoint(touch.clientX, touch.clientY)
+    .find(el => el.classList.contains('song-drop-zone'));
+  if (dropZone) {
+    const targetType = dropZone.dataset.catType;
+    if (targetType && targetType !== _touchDragType) {
+      const students = loadStudents();
+      const s = students.find(x => x.id === curDetailId);
+      if (s) {
+        const song = (s.songs[_touchDragType] || [])[_touchDragIdx];
+        if (song !== undefined) {
+          s.songs[_touchDragType].splice(_touchDragIdx, 1);
+          if (!s.songs[targetType]) s.songs[targetType] = [];
+          s.songs[targetType].push(song);
+          saveStudents(students);
+          renderSongsTab(s);
+        }
+      }
+    }
+  }
+  document.querySelectorAll('.song-drop-zone').forEach(z => z.classList.remove('drag-over'));
+  _touchDragType = null; _touchDragIdx = null; _touchDragEl = null;
+}
+
 function toggleSongPanel(type) {
   const p=document.getElementById(`song-panel-${type}`);
   const wasHidden=p.classList.contains('hidden');
@@ -4208,6 +5125,7 @@ function enterStudent() {
   _hwCardOpen = false;
   _learnedOpen = false;
   _activeWeekDay = null;
+  _homeWeekPage = 0;
   // 스케줄 달력 초기화
   const _now = new Date();
   _sCalYear = _now.getFullYear();
@@ -4262,14 +5180,12 @@ function enterStudent() {
   // ── 새 디자인파일 기반 홈 렌더링
   document.getElementById('s-home').innerHTML = renderStudentNewHome(s);
   _renderHomeHwRows(s);
-  _renderHomeWeekRow(s);
-  setTimeout(_initWeekWidgetDrag, 0);
+  _renderHomeWeekRow(s);  // 이번주+다음주 렌더 및 스와이프 초기화 포함
 
-    renderStudentHwTab(s);
+  renderStudentHwTab(s);
   renderStudentHomeHw(s);
   renderStudentHomeWant(s);
   renderStudentSongsTab(s);
-  setTimeout(_initWeekWidgetDrag, 0);
   goScreen('sc-student');
   // 채팅 미읽 배지 초기화
   _initStudentChatBadge(s.id);
@@ -4393,11 +5309,20 @@ function renderStudentNewHome(s) {
 
   return `
     <!-- ① 이번주 일정 -->
-    <div style="padding:22px 24px;border-radius:2.5rem;box-shadow:var(--sh-out);background:var(--bg);margin-bottom:32px;">
+    <div onclick="toggleAllWeekDetail()" style="padding:22px 24px;border-radius:2.5rem;box-shadow:var(--sh-out);background:var(--bg);margin-bottom:32px;cursor:pointer;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-        <h4 style="font-size:12px;font-weight:700;color:var(--text2);letter-spacing:0.12em;text-transform:uppercase;">이번주 일정</h4>
+        <h4 id="s-home-week-title" style="font-size:12px;font-weight:700;color:var(--text2);letter-spacing:0.12em;text-transform:uppercase;">이번주 일정</h4>
+        <div style="display:flex;gap:5px;">
+          <div id="s-hw-dot-0" style="width:5px;height:5px;border-radius:50%;background:var(--gold);transition:background 0.2s;"></div>
+          <div id="s-hw-dot-1" style="width:5px;height:5px;border-radius:50%;background:var(--border2);transition:background 0.2s;"></div>
+        </div>
       </div>
-      <div style="display:flex;justify-content:space-between;" id="s-home-week-row"></div>
+      <div id="s-home-week-swipe-wrap" style="overflow:hidden;position:relative;touch-action:pan-y;">
+        <div id="s-home-week-slider" style="display:flex;width:200%;will-change:transform;transition:none;">
+          <div style="width:50%;flex-shrink:0;"><div style="display:flex;justify-content:space-between;" id="s-home-week-row"></div></div>
+          <div style="width:50%;flex-shrink:0;"><div style="display:flex;justify-content:space-between;" id="s-home-week-row-next"></div></div>
+        </div>
+      </div>
       <div class="s-week-detail-wrap" id="s-home-week-detail">
         <div class="s-week-detail-inner" id="s-home-week-detail-inner"></div>
       </div>
@@ -4452,29 +5377,18 @@ function renderStudentNewHome(s) {
       <div style="display:flex;flex-direction:column;gap:10px;" id="s-home-hw-rows"></div>
     </div>
 
-    <!-- ④ 2열 버튼 그리드 -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:32px;width:100%;">
+    <!-- ④ 모르겠어요 버튼 (전체 너비) -->
+    <div style="margin-bottom:32px;width:100%;">
       <button class="s-home-grid-btn neu-button"
-        onclick="switchStudentTab('songs',document.getElementById('s-nav-songs'))">
-        <div class="s-home-grid-inner">
-          <div style="width:46px;height:46px;border-radius:15px;box-shadow:var(--sh-in);display:flex;align-items:center;justify-content:center;">
-            <i class="ph-bold ph-pencil" style="color:#60a5fa;font-size:20px;"></i>
-          </div>
-          <div>
-            <h4 style="font-size:13px;font-weight:700;color:var(--text);">곡 리스트</h4>
-            <p style="font-size:10px;font-weight:600;color:var(--text2);margin-top:3px;">${canLearnCnt}곡 준비됨</p>
-          </div>
-        </div>
-      </button>
-      <button class="s-home-grid-btn neu-button"
-        onclick="openHwQuestion()">
-        <div class="s-home-grid-inner">
-          <div style="width:46px;height:46px;border-radius:15px;box-shadow:var(--sh-in);display:flex;align-items:center;justify-content:center;">
+        onclick="openHwQuestion()"
+        style="aspect-ratio:unset;height:88px;width:100%;flex-direction:row;gap:0;padding:6px;">
+        <div style="width:100%;height:100%;border-radius:1.5rem;background:var(--bg);padding:16px 20px;display:flex;flex-direction:row;align-items:center;gap:18px;box-sizing:border-box;">
+          <div style="width:46px;height:46px;flex-shrink:0;border-radius:15px;box-shadow:var(--sh-in);display:flex;align-items:center;justify-content:center;">
             <i class="ph-bold ph-question" style="color:#818cf8;font-size:20px;"></i>
           </div>
-          <div>
-            <h4 style="font-size:13px;font-weight:700;color:var(--text);">모르겠어요</h4>
-            <p style="font-size:10px;font-weight:600;color:var(--text2);margin-top:3px;">${pendingCnt}개 남음</p>
+          <div style="text-align:left;">
+            <h4 style="font-size:14px;font-weight:700;color:var(--text);">모르겠어요</h4>
+            <p style="font-size:11px;font-weight:600;color:var(--text2);margin-top:3px;">${pendingCnt}개 남음</p>
           </div>
         </div>
       </button>
@@ -4519,20 +5433,19 @@ function _renderHomeHwRows(s) {
   }).join('');
 }
 
-// 이번주 일정 요일 렌더링
-function _renderHomeWeekRow(s) {
-  const el = document.getElementById('s-home-week-row');
-  if (!el) return;
+// 이번주/다음주 일정 요일 렌더링
+let _homeWeekPage = 0; // 0=이번주, 1=다음주
+
+function _buildWeekRowHtml(s, weekOffset) {
   const now = new Date(); now.setHours(0,0,0,0);
-  // toISOString()은 UTC 기준이라 한국(UTC+9)에서 날짜가 하루 밀림 → 로컬 날짜 포맷 사용
   function _localDate(d) {
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   }
   const todayStr = _localDate(now);
   const dow = now.getDay();
   const DAY_KO = ['일','월','화','수','목','금','토'];
-  el.innerHTML = DAY_KO.map((label, i) => {
-    const d = new Date(now); d.setDate(now.getDate() - dow + i);
+  return DAY_KO.map((label, i) => {
+    const d = new Date(now); d.setDate(now.getDate() - dow + i + weekOffset * 7);
     const ds = _localDate(d);
     const hasLesson = (s.events||[]).some(e => e.date === ds);
     const isToday   = ds === todayStr;
@@ -4541,12 +5454,79 @@ function _renderHomeWeekRow(s) {
     else if (isToday)         cls = 'wdc-today';
     else if (hasLesson)       cls = 'wdc-lesson';
     const dot = hasLesson ? '<div class="s-week-day-dot"></div>' : '';
-    const click = hasLesson ? `onclick="toggleWeekDayDetail('${ds}')"` : '';
     return `<div class="s-week-day-wrap">
-      <div class="s-week-day-circle ${cls}" ${click}>${label}</div>
+      <div class="s-week-day-circle ${cls}">${label}</div>
       ${dot}
     </div>`;
   }).join('');
+}
+
+function _renderHomeWeekRow(s) {
+  const el     = document.getElementById('s-home-week-row');
+  const elNext = document.getElementById('s-home-week-row-next');
+  if (el)     el.innerHTML     = _buildWeekRowHtml(s, 0);
+  if (elNext) elNext.innerHTML = _buildWeekRowHtml(s, 1);
+  _initHomeWeekSwipe(s);
+}
+
+function _initHomeWeekSwipe(s) {
+  const wrap   = document.getElementById('s-home-week-swipe-wrap');
+  const slider = document.getElementById('s-home-week-slider');
+  if (!wrap || !slider) return;
+
+  // 이미 초기화됐으면 skip (이벤트 중복 방지)
+  if (wrap._swipeInit) return;
+  wrap._swipeInit = true;
+
+  let startX = null, startY = null, isH = null, liveX = 0;
+
+  function setPage(p, animate) {
+    _homeWeekPage = p;
+    slider.style.transition = animate ? 'transform 0.3s cubic-bezier(0.4,0,0.2,1)' : 'none';
+    slider.style.transform  = `translateX(${-p * 50}%)`;
+    const d0 = document.getElementById('s-hw-dot-0');
+    const d1 = document.getElementById('s-hw-dot-1');
+    if (d0) d0.style.background = p === 0 ? 'var(--gold)' : 'var(--border2)';
+    if (d1) d1.style.background = p === 1 ? 'var(--gold)' : 'var(--border2)';
+    const title = document.getElementById('s-home-week-title');
+    if (title) title.textContent = p === 0 ? '이번주 일정' : '다음주 일정';
+    // 상세 닫기
+    const detWrap = document.getElementById('s-home-week-detail');
+    if (detWrap) { detWrap.classList.remove('open'); _activeWeekDay = null; }
+  }
+
+  // 현재 페이지 상태 복원
+  setPage(_homeWeekPage, false);
+
+  function onStart(cx, cy) { startX = cx; startY = cy; isH = null; liveX = -_homeWeekPage * wrap.getBoundingClientRect().width; }
+  function onMove(cx, cy, e) {
+    if (startX === null) return;
+    const dx = cx - startX, dy = cy - startY;
+    if (isH === null && (Math.abs(dx) > 6 || Math.abs(dy) > 6)) isH = Math.abs(dx) >= Math.abs(dy);
+    if (!isH) return;
+    e.preventDefault();
+    const W = wrap.getBoundingClientRect().width;
+    const raw = liveX + dx;
+    const minX = -W, maxX = 0;
+    const x = raw < minX ? minX + (raw - minX) * 0.25 : raw > maxX ? maxX + (raw - maxX) * 0.25 : raw;
+    slider.style.transition = 'none';
+    slider.style.transform  = `translateX(${x}px)`;
+  }
+  function onEnd(cx) {
+    if (startX === null) return;
+    const dx = cx - startX;
+    startX = null;
+    if (!isH) return;
+    if (Math.abs(dx) > 40) setPage(dx < 0 ? 1 : 0, true);
+    else setPage(_homeWeekPage, true);
+  }
+
+  wrap.addEventListener('touchstart', e => onStart(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+  wrap.addEventListener('touchmove',  e => onMove(e.touches[0].clientX, e.touches[0].clientY, e), { passive: false });
+  wrap.addEventListener('touchend',   e => onEnd(e.changedTouches[0].clientX), { passive: true });
+  wrap.addEventListener('mousedown',  e => { onStart(e.clientX, e.clientY); e.preventDefault(); });
+  document.addEventListener('mousemove', e => { if (startX !== null && isH !== false) onMove(e.clientX, e.clientY, e); });
+  document.addEventListener('mouseup',   e => { if (startX !== null) onEnd(e.clientX); });
 }
 
 function toggleWeekDayDetail(ds) {
@@ -4572,9 +5552,54 @@ function toggleWeekDayDetail(ds) {
       ${events.map(ev => `
         <div style="display:flex;flex-direction:column;gap:4px;padding:10px 14px;border-radius:14px;background:var(--surface3);margin-bottom:6px;">
           <p style="font-size:13px;font-weight:700;color:var(--text);">${ev.time||'시간 미정'}${ev.week?' · '+ev.week+'주차':''}</p>
-          ${ev.memo?`<p style="font-size:12px;color:var(--text2);line-height:1.5;">${ev.memo}</p>`:''}
+          ${ev.content?`<p style="font-size:12px;color:var(--text2);line-height:1.5;">${ev.content}</p>`:''}
         </div>`).join('')}
     </div>`;
+  wrap.classList.add('open');
+}
+
+// 이번주 일정 카드 전체 클릭 — 현재 페이지(이번주/다음주) 모든 이벤트 펼치기/닫기
+function toggleAllWeekDetail() {
+  const wrap  = document.getElementById('s-home-week-detail');
+  const inner = document.getElementById('s-home-week-detail-inner');
+  if (!wrap || !inner) return;
+  // 이미 열려있으면 닫기
+  if (wrap.classList.contains('open')) {
+    wrap.classList.remove('open');
+    _activeWeekDay = null;
+    return;
+  }
+  const s = curStudent ? loadStudents().find(x => x.id === curStudent.id) : null;
+  if (!s) return;
+  const now = new Date(); now.setHours(0,0,0,0);
+  const dow = now.getDay();
+  const DOW = ['일','월','화','수','목','금','토'];
+  // 현재 페이지(0=이번주, 1=다음주) 오프셋 반영
+  const weekOffset = typeof _homeWeekPage === 'number' ? _homeWeekPage : 0;
+  function _ld(d) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  // 현재 페이지 주 전체 이벤트 수집
+  const weekEvents = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(now); d.setDate(now.getDate() - dow + i + weekOffset * 7);
+    const ds = _ld(d);
+    const evs = (s.events || []).filter(e => e.date === ds);
+    if (evs.length > 0) {
+      weekEvents.push({ dateLabel: `${d.getMonth()+1}월 ${d.getDate()}일 (${DOW[d.getDay()]})`, evs });
+    }
+  }
+  if (!weekEvents.length) return;
+  inner.innerHTML = weekEvents.map(({ dateLabel, evs }) => `
+    <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:2px;">
+      <p style="font-size:11px;font-weight:700;color:var(--text2);letter-spacing:0.08em;margin-bottom:10px;">${dateLabel}</p>
+      ${evs.map(ev => `
+        <div style="display:flex;flex-direction:column;gap:4px;padding:10px 14px;border-radius:14px;background:var(--surface3);margin-bottom:6px;">
+          <p style="font-size:13px;font-weight:700;color:var(--text);">${ev.time||'시간 미정'}${ev.week?' · '+ev.week+'주차':''}</p>
+          ${ev.content?`<p style="font-size:12px;color:var(--text2);line-height:1.5;">${ev.content}</p>`:''}
+        </div>`).join('')}
+    </div>`).join('');
+  _activeWeekDay = 'all';
   wrap.classList.add('open');
 }
 
@@ -4773,6 +5798,10 @@ function switchStudentTab(tab,btn) {
     }
   } else {
     scEl.classList.remove('sched-mode');
+  }
+  if (tab === 'homework' && curStudent) {
+    const _js = loadStudents().find(x => x.id === curStudent.id);
+    if (_js) renderJourneyTab(_js);
   }
 }
 function toggleNotYetDrawer() {
@@ -5269,7 +6298,7 @@ function renderTeacherScheduleScreen() {
 
     // 오늘 배경 강조
     const bg = isToday ? 'rgba(201,168,76,0.04)' : 'var(--surface)';
-    dayCols += `<div style="position:relative;flex:0 0 ${_tSchedDayW}px;height:${TOTAL_H+16}px;border-left:0.5px solid var(--border);background:${bg};">
+    dayCols += `<div style="position:relative;flex:0 0 ${_tSchedDayW}px;height:${TOTAL_H+16}px;border-left:0.5px solid var(--border);background:${bg};cursor:pointer;" onclick="tSchedColClick(event,'${ds}')">
       ${hourLines}
       ${isToday ? nowLine : ''}
       ${evHtml}
@@ -5384,6 +6413,91 @@ function teacherSchedNav(dir) {
   // 하위 호환 (호출되지 않음)
   _teacherCurPage += dir;
   renderTeacherScheduleScreen();
+}
+
+// ── 강사 스케줄 일정 추가 모달 ──────────────────────────────────
+let _tSchedModalWeekSel = null;
+
+function tSchedColClick(e, dateStr) {
+  // 이벤트 블록 클릭 시 무시
+  if (e.target.closest('.cgrid-event')) return;
+  // 클릭 Y 위치로 시간 계산
+  const rect = e.currentTarget.getBoundingClientRect();
+  const relY = e.clientY - rect.top;
+  const clickedH = CGRID_H_START + Math.floor(relY / CGRID_HOUR_H);
+  const h = Math.min(Math.max(clickedH, CGRID_H_START), CGRID_H_END - 1);
+  tSchedShowAddModal(dateStr, String(h).padStart(2,'0'));
+}
+
+function tSchedShowAddModal(dateStr, hourStr) {
+  const modal = document.getElementById('tsched-add-modal');
+  if (!modal) return;
+
+  // 학생 선택 드롭다운 채우기
+  const sel = document.getElementById('tsched-modal-student');
+  const students = loadStudents();
+  sel.innerHTML = '<option value="">레슨생을 선택하세요</option>' +
+    students.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+
+  // 날짜 기본값
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('tsched-modal-date').value = dateStr || today;
+
+  // 시간 기본값
+  document.getElementById('tsched-modal-hour').value = hourStr || '';
+  document.getElementById('tsched-modal-min').value = '';
+
+  // 주차 그리드 초기화
+  _tSchedModalWeekSel = null;
+  _tSchedBuildWeekGrid();
+
+  // 텍스트 초기화
+  document.getElementById('tsched-modal-content').value = '';
+  document.getElementById('tsched-modal-memo').value = '';
+
+  modal.style.display = 'flex';
+}
+
+function tSchedHideAddModal() {
+  const modal = document.getElementById('tsched-add-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function _tSchedBuildWeekGrid() {
+  const g = document.getElementById('tsched-modal-week-grid');
+  if (!g) return;
+  g.innerHTML = Array.from({length:4}, (_, i) => i + 1).map(w =>
+    `<button onclick="_tSchedSelectWeek(${w})" style="flex:1;padding:9px 4px;border-radius:10px;border:none;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s;background:var(--bg);box-shadow:${_tSchedModalWeekSel===w?'var(--sh-in-sm)':'var(--sh-out-sm)'};color:${_tSchedModalWeekSel===w?'#818cf8':'var(--text2)'};">${w}주차</button>`
+  ).join('');
+}
+
+function _tSchedSelectWeek(w) {
+  _tSchedModalWeekSel = (_tSchedModalWeekSel === w) ? null : w;
+  _tSchedBuildWeekGrid();
+}
+
+function tSchedSubmitEvent() {
+  const studentId = parseInt(document.getElementById('tsched-modal-student').value);
+  const date = document.getElementById('tsched-modal-date').value;
+  const h = document.getElementById('tsched-modal-hour').value;
+  const m = document.getElementById('tsched-modal-min').value;
+  const content = document.getElementById('tsched-modal-content').value.trim();
+  const memo = document.getElementById('tsched-modal-memo').value.trim();
+
+  if (!studentId) { alert('레슨생을 선택하세요'); return; }
+  if (!date) { alert('날짜를 선택하세요'); return; }
+
+  const time = (h && m) ? `${h}:${m}` : (h ? `${h}:00` : '');
+  const students = loadStudents();
+  const s = students.find(x => x.id === studentId);
+  if (!s) return;
+  if (!s.events) s.events = [];
+  s.events.push({ date, week: _tSchedModalWeekSel, time, memo, content });
+  saveStudents(students);
+
+  tSchedHideAddModal();
+  renderTeacherScheduleScreen();
+  renderTeacherDashboard();
 }
 
 // ── 레슨생 스케줄 확인 탭 (3일/7일 그리드) ──────────────────────
@@ -5610,6 +6724,7 @@ let _chatListener      = null;  // 현재 열린 채팅 리스너
 let _chatListListeners = {};    // 강사용 목록 리스너 {sid: unsubFn}
 let _curChatStudentId  = null;  // 강사가 현재 보고 있는 학생 id
 let _teacherChatUnread = {};    // {sid: count}
+let _chatMsgCache      = {};    // {sid: {key: msgObj}} — 메시지 캐시
 
 // ─ 유틸 ─
 function _chatRef(sid) { return _db.ref('heum/chat/' + sid + '/messages'); }
@@ -5632,7 +6747,7 @@ function _chatScrollBottom(id) {
   if (el) setTimeout(()=>{ el.scrollTop = el.scrollHeight; }, 50);
 }
 
-// ─ 메시지 렌더링 ─
+// ─ 메시지 렌더링 (전체 재렌더) ─
 function _renderChatMessages(containerId, emptyId, messages, myRole) {
   const container = document.getElementById(containerId);
   const emptyEl   = document.getElementById(emptyId);
@@ -5700,14 +6815,158 @@ function _renderChatMessages(containerId, emptyId, messages, myRole) {
   _chatScrollBottom(containerId);
 }
 
+// ─ 단일 메시지 버블 DOM 생성 ─
+function _buildMsgBubble(msg, myRole, prevMsg) {
+  const isMine = msg.sender === myRole;
+  const frag = document.createDocumentFragment();
+
+  // 날짜 구분선: 이전 메시지와 날짜가 다를 때
+  const dateLabel = _chatFmtDate(msg.ts);
+  const prevDateLabel = prevMsg ? _chatFmtDate(prevMsg.ts) : null;
+  let dateChanged = false;
+  if (dateLabel !== prevDateLabel) {
+    const div = document.createElement('div');
+    div.className = 'chat-date-divider';
+    div.textContent = dateLabel;
+    div.dataset.dateKey = dateLabel;
+    frag.appendChild(div);
+    dateChanged = true;
+  }
+
+  const wrap = document.createElement('div');
+  wrap.className = 'chat-bubble-wrap ' + (isMine ? 'mine' : 'theirs');
+  wrap.dataset.msgKey = msg._key || msg.ts;
+
+  if (!isMine) {
+    const senderChanged = !prevMsg || prevMsg.sender !== msg.sender;
+    if (dateChanged || senderChanged) {
+      const lbl = document.createElement('div');
+      lbl.className = 'chat-sender-label';
+      lbl.textContent = msg.sender === 'teacher' ? 'HEUM 강사' : msg.senderName || '레슨생';
+      wrap.appendChild(lbl);
+    }
+  }
+  const bubble = document.createElement('div');
+  bubble.className = 'chat-bubble ' + (isMine ? 'mine' : 'theirs');
+  if (msg.hwCategory) {
+    const badge = document.createElement('div');
+    badge.className = 'chat-hw-badge';
+    badge.innerHTML = `<i class="ph-bold ph-books" style="font-size:12px;flex-shrink:0;"></i>${msg.hwCategory}`;
+    bubble.appendChild(badge);
+  }
+  const textNode = document.createElement('div');
+  textNode.style.cssText = msg.hwCategory ? 'margin-top:2px;' : '';
+  textNode.textContent = msg.text || '(내용 없음)';
+  bubble.appendChild(textNode);
+  wrap.appendChild(bubble);
+  const ts = document.createElement('div');
+  ts.className = 'chat-ts';
+  ts.textContent = _chatFmtTime(msg.ts);
+  wrap.appendChild(ts);
+  frag.appendChild(wrap);
+  return frag;
+}
+
+// ─ child_added 방식 채팅 구독 ─
+// containerId: 메시지 컨테이너 ID, emptyId: 빈 상태 ID, myRole: 'student'|'teacher'
+// 반환값: {off: fn} — 구독 해제 함수
+function _subscribeChatChildAdded(sid, containerId, emptyId, myRole) {
+  const ref = _chatRef(sid).limitToLast(200);
+  let initialized = false;
+  let initBuf = [];   // 초기 once() 로드 전 도착한 child_added 버퍼
+  let lastMsgInArr = null; // 전체 배열의 마지막 메시지 (발신자 레이블용)
+
+  // 1) 먼저 캐시된 메시지로 즉시 렌더
+  const cached = Object.values(_chatMsgCache[sid] || {}).sort((a,b)=>a.ts-b.ts);
+  if (cached.length) {
+    _renderChatMessages(containerId, emptyId, cached, myRole);
+    lastMsgInArr = cached[cached.length - 1] || null;
+  }
+
+  // 2) once('value')로 전체 최신 상태 로드 후 렌더 (깜빡임 없음)
+  ref.once('value', snap => {
+    // Firebase 객체를 배열+key로 변환
+    const allMsgs = [];
+    if (snap.exists()) {
+      snap.forEach(ch => { allMsgs.push({...ch.val(), _key: ch.key}); });
+    }
+    allMsgs.sort((a,b)=>a.ts-b.ts);
+
+    // 캐시 갱신
+    if (!_chatMsgCache[sid]) _chatMsgCache[sid] = {};
+    allMsgs.forEach(m => { _chatMsgCache[sid][m._key] = m; });
+
+    _renderChatMessages(containerId, emptyId, allMsgs, myRole);
+    lastMsgInArr = allMsgs[allMsgs.length - 1] || null;
+
+    // 버퍼에 쌓인 새 메시지 처리
+    initBuf.forEach(({snap: cs}) => {
+      const key = cs.key;
+      if (!_chatMsgCache[sid]) _chatMsgCache[sid] = {};
+      if (!_chatMsgCache[sid][key]) {
+        const msg = {...cs.val(), _key: key};
+        _chatMsgCache[sid][key] = msg;
+        _appendChatBubble(containerId, emptyId, msg, myRole, lastMsgInArr);
+        lastMsgInArr = msg;
+      }
+    });
+    initBuf = [];
+    initialized = true;
+  });
+
+  // 3) child_added로 새 메시지만 실시간 추가
+  const childCb = ref.on('child_added', cs => {
+    const key = cs.key;
+    if (!_chatMsgCache[sid]) _chatMsgCache[sid] = {};
+    if (!initialized) {
+      // once() 완료 전이면 버퍼에 저장
+      initBuf.push({snap: cs});
+      return;
+    }
+    if (_chatMsgCache[sid][key]) return; // 이미 있음
+    const msg = {...cs.val(), _key: key};
+    _chatMsgCache[sid][key] = msg;
+    _appendChatBubble(containerId, emptyId, msg, myRole, lastMsgInArr);
+    lastMsgInArr = msg;
+  });
+
+  return {
+    off: () => {
+      ref.off('child_added', childCb);
+      initBuf = [];
+    }
+  };
+}
+
+// ─ 단일 메시지를 컨테이너에 추가 ─
+function _appendChatBubble(containerId, emptyId, msg, myRole, prevMsg) {
+  const container = document.getElementById(containerId);
+  const emptyEl   = document.getElementById(emptyId);
+  if (!container) return;
+  if (emptyEl) emptyEl.style.display = 'none';
+  const frag = _buildMsgBubble(msg, myRole, prevMsg);
+  container.appendChild(frag);
+  // 시간 표시 최적화: 이전 버블의 시간 레이블 갱신
+  const allWraps = container.querySelectorAll('.chat-bubble-wrap');
+  if (allWraps.length >= 2) {
+    const prev = allWraps[allWraps.length - 2];
+    const prevTs = prev.querySelector('.chat-ts');
+    const curTs  = container.querySelectorAll('.chat-bubble-wrap')[allWraps.length - 1].querySelector('.chat-ts');
+    if (prevTs && curTs && prevTs.textContent === curTs.textContent) {
+      prevTs.style.display = 'none';
+    }
+  }
+  _chatScrollBottom(containerId);
+}
+
 // ─ 레슨생: 채팅 열기 ─
 function openStudentChat() {
   if (!curStudent) return;
   const sid = curStudent.id;
 
-  // 이전 리스너 정확하게 해제 (콜백 호출이 아닌 .off() 사용)
+  // 이전 리스너 해제 (페이지를 나갔다가 돌아올 때)
   if (_chatListener) {
-    _chatRef(sid).off('value', _chatListener);
+    _chatListener.off();
     _chatListener = null;
   }
 
@@ -5715,20 +6974,11 @@ function openStudentChat() {
   _markChatRead(sid, 'teacher');
   _updateStudentChatBadge(0);
 
-  // 즉시 1회 렌더 — 화면 전환 중에도 메시지가 바로 표시되도록
-  _chatRef(sid).limitToLast(200).once('value', snap => {
-    const msgs = snap.exists() ? Object.values(snap.val()).sort((a,b)=>a.ts-b.ts) : [];
-    _renderChatMessages('s-chat-messages', 's-chat-empty', msgs, 'student');
-  });
-
-  // 실시간 리스너 — 이후 새 메시지 도착 시 갱신
-  _chatListener = _chatRef(sid).limitToLast(200).on('value', snap => {
-    const msgs = snap.exists() ? Object.values(snap.val()).sort((a,b)=>a.ts-b.ts) : [];
-    _renderChatMessages('s-chat-messages', 's-chat-empty', msgs, 'student');
-  });
+  // child_added 방식으로 구독 — 캐시 즉시 렌더 + 새 메시지만 추가
+  _chatListener = _subscribeChatChildAdded(sid, 's-chat-messages', 's-chat-empty', 'student');
 }
 function closeStudentChat() {
-  if (_chatListener) { _db.ref('heum/chat/' + curStudent.id + '/messages').off('value', _chatListener); _chatListener = null; }
+  if (_chatListener) { _chatListener.off(); _chatListener = null; }
   goBack();
 }
 function sendStudentMsg() {
@@ -5780,18 +7030,33 @@ function _renderTeacherChatList() {
   const container  = document.getElementById('t-chat-list-inner');   // 데스크탑
   const containerM = document.getElementById('t-chat-list-inner-m'); // 모바일
 
-  const makeItem = (s, pfx) =>
-    `<div class="chat-list-item" id="t-cl-${pfx}${s.id}" data-ts="0" onclick="openTeacherChat(${s.id},'${s.name.replace(/'/g,"\\'")}')">
+  const makeItem = (s, pfx) => {
+    // 캐시에서 즉시 프리뷰 구성 (Firebase 조회 전 플래시 방지)
+    const cached = _chatMsgCache[s.id];
+    let initPreview = '대화 없음', initTime = '', initTs = 0;
+    if (cached) {
+      const msgs = Object.values(cached).sort((a,b) => a.ts - b.ts);
+      if (msgs.length) {
+        const last = msgs[msgs.length - 1];
+        const prefix = last.sender === 'teacher' ? '나: ' : '';
+        const cat    = last.hwCategory ? `[${last.hwCategory}] ` : '';
+        initPreview = prefix + cat + (last.text || '');
+        initTime    = _chatFmtTime(last.ts);
+        initTs      = last.ts || 0;
+      }
+    }
+    return `<div class="chat-list-item" id="t-cl-${pfx}${s.id}" data-ts="${initTs}" onclick="openTeacherChat(${s.id},'${s.name.replace(/'/g,"\\'")}')">
       <div class="chat-list-avatar">${s.name.slice(0,2)}</div>
       <div class="chat-list-info">
         <div class="chat-list-name">${s.name}</div>
-        <div class="chat-list-preview muted" id="t-cl-preview-${pfx}${s.id}">대화 없음</div>
+        <div class="chat-list-preview muted" id="t-cl-preview-${pfx}${s.id}">${initPreview}</div>
       </div>
       <div class="chat-list-meta">
-        <div class="chat-list-time" id="t-cl-time-${pfx}${s.id}"></div>
+        <div class="chat-list-time" id="t-cl-time-${pfx}${s.id}">${initTime}</div>
         <div id="t-cl-dot-${pfx}${s.id}"></div>
       </div>
     </div>`;
+  };
 
   const emptyHtml = '<div style="padding:20px;text-align:center;"><p class="small muted">등록된 레슨생이 없습니다</p></div>';
   if (!students.length) {
@@ -5838,6 +7103,17 @@ function _renderTeacherChatList() {
             .forEach(el => c.appendChild(el));
         }
       }
+      // 모바일 타임스탬프 저장 후 재정렬 (최근순)
+      const itemElM = document.getElementById('t-cl-m-' + s.id);
+      if (itemElM) {
+        itemElM.dataset.ts = String(last.ts);
+        const cm = document.getElementById('t-chat-list-inner-m');
+        if (cm) {
+          Array.from(cm.querySelectorAll('.chat-list-item'))
+            .sort((a, b) => (parseInt(b.dataset.ts) || 0) - (parseInt(a.dataset.ts) || 0))
+            .forEach(el => cm.appendChild(el));
+        }
+      }
       // 안읽은 메시지 (student가 보낸 것 중 read:false)
       _chatRef(s.id).orderByChild('sender').equalTo('student').once('value', allSnap => {
         if (!allSnap.exists()) return;
@@ -5851,8 +7127,8 @@ function _renderTeacherChatList() {
 // ─ 강사: 학생 채팅창 열기 ─
 function openTeacherChat(sid, sname) {
   // 이전 리스너 해제
-  if (_chatListener && _curChatStudentId) {
-    _chatRef(_curChatStudentId).off('value', _chatListener);
+  if (_chatListener) {
+    _chatListener.off();
     _chatListener = null;
   }
   _curChatStudentId = sid;
@@ -5877,17 +7153,8 @@ function openTeacherChat(sid, sname) {
     document.querySelectorAll('#t-chat-list-inner .chat-list-item').forEach(el => el.classList.remove('active-chat'));
     const activeItem = document.getElementById('t-cl-' + sid);
     if (activeItem) activeItem.classList.add('active-chat');
-    // 즉시 렌더
-    _chatRef(sid).limitToLast(200).once('value', snap => {
-      const messages = snap.exists() ? Object.values(snap.val()).sort((a,b)=>a.ts-b.ts) : [];
-      _renderChatMessages('t-chat-dt-messages', 't-chat-dt-empty-msg', messages, 'teacher');
-    });
-    // 실시간 리스너
-    _chatListener = _chatRef(sid).limitToLast(200).on('value', snap => {
-      const messages = snap.exists() ? Object.values(snap.val()).sort((a,b)=>a.ts-b.ts) : [];
-      _renderChatMessages('t-chat-dt-messages', 't-chat-dt-empty-msg', messages, 'teacher');
-      _updateTeacherChatBadge();
-    });
+    // child_added 방식 구독
+    _chatListener = _subscribeChatChildAdded(sid, 't-chat-dt-messages', 't-chat-dt-empty-msg', 'teacher');
     return;
   }
 
@@ -5895,18 +7162,8 @@ function openTeacherChat(sid, sname) {
   document.getElementById('t-chat-student-name').textContent = sname || '레슨생';
   goScreen('sc-teacher-chat');
 
-  // 즉시 1회 렌더
-  _chatRef(sid).limitToLast(200).once('value', snap => {
-    const messages = snap.exists() ? Object.values(snap.val()).sort((a,b)=>a.ts-b.ts) : [];
-    _renderChatMessages('t-chat-messages', 't-chat-empty', messages, 'teacher');
-  });
-
-  // 실시간 리스너
-  _chatListener = _chatRef(sid).limitToLast(200).on('value', snap => {
-    const messages = snap.exists() ? Object.values(snap.val()).sort((a,b)=>a.ts-b.ts) : [];
-    _renderChatMessages('t-chat-messages', 't-chat-empty', messages, 'teacher');
-    _updateTeacherChatBadge();
-  });
+  // child_added 방식 구독
+  _chatListener = _subscribeChatChildAdded(sid, 't-chat-messages', 't-chat-empty', 'teacher');
 }
 function sendTeacherMsg() {
   const inp  = document.getElementById('t-chat-input');
@@ -6109,9 +7366,86 @@ document.addEventListener('touchstart', function() {}, {passive: true});
     <div class="topbar" style="flex-shrink:0;padding-top:16px;padding-bottom:12px;">
       <button class="btn-ghost" onclick="goBack()">← 돌아가기</button>
       <p id="teacher-sched-range" style="font-size:12px;color:var(--text2);font-weight:500;"></p>
-      <button onclick="teacherSchedToday()" style="background:rgba(201,168,76,0.12);border:0.5px solid rgba(201,168,76,0.4);border-radius:8px;color:var(--gold);font-size:12px;font-weight:500;padding:6px 12px;cursor:pointer;transition:background 0.15s;">오늘</button>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button onclick="teacherSchedToday()" style="background:rgba(201,168,76,0.12);border:0.5px solid rgba(201,168,76,0.4);border-radius:8px;color:var(--gold);font-size:12px;font-weight:500;padding:6px 12px;cursor:pointer;transition:background 0.15s;">오늘</button>
+        <button onclick="tSchedShowAddModal()" style="background:rgba(129,140,248,0.12);border:0.5px solid rgba(129,140,248,0.4);border-radius:8px;color:#818cf8;font-size:18px;font-weight:700;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background 0.15s;line-height:1;">+</button>
+      </div>
     </div>
     <div id="teacher-sched-grid" style="flex:1;overflow:hidden;min-height:0;"></div>
+  </div>
+</div>
+
+<!-- 강사 스케줄 일정 추가 모달 -->
+<div id="tsched-add-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;padding:24px;box-sizing:border-box;align-items:center;justify-content:center;">
+  <div style="width:100%;max-width:420px;background:var(--bg);border-radius:20px;box-shadow:var(--sh-out);padding:24px;box-sizing:border-box;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+      <p style="font-size:16px;font-weight:800;color:var(--text);">일정 추가</p>
+      <button onclick="tSchedHideAddModal()" style="background:transparent;border:none;color:var(--text2);font-size:22px;line-height:1;cursor:pointer;padding:0;">×</button>
+    </div>
+    <!-- 레슨생 선택 -->
+    <div style="margin-bottom:14px;">
+      <p style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:6px;">레슨생</p>
+      <div style="border-radius:12px;background:var(--bg);box-shadow:var(--sh-in-sm);overflow:hidden;">
+        <select id="tsched-modal-student" style="width:100%;padding:12px 14px;font-size:14px;font-weight:600;color:var(--text);background:transparent;border:none;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;">
+          <option value="">레슨생을 선택하세요</option>
+        </select>
+      </div>
+    </div>
+    <!-- 날짜 -->
+    <div style="margin-bottom:14px;">
+      <p style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:6px;">날짜</p>
+      <div style="border-radius:12px;background:var(--bg);box-shadow:var(--sh-in-sm);">
+        <input type="date" id="tsched-modal-date" style="width:100%;padding:12px 14px;font-size:14px;font-weight:600;color:var(--text);background:transparent;border:none;outline:none;box-sizing:border-box;">
+      </div>
+    </div>
+    <!-- 주차 -->
+    <div style="margin-bottom:14px;">
+      <p style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:6px;">주차 선택</p>
+      <div id="tsched-modal-week-grid" style="display:flex;gap:8px;"></div>
+    </div>
+    <!-- 시간 -->
+    <div style="margin-bottom:14px;">
+      <p style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:6px;">시간</p>
+      <div style="display:flex;gap:8px;">
+        <div style="flex:1;border-radius:12px;background:var(--bg);box-shadow:var(--sh-in-sm);overflow:hidden;">
+          <select id="tsched-modal-hour" style="width:100%;padding:12px 10px;font-size:14px;font-weight:600;color:var(--text);background:transparent;border:none;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;text-align:center;">
+            <option value="">시</option>
+            <option value="06">06시</option><option value="07">07시</option><option value="08">08시</option>
+            <option value="09">09시</option><option value="10">10시</option><option value="11">11시</option>
+            <option value="12">12시</option><option value="13">13시</option><option value="14">14시</option>
+            <option value="15">15시</option><option value="16">16시</option><option value="17">17시</option>
+            <option value="18">18시</option><option value="19">19시</option><option value="20">20시</option>
+            <option value="21">21시</option><option value="22">22시</option><option value="23">23시</option>
+          </select>
+        </div>
+        <div style="flex:1;border-radius:12px;background:var(--bg);box-shadow:var(--sh-in-sm);overflow:hidden;">
+          <select id="tsched-modal-min" style="width:100%;padding:12px 10px;font-size:14px;font-weight:600;color:var(--text);background:transparent;border:none;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;text-align:center;">
+            <option value="">분</option>
+            <option value="00">00분</option><option value="10">10분</option><option value="20">20분</option>
+            <option value="30">30분</option><option value="40">40분</option><option value="50">50분</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <!-- 수업 내용 -->
+    <div style="margin-bottom:14px;">
+      <p style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:6px;">수업 내용 <span style="font-weight:400;">(레슨생에게 표시)</span></p>
+      <div style="border-radius:12px;background:var(--bg);box-shadow:var(--sh-in-sm);">
+        <textarea id="tsched-modal-content" rows="2" placeholder="이번 수업에서 다룬 내용" style="width:100%;padding:12px 14px;font-size:13px;color:var(--text);background:transparent;border:none;outline:none;resize:none;box-sizing:border-box;font-family:inherit;"></textarea>
+      </div>
+    </div>
+    <!-- 메모 -->
+    <div style="margin-bottom:20px;">
+      <p style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:6px;">메모 <span style="font-weight:400;">(강사용)</span></p>
+      <div style="border-radius:12px;background:var(--bg);box-shadow:var(--sh-in-sm);">
+        <textarea id="tsched-modal-memo" rows="2" placeholder="수업 메모" style="width:100%;padding:12px 14px;font-size:13px;color:var(--text);background:transparent;border:none;outline:none;resize:none;box-sizing:border-box;font-family:inherit;"></textarea>
+      </div>
+    </div>
+    <!-- 버튼 -->
+    <div style="display:flex;gap:10px;">
+      <button onclick="tSchedHideAddModal()" style="flex:1;padding:14px;border-radius:14px;background:var(--bg);box-shadow:var(--sh-out-sm);border:none;font-size:14px;font-weight:700;color:var(--text2);cursor:pointer;">취소</button>
+      <button onclick="tSchedSubmitEvent()" style="flex:2;padding:14px;border-radius:14px;background:linear-gradient(135deg,#818cf8,#6366f1);border:none;font-size:14px;font-weight:700;color:#fff;cursor:pointer;box-shadow:0 4px 12px rgba(99,102,241,0.35);">추가하기</button>
+    </div>
   </div>
 </div>
 
@@ -6304,6 +7638,16 @@ document.addEventListener('touchstart', function() {}, {passive: true});
     </div>
   </div>
 </div>
+
+
+<!-- ── 강사 모바일 하단 고정 네비게이션 ── -->
+<nav class="td-m-nav" id="td-m-nav-global">
+  <button class="td-m-nav-btn" id="td-m-nav-home" onclick="goScreen('sc-teacher')"><i class="ph-bold ph-squares-four"></i></button>
+  <button class="td-m-nav-btn" id="td-m-nav-schedule" onclick="goScreen('sc-teacher-schedule-view')"><i class="ph-bold ph-calendar-blank"></i></button>
+  <button class="td-m-nav-center" id="td-m-nav-students" onclick="goScreen('sc-info')"><i class="ph-bold ph-plus"></i></button>
+  <button class="td-m-nav-btn" id="td-m-nav-chat" onclick="openTeacherChatList()"><i class="ph-bold ph-chat-circle-text"></i></button>
+  <button class="td-m-nav-btn" id="td-m-nav-settings" onclick="toggleTeacherTheme()"><i class="ph-bold ph-gear-six"></i></button>
+</nav>
 
 </body>
 </html>
