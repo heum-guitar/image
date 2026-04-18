@@ -11,6 +11,7 @@
 <link rel="manifest" href="manifest.json">
 <title>HEUM</title>
 <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
@@ -280,6 +281,17 @@
   .song-drop-zone { border-radius: 12px; transition: background 0.18s, box-shadow 0.18s; padding: 4px; margin: -4px; }
   .song-drop-zone.drag-over { background: rgba(129,140,248,0.10); box-shadow: inset 0 0 0 2px rgba(129,140,248,0.45); }
   .song-item[draggable="true"] { -webkit-user-drag: element; cursor: grab; }
+  /* 섹션 접기/펼치기 */
+  .song-sec-header {
+    display:flex; align-items:center; justify-content:space-between;
+    cursor:pointer; -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none;
+    padding: 2px 0 10px;
+  }
+  .song-sec-header .section-title { margin-bottom:0; }
+  .song-sec-arrow { font-size:11px; color:var(--text3); transition:transform 0.3s cubic-bezier(0.4,0,0.2,1); display:inline-block; }
+  .song-sec-body { overflow:hidden; transition:max-height 0.38s cubic-bezier(0.4,0,0.2,1), opacity 0.28s ease; }
+  .song-sec-body.open  { opacity:1; }
+  .song-sec-body.closed { max-height:0 !important; opacity:0; }
   .dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
   .dot-gold { background:var(--gold); box-shadow: 0 0 5px rgba(129,140,248,0.5); }
   .dot-green { background:var(--green); }
@@ -1463,7 +1475,7 @@
     .td-widget-corner::after {
       content: '';
       position: absolute;
-      inset: 2px;
+      top: 2px; right: 2px; bottom: 2px; left: 2px;
       background: transparent;
       border: 3px solid #818cf8;
     }
@@ -1475,6 +1487,24 @@
     .td-widget-corner.bl::after { border-right: none; border-top: none; border-bottom-left-radius: 7px; }
     .td-widget-corner.br { bottom: -4px; right: -4px; cursor: nwse-resize; }
     .td-widget-corner.br::after { border-left: none; border-top: none; border-bottom-right-radius: 7px; }
+    /* 터치 디바이스(iPad 등) — 핸들을 항상 표시하고 터치 영역 확대 */
+    @media (pointer: coarse) {
+      .td-widget-drag-bar {
+        opacity: 0.45;
+        width: 48px; height: 8px;
+        top: 10px;
+      }
+      .td-widget-corner {
+        opacity: 0.55;
+        width: 36px; height: 36px;
+      }
+      /* 실제 터치 히트 영역을 핸들보다 크게 (투명 before) */
+      .td-widget-corner::before {
+        content: '';
+        position: absolute;
+        top: -10px; right: -10px; bottom: -10px; left: -10px;
+      }
+    }
     /* 드래그 중 그림자 강조 */
     .td-widget.td-w-dragging { z-index: 1000; }
     .td-widget.td-w-dragging .td-d-card,
@@ -1961,7 +1991,7 @@
 </aside>
 
 <!-- 로딩 오버레이 -->
-<div id="loading-overlay" style="display:flex;position:fixed;inset:0;background:#e0e5ec;z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:20px;">
+<div id="loading-overlay" style="display:flex;position:fixed;top:0;right:0;bottom:0;left:0;background:#e0e5ec;z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:20px;">
   <p style="font-size:30px;letter-spacing:0.28em;font-weight:800;color:#3d4f63;font-family:'Plus Jakarta Sans',sans-serif;">HEUM</p>
   <p style="font-size:11px;letter-spacing:0.15em;color:#7a8fa4;font-family:'Plus Jakarta Sans',sans-serif;margin-top:-12px;">Guitar Lesson</p>
   <div style="width:28px;height:28px;border:2px solid rgba(163,177,198,0.3);border-top-color:#818cf8;border-radius:50%;animation:_spin 0.8s linear infinite;margin-top:8px;"></div>
@@ -2325,7 +2355,7 @@
     <div class="sc-info-dt-topbar">
       <div>
         <p style="font-size:22px;font-weight:800;color:var(--text);letter-spacing:-0.02em;">수강생 통합 관리</p>
-        <p style="font-size:11px;color:var(--text2);margin-top:4px;" id="sc-info-dt-count">로딩 중...</p>
+        <p style="font-size:11px;color:var(--text2);margin-top:4px;" id="idt-count">로딩 중...</p>
       </div>
       <div style="display:flex;gap:10px;">
         <button style="height:40px;padding:0 18px;background:var(--bg);box-shadow:var(--sh-out-sm);border:none;border-radius:12px;color:var(--text2);font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:7px;cursor:pointer;transition:box-shadow 0.15s,transform 0.15s;" onmousedown="this.style.boxShadow='var(--sh-in-sm)';this.style.transform='scale(0.97)'" onmouseup="this.style.boxShadow='var(--sh-out-sm)';this.style.transform=''">
@@ -2338,7 +2368,7 @@
     </div>
 
     <!-- 추가 폼 (기본 숨김) -->
-    <section class="sc-info-dt-add-form" id="sc-info-dt-add-panel" style="display:none;">
+    <section class="sc-info-dt-add-form" id="idt-add-panel" style="display:none;">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
         <div style="width:38px;height:38px;border-radius:12px;background:var(--bg);box-shadow:var(--sh-in);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <i class="ph-fill ph-user-plus" style="color:#818cf8;font-size:16px;"></i>
@@ -2391,7 +2421,7 @@
     <div class="sc-info-dt-filterbar">
       <div class="sc-info-dt-filterbar-search">
         <i class="ph-bold ph-magnifying-glass"></i>
-        <input type="text" placeholder="이름으로 검색..." id="sc-info-dt-q" oninput="_filterDtStudentList(this.value)">
+        <input type="text" placeholder="이름으로 검색..." id="idt-q" oninput="_filterDtStudentList(this.value)">
       </div>
       <div class="sc-info-dt-filters" style="display:flex;gap:6px;">
         <button class="sc-info-dt-filter active" onclick="_filterDtStatus('all',this)">전체</button>
@@ -2415,7 +2445,7 @@
               <th style="text-align:center;">관리</th>
             </tr>
           </thead>
-          <tbody id="sc-info-dt-student-list">
+          <tbody id="idt-student-list">
             <!-- JS 렌더 -->
           </tbody>
         </table>
@@ -2423,7 +2453,7 @@
     </div>
 
     <!-- 삭제 확인 패널 -->
-    <div class="sc-info-dt-del-panel" id="sc-info-dt-del-section">
+    <div class="sc-info-dt-del-panel" id="idt-del-section">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
         <div style="width:32px;height:32px;border-radius:10px;background:var(--bg);box-shadow:var(--sh-in);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <i class="ph-fill ph-trash" style="color:var(--red);font-size:14px;"></i>
@@ -2613,13 +2643,30 @@ const FIREBASE_CONFIG = {
   messagingSenderId: "865808961682",
   appId: "1:865808961682:web:fafbe0225a6d120c07164b"
 };
-firebase.initializeApp(FIREBASE_CONFIG);
-const _db = firebase.database();
-
 // ── 데이터 캐시 ───────────────────────────────────────────────
 let _studentsCache = null;
 let _teacherPwCache = null;
 let _studentPwCache = {};
+
+// Firebase 초기화 — CDN 로드 실패(iPad 네트워크 제한 등) 시에도 앱이 열리도록 try-catch
+let _db;
+let _firebaseOk = false;
+try {
+  firebase.initializeApp(FIREBASE_CONFIG);
+  _db = firebase.database();
+  _firebaseOk = true;
+} catch(e) {
+  console.warn('Firebase 초기화 실패 (오프라인 모드):', e);
+  // 더미 _db: 메서드 호출 시 조용히 실패
+  const _noSnap = { exists: () => false, val: () => null };
+  const _noRef = () => ({
+    get:    () => Promise.resolve(_noSnap),
+    set:    () => Promise.resolve(),
+    remove: () => Promise.resolve(),
+    on:     () => {}
+  });
+  _db = { ref: _noRef };
+}
 
 // 학생 비밀번호 헬퍼 (Firebase + localStorage 이중 저장)
 function getStudentPw(id) {
@@ -2671,8 +2718,8 @@ function remainLockMin(id) {
 
 // ── 데이터 ─────────────────────────────────────────────────
 const STUDENTS_DEFAULT = [
-  { id:1, name:"임슬찬", level:"초급", birthdate:"00000000", startDate:null, progress:0, module:"수업 준비 중", currentWeek:1, nextLesson:"", homework:[], songs:{canLearn:[],notYetBeginner:[],notYetIntermediate:[],wantToLearn:[],learned:[]}, events:[] },
-  { id:2, name:"인영",   level:"초급", birthdate:"00000000", startDate:null, progress:0, module:"수업 준비 중", currentWeek:1, nextLesson:"", homework:[], songs:{canLearn:[],notYetBeginner:[],notYetIntermediate:[],wantToLearn:[],learned:[]}, events:[] }
+  { id:1, name:"임슬찬", level:"초급", birthdate:"00000000", startDate:null, progress:0, module:"수업 준비 중", currentWeek:1, nextLesson:"", homework:[], songs:{canLearn:[],notYetBeginner:[],notYetIntermediate:[],wantToLearn:[],learned:[],undecided:[]}, events:[] },
+  { id:2, name:"인영",   level:"초급", birthdate:"00000000", startDate:null, progress:0, module:"수업 준비 중", currentWeek:1, nextLesson:"", homework:[], songs:{canLearn:[],notYetBeginner:[],notYetIntermediate:[],wantToLearn:[],learned:[],undecided:[]}, events:[] }
 ];
 const TEACHER_PW_DEFAULT = "0912";
 
@@ -2709,11 +2756,12 @@ function _fixStudent(st){
   st.homework = _toArr(st.homework);
   if(!st.currentWeek)st.currentWeek=1;
   if(st.nextLesson===undefined)st.nextLesson='';
-  if(!st.songs){ st.songs={canLearn:[],notYetBeginner:[],notYetIntermediate:[],wantToLearn:[],learned:[]}; }
+  if(!st.songs){ st.songs={canLearn:[],notYetBeginner:[],notYetIntermediate:[],wantToLearn:[],learned:[],undecided:[]}; }
   else{
     st.songs.canLearn         = _toArr(st.songs.canLearn);
     st.songs.wantToLearn      = _toArr(st.songs.wantToLearn);
     st.songs.learned          = _toArr(st.songs.learned);
+    st.songs.undecided        = _toArr(st.songs.undecided);
     // 레거시 notYet → notYetBeginner 마이그레이션
     const legacy              = _toArr(st.songs.notYet);
     st.songs.notYetBeginner   = _toArr(st.songs.notYetBeginner);
@@ -3776,10 +3824,10 @@ function renderInfoScreen() {
   ).join('') || '<p class="small muted">등록된 레슨생이 없습니다</p>';
 
   // ── 데스크탑 레이아웃 업데이트 ──
-  const _dtCount = document.getElementById('sc-info-dt-count');
+  const _dtCount = document.getElementById('idt-count');
   if (_dtCount) _dtCount.textContent = students.length ? `총 ${students.length}명 수강 중` : '등록된 레슨생 없음';
 
-  const _dtList = document.getElementById('sc-info-dt-student-list');
+  const _dtList = document.getElementById('idt-student-list');
   if (_dtList) {
     _dtList.innerHTML = students.length ? students.map(s => {
       const lvColor = s.level==='초급' ? '#34d399' : s.level==='고급' ? '#f59e0b' : '#818cf8';
@@ -3907,7 +3955,7 @@ function addStudent() {
   if (birth.length!==6) { err.textContent='생년월일 6자리를 입력하세요 (예: 991201)'; return; }
   err.textContent='';
   const students=loadStudents();
-  students.push({ id:nextId(students),name,level,birthdate:birth,startDate:start||null,progress:0,module:"수업 준비 중",currentWeek:1,nextLesson:'',homework:[],songs:{canLearn:[],notYet:[],wantToLearn:[],learned:[]},events:[] });
+  students.push({ id:nextId(students),name,level,birthdate:birth,startDate:start||null,progress:0,module:"수업 준비 중",currentWeek:1,nextLesson:'',homework:[],songs:{canLearn:[],notYetBeginner:[],notYetIntermediate:[],wantToLearn:[],learned:[],undecided:[]},events:[] });
   saveStudents(students);
   document.getElementById('add-name').value=''; document.getElementById('add-birth').value=''; document.getElementById('add-start').value='';
   renderInfoScreen(); alert(`${name} 레슨생이 추가됐습니다`);
@@ -4691,12 +4739,31 @@ function submitHomework() {
   renderHomeworkTab(s,done);
 }
 
+// ── 곡 섹션 접기/펼치기 상태 ─────────────────────────────────
+const _songSecOpen = { canLearn:true, notYetBeginner:true, notYetIntermediate:true, learned:true, wantToLearn:true, undecided:true };
+
+function toggleSongSec(type) {
+  _songSecOpen[type] = !_songSecOpen[type];
+  const body  = document.getElementById(`song-sec-body-${type}`);
+  const arrow = document.getElementById(`song-sec-arrow-${type}`);
+  if (!body) return;
+  const open = _songSecOpen[type];
+  if (open) {
+    body.style.maxHeight = body.scrollHeight + 'px';
+    body.classList.remove('closed'); body.classList.add('open');
+  } else {
+    body.style.maxHeight = body.scrollHeight + 'px';
+    requestAnimationFrame(() => { body.style.maxHeight = '0'; });
+    body.classList.add('closed'); body.classList.remove('open');
+  }
+  if (arrow) arrow.style.transform = open ? 'rotate(0deg)' : 'rotate(-90deg)';
+}
+
 // ── 곡 탭 (강사) ─────────────────────────────────────────
 function renderSongsTab(s) {
   function songRow(g, type, idx) {
     const dotCls = type==='canLearn'?'dot-gold':type==='learned'?'dot-green':'dot-dim';
     const nameCls = (type==='canLearn'||type==='learned')?'':'muted';
-    const safeG = g.replace(/'/g,"\\'").replace(/"/g,'&quot;');
     return `<div class="song-item" id="song-item-${type}-${idx}" draggable="true"
       ondragstart="_songDragStart(event,'${type}',${idx})"
       ondragend="_songDragEnd(event)"
@@ -4709,83 +4776,123 @@ function renderSongsTab(s) {
       <button class="btn-red" onclick="deleteSong(${s.id},'${type}',${idx})">×</button>
     </div>`;
   }
-  const canItems     = s.songs.canLearn.length ? s.songs.canLearn.map((g,i)=>songRow(g,'canLearn',i)).join('') : '<p class="small muted" style="padding:10px 0;text-align:center;">곡을 추가해주세요</p>';
-  const beginItems   = (s.songs.notYetBeginner||[]).length ? s.songs.notYetBeginner.map((g,i)=>songRow(g,'notYetBeginner',i)).join('') : '<p class="small muted" style="padding:10px 0;text-align:center;">곡을 추가해주세요</p>';
-  const interItems   = (s.songs.notYetIntermediate||[]).length ? s.songs.notYetIntermediate.map((g,i)=>songRow(g,'notYetIntermediate',i)).join('') : '<p class="small muted" style="padding:10px 0;text-align:center;">곡을 추가해주세요</p>';
-  const learnedItems = (s.songs.learned||[]).length ? s.songs.learned.map((g,i)=>songRow(g,'learned',i)).join('') : '<p class="small muted" style="padding:10px 0;text-align:center;">곡을 추가해주세요</p>';
-  const wantItems    = (s.songs.wantToLearn||[]).length
+  function emptyMsg() { return '<p class="small muted" style="padding:10px 0;text-align:center;">곡을 추가해주세요</p>'; }
+  const canItems    = s.songs.canLearn.length ? s.songs.canLearn.map((g,i)=>songRow(g,'canLearn',i)).join('') : emptyMsg();
+  const beginItems  = (s.songs.notYetBeginner||[]).length ? s.songs.notYetBeginner.map((g,i)=>songRow(g,'notYetBeginner',i)).join('') : emptyMsg();
+  const interItems  = (s.songs.notYetIntermediate||[]).length ? s.songs.notYetIntermediate.map((g,i)=>songRow(g,'notYetIntermediate',i)).join('') : emptyMsg();
+  const learnedItems= (s.songs.learned||[]).length ? s.songs.learned.map((g,i)=>songRow(g,'learned',i)).join('') : emptyMsg();
+  const wantItems   = (s.songs.wantToLearn||[]).length
     ? s.songs.wantToLearn.map(g=>`<div class="song-item"><div class="dot dot-dim"></div><p class="song-name muted" style="flex:1;">${g}</p></div>`).join('')
     : '<p class="small muted" style="padding:10px 0;text-align:center;">레슨생이 아직 없음</p>';
+  const undecItems  = (s.songs.undecided||[]).length ? s.songs.undecided.map((g,i)=>songRow(g,'undecided',i)).join('') : emptyMsg();
+
   function dropZoneAttrs(catType) {
     return `class="song-drop-zone" data-cat-type="${catType}"
       ondragover="_songDropZoneDragOver(event)"
       ondragleave="_songDropZoneDragLeave(event)"
       ondrop="_songDropZoneDrop(event,'${catType}')"`;
   }
+  function secHeader(type, titleHtml) {
+    const open = _songSecOpen[type] !== false;
+    const arrowStyle = open ? '' : 'transform:rotate(-90deg);';
+    return `<div class="song-sec-header" onclick="toggleSongSec('${type}')">
+      <span class="section-title" style="margin-bottom:0;">${titleHtml}</span>
+      <span class="song-sec-arrow" id="song-sec-arrow-${type}" style="${arrowStyle}">▼</span>
+    </div>`;
+  }
+  function secBody(type, content, extra='') {
+    const open = _songSecOpen[type] !== false;
+    return `<div class="song-sec-body ${open?'open':'closed'}" id="song-sec-body-${type}" style="max-height:${open?'2000px':'0'};">
+      ${content}${extra}
+    </div>`;
+  }
+
   document.getElementById('d-songs').innerHTML = `
-    <div class="card">
-      <div ${dropZoneAttrs('canLearn')}>
-        <p class="section-title gold">지금 배울 수 있는 곡</p>
-        ${canItems}
-      </div>
-      <button class="add-trigger" style="margin-top:10px;" onclick="toggleSongPanel('canLearn')">+ 곡 추가</button>
-      <div class="add-panel hidden" id="song-panel-canLearn">
-        <p class="add-panel-title">배울 수 있는 곡 추가</p>
-        <div class="form-group"><textarea id="song-input-canLearn" rows="1" placeholder="예: 아이유 - 좋은 날"></textarea></div>
-        <div class="panel-actions">
-          <button class="panel-btn panel-btn-cancel" onclick="toggleSongPanel('canLearn')">취소</button>
-          <button class="panel-btn panel-btn-submit" onclick="submitSong('canLearn')">추가</button>
-        </div>
-      </div>
+    <div style="margin-bottom:8px;display:flex;justify-content:flex-end;">
+      <button class="btn" style="font-size:11px;padding:7px 14px;" onclick="document.getElementById('excel-file-input').click()">
+        <i class="ph-bold ph-file-xls" style="margin-right:4px;"></i>엑셀 등록
+      </button>
+      <input type="file" id="excel-file-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importSongsFromExcel(event,${s.id})">
     </div>
+
     <div class="card">
-      <p class="section-title muted">배우고 싶은 곡 <span style="font-size:10px;color:var(--text3);font-weight:400;">(레슨생 입력)</span></p>
-      ${wantItems}
+      ${secHeader('canLearn','<span class="gold">지금 배울 수 있는 곡</span>')}
+      ${secBody('canLearn', `<div ${dropZoneAttrs('canLearn')}>${canItems}</div>`,
+        `<button class="add-trigger" style="margin-top:10px;" onclick="toggleSongPanel('canLearn')">+ 곡 추가</button>
+         <div class="add-panel hidden" id="song-panel-canLearn">
+           <p class="add-panel-title">배울 수 있는 곡 추가</p>
+           <div class="form-group"><textarea id="song-input-canLearn" rows="1" placeholder="예: 아이유 - 좋은 날"></textarea></div>
+           <div class="panel-actions">
+             <button class="panel-btn panel-btn-cancel" onclick="toggleSongPanel('canLearn')">취소</button>
+             <button class="panel-btn panel-btn-submit" onclick="submitSong('canLearn')">추가</button>
+           </div>
+         </div>`
+      )}
     </div>
+
     <div class="card">
-      <div ${dropZoneAttrs('notYetBeginner')}>
-        <p class="section-title muted">연습이 필요한 곡 — <span style="color:var(--text);">초급</span></p>
-        ${beginItems}
-      </div>
-      <button class="add-trigger" style="margin-top:10px;" onclick="toggleSongPanel('notYetBeginner')">+ 곡 추가</button>
-      <div class="add-panel hidden" id="song-panel-notYetBeginner">
-        <p class="add-panel-title">초급 곡 추가</p>
-        <div class="form-group"><textarea id="song-input-notYetBeginner" rows="1" placeholder="예: 버스커버스커 - 여수 밤바다"></textarea></div>
-        <div class="panel-actions">
-          <button class="panel-btn panel-btn-cancel" onclick="toggleSongPanel('notYetBeginner')">취소</button>
-          <button class="panel-btn panel-btn-submit" onclick="submitSong('notYetBeginner')">추가</button>
-        </div>
-      </div>
+      ${secHeader('notYetBeginner','<span class="muted">연습이 필요한 곡 — <span style="color:var(--text);">초급</span></span>')}
+      ${secBody('notYetBeginner', `<div ${dropZoneAttrs('notYetBeginner')}>${beginItems}</div>`,
+        `<button class="add-trigger" style="margin-top:10px;" onclick="toggleSongPanel('notYetBeginner')">+ 곡 추가</button>
+         <div class="add-panel hidden" id="song-panel-notYetBeginner">
+           <p class="add-panel-title">초급 곡 추가</p>
+           <div class="form-group"><textarea id="song-input-notYetBeginner" rows="1" placeholder="예: 버스커버스커 - 여수 밤바다"></textarea></div>
+           <div class="panel-actions">
+             <button class="panel-btn panel-btn-cancel" onclick="toggleSongPanel('notYetBeginner')">취소</button>
+             <button class="panel-btn panel-btn-submit" onclick="submitSong('notYetBeginner')">추가</button>
+           </div>
+         </div>`
+      )}
     </div>
+
     <div class="card">
-      <div ${dropZoneAttrs('notYetIntermediate')}>
-        <p class="section-title muted">연습이 필요한 곡 — <span style="color:var(--text);">중급</span></p>
-        ${interItems}
-      </div>
-      <button class="add-trigger" style="margin-top:10px;" onclick="toggleSongPanel('notYetIntermediate')">+ 곡 추가</button>
-      <div class="add-panel hidden" id="song-panel-notYetIntermediate">
-        <p class="add-panel-title">중급 곡 추가</p>
-        <div class="form-group"><textarea id="song-input-notYetIntermediate" rows="1" placeholder="예: Tommy Emmanuel - Classical Gas"></textarea></div>
-        <div class="panel-actions">
-          <button class="panel-btn panel-btn-cancel" onclick="toggleSongPanel('notYetIntermediate')">취소</button>
-          <button class="panel-btn panel-btn-submit" onclick="submitSong('notYetIntermediate')">추가</button>
-        </div>
-      </div>
+      ${secHeader('notYetIntermediate','<span class="muted">연습이 필요한 곡 — <span style="color:var(--text);">중급</span></span>')}
+      ${secBody('notYetIntermediate', `<div ${dropZoneAttrs('notYetIntermediate')}>${interItems}</div>`,
+        `<button class="add-trigger" style="margin-top:10px;" onclick="toggleSongPanel('notYetIntermediate')">+ 곡 추가</button>
+         <div class="add-panel hidden" id="song-panel-notYetIntermediate">
+           <p class="add-panel-title">중급 곡 추가</p>
+           <div class="form-group"><textarea id="song-input-notYetIntermediate" rows="1" placeholder="예: Tommy Emmanuel - Classical Gas"></textarea></div>
+           <div class="panel-actions">
+             <button class="panel-btn panel-btn-cancel" onclick="toggleSongPanel('notYetIntermediate')">취소</button>
+             <button class="panel-btn panel-btn-submit" onclick="submitSong('notYetIntermediate')">추가</button>
+           </div>
+         </div>`
+      )}
     </div>
+
     <div class="card">
-      <div ${dropZoneAttrs('learned')}>
-        <p class="section-title" style="color:var(--green);">지금까지 배운 곡</p>
-        ${learnedItems}
-      </div>
-      <button class="add-trigger" style="margin-top:10px;" onclick="toggleSongPanel('learned')">+ 곡 추가</button>
-      <div class="add-panel hidden" id="song-panel-learned">
-        <p class="add-panel-title">배운 곡 추가</p>
-        <div class="form-group"><textarea id="song-input-learned" rows="1" placeholder="예: 버스커버스커 - 여수 밤바다"></textarea></div>
-        <div class="panel-actions">
-          <button class="panel-btn panel-btn-cancel" onclick="toggleSongPanel('learned')">취소</button>
-          <button class="panel-btn panel-btn-submit" onclick="submitSong('learned')">추가</button>
-        </div>
-      </div>
+      ${secHeader('learned','<span style="color:var(--green);">지금까지 배운 곡</span>')}
+      ${secBody('learned', `<div ${dropZoneAttrs('learned')}>${learnedItems}</div>`,
+        `<button class="add-trigger" style="margin-top:10px;" onclick="toggleSongPanel('learned')">+ 곡 추가</button>
+         <div class="add-panel hidden" id="song-panel-learned">
+           <p class="add-panel-title">배운 곡 추가</p>
+           <div class="form-group"><textarea id="song-input-learned" rows="1" placeholder="예: 버스커버스커 - 여수 밤바다"></textarea></div>
+           <div class="panel-actions">
+             <button class="panel-btn panel-btn-cancel" onclick="toggleSongPanel('learned')">취소</button>
+             <button class="panel-btn panel-btn-submit" onclick="submitSong('learned')">추가</button>
+           </div>
+         </div>`
+      )}
+    </div>
+
+    <div class="card">
+      ${secHeader('wantToLearn','<span class="muted">배우고 싶은 곡 <span style="font-size:10px;color:var(--text3);font-weight:400;">(레슨생 입력)</span></span>')}
+      ${secBody('wantToLearn', wantItems)}
+    </div>
+
+    <div class="card">
+      ${secHeader('undecided','<span class="muted">정해지지 않은 곡 <span style="font-size:10px;color:var(--text3);font-weight:400;">(엑셀 등록)</span></span>')}
+      ${secBody('undecided', `<div ${dropZoneAttrs('undecided')}>${undecItems}</div>`,
+        `<button class="add-trigger" style="margin-top:10px;" onclick="toggleSongPanel('undecided')">+ 곡 추가</button>
+         <div class="add-panel hidden" id="song-panel-undecided">
+           <p class="add-panel-title">정해지지 않은 곡 추가</p>
+           <div class="form-group"><textarea id="song-input-undecided" rows="1" placeholder="예: 아티스트 - 곡명"></textarea></div>
+           <div class="panel-actions">
+             <button class="panel-btn panel-btn-cancel" onclick="toggleSongPanel('undecided')">취소</button>
+             <button class="panel-btn panel-btn-submit" onclick="submitSong('undecided')">추가</button>
+           </div>
+         </div>`
+      )}
     </div>`;
 }
 function deleteSong(sid,type,idx) {
@@ -4850,12 +4957,14 @@ let _dragSongType = null, _dragSongIdx = null, _dragSongSid = null;
 // 터치 드래그용
 let _touchDragEl = null, _touchDragClone = null, _touchDragType = null, _touchDragIdx = null;
 
-const SONG_CATEGORIES = ['canLearn','notYetBeginner','notYetIntermediate','learned'];
+const SONG_CATEGORIES = ['canLearn','notYetBeginner','notYetIntermediate','learned','wantToLearn','undecided'];
 const SONG_CAT_LABELS = {
   canLearn: '지금 배울 수 있는 곡',
   notYetBeginner: '연습이 필요한 곡 — 초급',
   notYetIntermediate: '연습이 필요한 곡 — 중급',
-  learned: '지금까지 배운 곡'
+  learned: '지금까지 배운 곡',
+  wantToLearn: '배우고 싶은 곡',
+  undecided: '정해지지 않은 곡'
 };
 
 function _songDragStart(e, type, idx) {
@@ -4983,6 +5092,52 @@ function openYoutube(name) {
     window.open(webUrl, '_blank');
   }
 }
+// ── 엑셀 파일로 곡 일괄 등록 ────────────────────────────────
+function importSongsFromExcel(event, sid) {
+  const file = event.target.files[0];
+  if (!file) return;
+  event.target.value = ''; // 같은 파일 재선택 허용
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      let songs = [];
+      if (file.name.toLowerCase().endsWith('.csv')) {
+        // CSV: 각 줄의 첫 번째 셀을 곡명으로 취급
+        const text = new TextDecoder('utf-8').decode(new Uint8Array(e.target.result));
+        songs = text.split(/\r?\n/).map(l => l.split(',')[0].trim()).filter(Boolean);
+      } else {
+        // xlsx / xls: SheetJS 사용
+        const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+        songs = rows.map(r => String(r[0] || '').trim()).filter(Boolean);
+      }
+
+      if (!songs.length) { alert('곡 데이터를 찾을 수 없습니다.'); return; }
+
+      const students = loadStudents();
+      const s = students.find(x => x.id === sid);
+      if (!s) return;
+      if (!s.songs.undecided) s.songs.undecided = [];
+
+      // 이미 등록된 곡(모든 카테고리) 중복 제거
+      const existing = new Set(
+        SONG_CATEGORIES.flatMap(cat => (s.songs[cat]||[]).map(g => g.trim().toLowerCase()))
+      );
+      const toAdd = songs.filter(g => !existing.has(g.toLowerCase()));
+      s.songs.undecided.push(...toAdd);
+      saveStudents(students);
+      renderSongsTab(s);
+      alert(`${toAdd.length}곡이 '정해지지 않은 곡'에 추가되었습니다.${songs.length - toAdd.length > 0 ? `\n(중복 ${songs.length - toAdd.length}곡 제외)` : ''}`);
+    } catch(err) {
+      console.error('엑셀 파싱 오류:', err);
+      alert('파일을 읽는 중 오류가 발생했습니다.\n지원 형식: xlsx, xls, csv');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
 // ── 레슨생 '배우고 싶은 곡' ─────────────────────────────
 function _refreshWantLists(s) {
   const canSet = new Set((s.songs.canLearn||[]).map(g=>g.trim().toLowerCase()));
@@ -7368,7 +7523,7 @@ function addStudentDt() {
   if (birth.length !== 6) { if (errEl) errEl.textContent = '생년월일 6자리를 입력하세요 (예: 991201)'; return; }
   if (errEl) errEl.textContent = '';
   const students = loadStudents();
-  students.push({ id:nextId(students), name, level, birthdate:birth, startDate:start||null, progress:0, module:'수업 준비 중', currentWeek:1, nextLesson:'', homework:[], songs:{canLearn:[],notYet:[],wantToLearn:[],learned:[]}, events:[] });
+  students.push({ id:nextId(students), name, level, birthdate:birth, startDate:start||null, progress:0, module:'수업 준비 중', currentWeek:1, nextLesson:'', homework:[], songs:{canLearn:[],notYetBeginner:[],notYetIntermediate:[],wantToLearn:[],learned:[],undecided:[]}, events:[] });
   saveStudents(students);
   if (nameEl)  nameEl.value  = '';
   if (birthEl) birthEl.value = '';
@@ -7379,7 +7534,7 @@ function addStudentDt() {
 }
 
 function _toggleInfoAddPanel() {
-  const panel = document.getElementById('sc-info-dt-add-panel');
+  const panel = document.getElementById('idt-add-panel');
   if (!panel) return;
   panel.style.display = (panel.style.display === 'none') ? '' : 'none';
 }
@@ -7393,7 +7548,7 @@ function confirmDeleteDt(id, name) {
 }
 
 function _filterDtStudentList(q) {
-  document.querySelectorAll('#sc-info-dt-student-list .sc-info-dt-stu-card').forEach(c => {
+  document.querySelectorAll('#idt-student-list .sc-info-dt-stu-card').forEach(c => {
     const name = c.querySelector('.sc-info-dt-stu-name')?.textContent || '';
     c.style.display = name.includes(q) ? '' : 'none';
   });
@@ -7402,7 +7557,7 @@ function _filterDtStudentList(q) {
 function _filterDtStatus(status, btn) {
   document.querySelectorAll('.sc-info-dt-filter').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  document.querySelectorAll('#sc-info-dt-student-list .sc-info-dt-stu-card').forEach(c => {
+  document.querySelectorAll('#idt-student-list .sc-info-dt-stu-card').forEach(c => {
     c.style.display = '';
   });
 }
@@ -7659,7 +7814,13 @@ const _W_SNAP = 10;
 const _W_MIN_W = 180;
 const _W_MIN_H = 110;
 const _W_IDS = ['td-w-stat-1','td-w-stat-2','td-w-stat-3','td-w-stat-4','td-w-chart','td-w-students','td-w-today','td-w-messages'];
-const _W_LAYOUT_KEY = 'heum_widget_layout_' + screen.width + 'x' + screen.height + '@' + (window.devicePixelRatio || 1);
+
+// 가로/세로 방향을 구분하는 레이아웃 키 — 방향이 바뀌면 다른 키를 사용
+function _wLayoutKey() {
+  const orient = window.innerWidth > window.innerHeight ? 'land' : 'port';
+  const base   = Math.min(screen.width, screen.height) + 'x' + Math.max(screen.width, screen.height);
+  return 'heum_widget_layout_' + base + '_' + orient + '@' + (window.devicePixelRatio || 1);
+}
 
 function _wSnap(v) { return Math.round(v / _W_SNAP) * _W_SNAP; }
 
@@ -7699,7 +7860,7 @@ function _wClearGuides(board) {
 }
 
 function _wLoadLayout() {
-  try { return JSON.parse(localStorage.getItem(_W_LAYOUT_KEY) || '{}'); } catch { return {}; }
+  try { return JSON.parse(localStorage.getItem(_wLayoutKey()) || '{}'); } catch { return {}; }
 }
 function _wSaveLayout() {
   const out = {};
@@ -7708,7 +7869,7 @@ function _wSaveLayout() {
     if (!el) return;
     out[id] = { x: el.offsetLeft, y: el.offsetTop, w: el.offsetWidth, h: el.offsetHeight };
   });
-  localStorage.setItem(_W_LAYOUT_KEY, JSON.stringify(out));
+  localStorage.setItem(_wLayoutKey(), JSON.stringify(out));
 }
 function _wDefaults() {
   const board = document.getElementById('td-widget-board');
@@ -7762,6 +7923,8 @@ function _wInitDrag(el) {
   const bar = el.querySelector('.td-widget-drag-bar');
   if (!bar || bar._wDragBound) return;
   bar._wDragBound = true;
+
+  // ── 마우스 드래그 ──
   bar.addEventListener('mousedown', e => {
     if (e.button !== 0) return;
     e.preventDefault();
@@ -7782,11 +7945,86 @@ function _wInitDrag(el) {
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup',   onUp);
   });
+
+  // ── 터치 드래그 (iPad) ──
+  bar.addEventListener('touchstart', e => {
+    e.preventDefault();
+    const t  = e.touches[0];
+    const ox = t.clientX - el.offsetLeft;
+    const oy = t.clientY - el.offsetTop;
+    el.classList.add('td-w-dragging');
+    function onMove(e) {
+      const t = e.touches[0];
+      el.style.left = _wSnap(t.clientX - ox) + 'px';
+      el.style.top  = _wSnap(Math.max(0, t.clientY - oy)) + 'px';
+      _wUpdateBoardHeight();
+    }
+    function onEnd() {
+      el.classList.remove('td-w-dragging');
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend',  onEnd);
+      _wSaveLayout();
+    }
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('touchend',  onEnd);
+  }, { passive: false });
 }
 function _wInitResize(el) {
   el.querySelectorAll('.td-widget-corner').forEach(handle => {
     if (handle._wResizeBound) return;
     handle._wResizeBound = true;
+
+    // 공통 리사이즈 로직 — 마우스/터치 좌표(cx,cy)를 받아 처리
+    function _doResizeMove(cx, cy, corner, sx, sy, sl, st, sw, sh, board) {
+      const dx = cx - sx, dy = cy - sy;
+      const others  = _wGetOtherEdges(el);
+      const ATHRESH = 12;
+      const xGuides = [], yGuides = [];
+      const fixedRight  = sl + sw;
+      const fixedBottom = st + sh;
+      function snapIt(raw, edges) {
+        const a = _wFindSnap(raw, edges, ATHRESH);
+        return a !== null ? { v: a, g: true } : { v: _wSnap(raw), g: false };
+      }
+      let finalLeft = sl, finalTop = st, finalWidth, finalHeight;
+      if (corner === 'br') {
+        const r = snapIt(sl + sw + dx, others.x);
+        const b = snapIt(st + sh + dy, others.y);
+        if (r.g) xGuides.push(r.v); if (b.g) yGuides.push(b.v);
+        finalWidth  = Math.max(_W_MIN_W, r.v - sl);
+        finalHeight = Math.max(_W_MIN_H, b.v - st);
+      } else if (corner === 'bl') {
+        const l = snapIt(sl + dx, others.x);
+        const b = snapIt(st + sh + dy, others.y);
+        if (l.g) xGuides.push(l.v); if (b.g) yGuides.push(b.v);
+        finalLeft   = Math.min(Math.max(0, l.v), fixedRight - _W_MIN_W);
+        finalWidth  = fixedRight - finalLeft;
+        finalHeight = Math.max(_W_MIN_H, b.v - st);
+      } else if (corner === 'tr') {
+        const r = snapIt(sl + sw + dx, others.x);
+        const t = snapIt(st + dy, others.y);
+        if (r.g) xGuides.push(r.v); if (t.g) yGuides.push(t.v);
+        finalWidth  = Math.max(_W_MIN_W, r.v - sl);
+        finalTop    = Math.min(Math.max(0, t.v), fixedBottom - _W_MIN_H);
+        finalHeight = fixedBottom - finalTop;
+      } else { // tl
+        const l = snapIt(sl + dx, others.x);
+        const t = snapIt(st + dy, others.y);
+        if (l.g) xGuides.push(l.v); if (t.g) yGuides.push(t.v);
+        finalLeft   = Math.min(Math.max(0, l.v), fixedRight - _W_MIN_W);
+        finalWidth  = fixedRight - finalLeft;
+        finalTop    = Math.min(Math.max(0, t.v), fixedBottom - _W_MIN_H);
+        finalHeight = fixedBottom - finalTop;
+      }
+      el.style.width  = finalWidth + 'px';
+      el.style.height = finalHeight + 'px';
+      if (corner === 'bl' || corner === 'tl') el.style.left = finalLeft + 'px';
+      if (corner === 'tr' || corner === 'tl') el.style.top  = finalTop  + 'px';
+      _wUpdateBoardHeight();
+      _wShowGuides(board, xGuides, yGuides);
+    }
+
+    // ── 마우스 리사이즈 ──
     handle.addEventListener('mousedown', e => {
       if (e.button !== 0) return;
       e.preventDefault();
@@ -7797,55 +8035,7 @@ function _wInitResize(el) {
       const sw = el.offsetWidth, sh = el.offsetHeight;
       const board = document.getElementById('td-widget-board');
       el.classList.add('td-w-dragging');
-      function onMove(e) {
-        const dx = e.clientX - sx, dy = e.clientY - sy;
-        const others  = _wGetOtherEdges(el);
-        const ATHRESH = 12;
-        const xGuides = [], yGuides = [];
-        const fixedRight  = sl + sw;
-        const fixedBottom = st + sh;
-        // snap helper: align to another widget's edge or fall back to grid snap
-        function snapIt(raw, edges) {
-          const a = _wFindSnap(raw, edges, ATHRESH);
-          return a !== null ? { v: a, g: true } : { v: _wSnap(raw), g: false };
-        }
-        let finalLeft = sl, finalTop = st, finalWidth, finalHeight;
-        if (corner === 'br') {
-          const r = snapIt(sl + sw + dx, others.x);
-          const b = snapIt(st + sh + dy, others.y);
-          if (r.g) xGuides.push(r.v); if (b.g) yGuides.push(b.v);
-          finalWidth  = Math.max(_W_MIN_W, r.v - sl);
-          finalHeight = Math.max(_W_MIN_H, b.v - st);
-        } else if (corner === 'bl') {
-          const l = snapIt(sl + dx, others.x);
-          const b = snapIt(st + sh + dy, others.y);
-          if (l.g) xGuides.push(l.v); if (b.g) yGuides.push(b.v);
-          finalLeft   = Math.min(Math.max(0, l.v), fixedRight - _W_MIN_W);
-          finalWidth  = fixedRight - finalLeft;
-          finalHeight = Math.max(_W_MIN_H, b.v - st);
-        } else if (corner === 'tr') {
-          const r = snapIt(sl + sw + dx, others.x);
-          const t = snapIt(st + dy, others.y);
-          if (r.g) xGuides.push(r.v); if (t.g) yGuides.push(t.v);
-          finalWidth  = Math.max(_W_MIN_W, r.v - sl);
-          finalTop    = Math.min(Math.max(0, t.v), fixedBottom - _W_MIN_H);
-          finalHeight = fixedBottom - finalTop;
-        } else { // tl
-          const l = snapIt(sl + dx, others.x);
-          const t = snapIt(st + dy, others.y);
-          if (l.g) xGuides.push(l.v); if (t.g) yGuides.push(t.v);
-          finalLeft   = Math.min(Math.max(0, l.v), fixedRight - _W_MIN_W);
-          finalWidth  = fixedRight - finalLeft;
-          finalTop    = Math.min(Math.max(0, t.v), fixedBottom - _W_MIN_H);
-          finalHeight = fixedBottom - finalTop;
-        }
-        el.style.width  = finalWidth + 'px';
-        el.style.height = finalHeight + 'px';
-        if (corner === 'bl' || corner === 'tl') el.style.left = finalLeft + 'px';
-        if (corner === 'tr' || corner === 'tl') el.style.top  = finalTop  + 'px';
-        _wUpdateBoardHeight();
-        _wShowGuides(board, xGuides, yGuides);
-      }
+      function onMove(e) { _doResizeMove(e.clientX, e.clientY, corner, sx, sy, sl, st, sw, sh, board); }
       function onUp() {
         el.classList.remove('td-w-dragging');
         document.removeEventListener('mousemove', onMove);
@@ -7856,8 +8046,51 @@ function _wInitResize(el) {
       document.addEventListener('mousemove', onMove);
       document.addEventListener('mouseup',   onUp);
     });
+
+    // ── 터치 리사이즈 (iPad) ──
+    handle.addEventListener('touchstart', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      const corner = handle.dataset.corner;
+      const t0 = e.touches[0];
+      const sx = t0.clientX, sy = t0.clientY;
+      const sl = el.offsetLeft, st = el.offsetTop;
+      const sw = el.offsetWidth, sh = el.offsetHeight;
+      const board = document.getElementById('td-widget-board');
+      el.classList.add('td-w-dragging');
+      function onMove(e) {
+        const t = e.touches[0];
+        _doResizeMove(t.clientX, t.clientY, corner, sx, sy, sl, st, sw, sh, board);
+      }
+      function onEnd() {
+        el.classList.remove('td-w-dragging');
+        document.removeEventListener('touchmove', onMove);
+        document.removeEventListener('touchend',  onEnd);
+        _wClearGuides(board);
+        _wSaveLayout();
+      }
+      document.addEventListener('touchmove', onMove, { passive: false });
+      document.addEventListener('touchend',  onEnd);
+    }, { passive: false });
   });
 }
+// 방향 전환 시 해당 방향의 저장된 레이아웃으로 위젯 위치를 갱신
+function _wReloadForOrientation() {
+  const board = document.getElementById('td-widget-board');
+  if (!board) return;
+  const saved    = _wLoadLayout();
+  const defaults = _wDefaults();
+  _W_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    _wApplyPos(el, saved[id] || defaults[id] || { x:0, y:0, w:300, h:150 });
+  });
+  _wUpdateBoardHeight();
+}
+
+let _wOrientTimer = null;
+let _wLastOrient  = null;
+
 function initWidgetBoard() {
   const board = document.getElementById('td-widget-board');
   if (!board) return;
@@ -7872,6 +8105,16 @@ function initWidgetBoard() {
     _wInitResize(el);
   });
   _wUpdateBoardHeight();
+
+  // 방향 전환 감지 — 방향이 실제로 바뀔 때만 레이아웃 전환 (단순 resize는 무시)
+  _wLastOrient = window.innerWidth > window.innerHeight ? 'land' : 'port';
+  window.addEventListener('resize', () => {
+    const orient = window.innerWidth > window.innerHeight ? 'land' : 'port';
+    if (orient === _wLastOrient) return;
+    _wLastOrient = orient;
+    clearTimeout(_wOrientTimer);
+    _wOrientTimer = setTimeout(_wReloadForOrientation, 250);
+  });
 }
 
 // ── iOS :active 즉시 반응 픽스 ──────────────────────────────
