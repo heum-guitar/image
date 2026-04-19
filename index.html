@@ -2509,11 +2509,13 @@
       <button class="tab active" onclick="switchDTab('progress',this)">진도</button>
       <button class="tab" onclick="switchDTab('homework',this)">숙제</button>
       <button class="tab" onclick="switchDTab('songs',this)">곡 목록</button>
+      <button class="tab" onclick="switchDTab('journey',this)">진도 단계</button>
     </div>
     <div class="content">
       <div id="d-progress"></div>
       <div id="d-homework" class="hidden"></div>
       <div id="d-songs" class="hidden"></div>
+      <div id="d-journey" class="hidden"></div>
     </div>
   </div>
 </div>
@@ -3968,6 +3970,40 @@ function renderDetailAll(id) {
   renderProgressTab(s,months,pct);
   renderHomeworkTab(s,done);
   renderSongsTab(s);
+  renderJourneySettingsTab(s);
+}
+function renderJourneySettingsTab(s) {
+  const curW = s.currentWeek || 1;
+  let ci = s.currentStageIdx !== undefined ? s.currentStageIdx : _JP_STAGES.findIndex(st => curW <= st.maxWeek);
+  if (ci < 0) ci = _JP_STAGES.length - 1;
+  const stageRows = _JP_STAGES.map((st, i) => {
+    const isCur = i === ci;
+    const isAdv = st.adv === true;
+    const numColor = isCur ? 'var(--gold)' : (isAdv ? '#f87171' : 'var(--text2)');
+    const divider = i === 10 ? `
+      <div style="display:flex;align-items:center;gap:8px;margin:12px 0 10px;">
+        <div style="flex:1;height:1px;background:rgba(248,113,113,0.3);"></div>
+        <span style="font-size:9px;font-weight:800;color:#f87171;letter-spacing:0.1em;">ADVANCED LEVEL · 11~20단계</span>
+        <div style="flex:1;height:1px;background:rgba(248,113,113,0.3);"></div>
+      </div>` : '';
+    return divider + `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <div style="width:28px;height:28px;border-radius:8px;background:var(--bg);box-shadow:${isAdv?'var(--sh-in-sm), inset 0 0 0 1px rgba(248,113,113,0.25)':'var(--sh-in-sm)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <span style="font-size:10px;font-weight:700;color:${numColor};">${i+1}</span>
+        </div>
+        <input type="text" id="d-stage-${i}" value="${((s.journeyStages && s.journeyStages[i]) || st.name).replace(/"/g,'&quot;')}" placeholder="${st.name}" style="font-size:13px;padding:8px 12px;${isAdv?'box-shadow:var(--sh-in-sm), inset 0 0 0 1px rgba(248,113,113,0.15);':''}">
+        <button onclick="setCurrentStage(${s.id},${i})" title="${isCur?'현재 단계':'이 단계로 설정'}"
+          style="flex-shrink:0;width:34px;height:34px;border-radius:10px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:box-shadow 0.15s,transform 0.15s;${isCur?'background:var(--gold);box-shadow:var(--sh-out-sm);color:#fff;':'background:var(--bg);box-shadow:var(--sh-out-sm);color:var(--text3);'}">
+          <i class="ph-${isCur?'fill':'bold'} ph-map-pin" style="font-size:14px;"></i>
+        </button>
+      </div>`;
+  }).join('');
+  document.getElementById('d-journey').innerHTML = `
+    <div class="card">
+      <p class="card-label">진도 단계 이름 설정</p>
+      ${stageRows}
+      <button class="save-btn" style="margin-top:4px;width:100%;padding:10px;" onclick="saveJourneyStages(${s.id})">단계 이름 저장</button>
+    </div>`;
 }
 // ── 주차 자동 계산 헬퍼 ─────────────────────────────────────
 function getComputedWeek(s) {
@@ -4088,39 +4124,6 @@ function renderProgressTab(s,months,pct) {
       <div class="metric"><p class="metric-label">연습 필요한 곡</p><p class="metric-val">${(s.songs.notYetBeginner||[]).length+(s.songs.notYetIntermediate||[]).length}<span>곡</span></p></div>
     </div>
     <div id="cal-container"></div>
-
-    <!-- 진도 여정 관리 -->
-    <div class="card" style="margin-top:12px;">
-      <p class="card-label">진도 단계 이름 설정</p>
-      ${(() => {
-        const curW = s.currentWeek || 1;
-        let ci = s.currentStageIdx !== undefined ? s.currentStageIdx : _JP_STAGES.findIndex(st => curW <= st.maxWeek);
-        if (ci < 0) ci = _JP_STAGES.length - 1;
-        return _JP_STAGES.map((st, i) => {
-          const isCur = i === ci;
-          const isAdvStage = st.adv === true;
-          const numColor = isCur ? 'var(--gold)' : (isAdvStage ? '#f87171' : 'var(--text2)');
-          const divider = i === 10 ? `
-            <div style="display:flex;align-items:center;gap:8px;margin:12px 0 10px;">
-              <div style="flex:1;height:1px;background:rgba(248,113,113,0.3);"></div>
-              <span style="font-size:9px;font-weight:800;color:#f87171;letter-spacing:0.1em;">ADVANCED LEVEL · 11~20단계</span>
-              <div style="flex:1;height:1px;background:rgba(248,113,113,0.3);"></div>
-            </div>` : '';
-          return divider + `
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-              <div style="width:28px;height:28px;border-radius:8px;background:var(--bg);box-shadow:${isAdvStage?'var(--sh-in-sm), inset 0 0 0 1px rgba(248,113,113,0.25)':'var(--sh-in-sm)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                <span style="font-size:10px;font-weight:700;color:${numColor};">${i+1}</span>
-              </div>
-              <input type="text" id="d-stage-${i}" value="${((s.journeyStages && s.journeyStages[i]) || st.name).replace(/"/g,'&quot;')}" placeholder="${st.name}" style="font-size:13px;padding:8px 12px;${isAdvStage?'box-shadow:var(--sh-in-sm), inset 0 0 0 1px rgba(248,113,113,0.15);':''}">
-              <button onclick="setCurrentStage(${s.id},${i})" title="${isCur?'현재 단계':'이 단계로 설정'}"
-                style="flex-shrink:0;width:34px;height:34px;border-radius:10px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:box-shadow 0.15s,transform 0.15s;${isCur?'background:var(--gold);box-shadow:var(--sh-out-sm);color:#fff;':'background:var(--bg);box-shadow:var(--sh-out-sm);color:var(--text3);'}">
-                <i class="ph-${isCur?'fill':'bold'} ph-map-pin" style="font-size:14px;"></i>
-              </button>
-            </div>`;
-        }).join('');
-      })()}
-      <button class="save-btn" style="margin-top:4px;width:100%;padding:10px;" onclick="saveJourneyStages(${s.id})">단계 이름 저장</button>
-    </div>
 
     <!-- 이번 주 과제 관리 -->
     <div class="card" style="margin-top:12px;">
@@ -5288,7 +5291,7 @@ function deleteStudentWantSong(idx) {
 function switchDTab(tab,btn) {
   document.querySelectorAll('#sc-detail .tab').forEach(t=>t.classList.remove('active'));
   btn.classList.add('active');
-  ['progress','homework','songs'].forEach(t=>document.getElementById('d-'+t).classList.toggle('hidden',t!==tab));
+  ['progress','homework','songs','journey'].forEach(t=>document.getElementById('d-'+t).classList.toggle('hidden',t!==tab));
 }
 
 // ── 레슨생 로그인 ─────────────────────────────────────────
