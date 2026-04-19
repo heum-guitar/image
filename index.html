@@ -4093,24 +4093,23 @@ function renderProgressTab(s,months,pct) {
     <div class="card">
       <p class="card-label" style="margin-bottom:8px;">지난 수업 내용${lastEvDateLabel ? ` — ${lastEvDateLabel}` : ''}</p>
       ${lastEvBlock}
+      ${todayEv ? `
       <div style="margin-top:16px;">
-        <p class="card-label" style="margin-bottom:8px;">오늘 수업 내용${todayEvDateLabel ? ` — ${todayEvDateLabel}` : ''}</p>
-        ${(() => {
-          const contentHtml = todayEv && todayEv.content
+        <p class="card-label" style="margin-bottom:8px;">오늘 수업 내용 — ${todayEvDateLabel}</p>
+        <div style="padding:10px 12px;background:var(--bg);border-radius:10px;box-shadow:var(--sh-in-sm);">
+          ${todayEv.content
             ? `<p style="font-size:13px;color:var(--text);white-space:pre-wrap;">${todayEv.content}</p>`
-            : `<p style="font-size:12px;color:var(--text3);">수업 내용 미입력</p>`;
-          const memoVal = (todayEv&&todayEv.memo)||s.progressMemo||'';
-          return `<div style="padding:10px 12px;background:var(--bg);border-radius:10px;box-shadow:var(--sh-in-sm);">${contentHtml}</div>
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;margin-bottom:6px;">
-            <p style="font-size:11px;font-weight:700;color:var(--text2);margin:0;">피드백 메모</p>
-            <span style="font-size:10px;color:var(--text3);font-weight:500;">강사만 볼 수 있습니다</span>
-          </div>
-          <textarea id="d-progress-memo" rows="3" style="font-size:13px;padding:10px 12px;" placeholder="오늘 수업 피드백, 다음 수업에 전달할 내용을 적어주세요">${memoVal}</textarea>
-          <p style="font-size:11px;color:${todayEvDateLabel?'var(--text3)':'var(--red)'};margin-top:4px;padding:0 2px;">${memoHint}</p>`;
-        })()}
-      </div>
+            : `<p style="font-size:12px;color:var(--text3);">수업 내용 미입력</p>`}
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;margin-bottom:6px;">
+          <p style="font-size:11px;font-weight:700;color:var(--text2);margin:0;">피드백 메모</p>
+          <span style="font-size:10px;color:var(--text3);font-weight:500;">강사만 볼 수 있습니다</span>
+        </div>
+        <textarea id="d-progress-memo" rows="3" style="font-size:13px;padding:10px 12px;" placeholder="오늘 수업 피드백, 다음 수업에 전달할 내용을 적어주세요">${(todayEv.memo)||s.progressMemo||''}</textarea>
+        <p style="font-size:11px;color:var(--text3);margin-top:4px;padding:0 2px;">${memoHint}</p>
+      </div>` : ''}
       <div style="margin-top:16px;">
-        <p class="card-label" style="margin-bottom:8px;">다음 주 수업 내용${nextEvDateLabel ? ` — ${nextEvDateLabel}` : ''}</p>
+        <p class="card-label" style="margin-bottom:8px;">다음 수업 내용${nextEvDateLabel ? ` — ${nextEvDateLabel}` : ''}</p>
         ${nextEvContentBlock}
       </div>
       <button class="save-btn" style="margin-top:16px;width:100%;padding:10px;" onclick="saveProgressSettings(${s.id})">저장</button>
