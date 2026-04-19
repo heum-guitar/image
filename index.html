@@ -3201,38 +3201,7 @@ function renderTeacherMenu() {
   document.getElementById('menu-students').innerHTML = sorted.map(s => {
     const pend = s.homework.filter(h=>!h.done).length;
     const badge = pend>0 ? `<span class="badge-warn">${pend}개 미완</span>` : '';
-    const weekNum = s.currentWeek;
-    const hasToday = (s.events||[]).some(ev => ev.date === todayStr);
-    let weekBadge;
-    if (!weekNum) {
-      weekBadge = `<span class="item-badge" style="background:rgba(196,92,74,0.15);color:var(--red);cursor:pointer;"
-        data-tip="주차가 설정되지 않았습니다. 강사 화면에서 현재 주차를 입력해 주세요."
-        onclick="event.stopPropagation();showWeekTip(this)"
-        onmouseenter="showWeekTip(this)" onmouseleave="hideWeekTip()">주차 미설정</span>`;
-    } else if (hasToday) {
-      weekBadge = `<span class="item-badge" style="background:rgba(129,140,248,0.15);color:var(--gold);">${weekNum}주차</span>`;
-    } else {
-      const cutoffL = new Date(); cutoffL.setDate(cutoffL.getDate()-60);
-      const cutoffLStr = cutoffL.toISOString().slice(0,10);
-      const pastWeeks = (s.events||[]).filter(ev => ev.week && ev.date && ev.date < todayStr && ev.date >= cutoffLStr).map(ev => ev.week);
-      const maxPastWeek = pastWeeks.length ? Math.max(...pastWeeks) : 0;
-      const weekOutdated = maxPastWeek > weekNum && !(weekNum === 1 && maxPastWeek === 4);
-      const nextWeek = weekNum === 4 ? 1 : weekNum + 1;
-      const hasNextEvent = (s.events||[]).some(ev => ev.week === nextWeek);
-      const isRed = weekOutdated || !hasNextEvent;
-      if (isRed) {
-        const reasons = [];
-        if (weekOutdated) reasons.push(`${maxPastWeek}주차 수업 날짜가 지났지만 ${weekNum}주차로 표시 중입니다. 주차를 업데이트해 주세요.`);
-        if (!hasNextEvent) reasons.push(`${nextWeek}주차 일정이 아직 등록되지 않았습니다.`);
-        const tip = reasons.join(' / ');
-        weekBadge = `<span class="item-badge" style="background:rgba(196,92,74,0.15);color:var(--red);cursor:pointer;"
-          data-tip="${tip}"
-          onclick="event.stopPropagation();showWeekTip(this)"
-          onmouseenter="showWeekTip(this)" onmouseleave="hideWeekTip()">${weekNum}주차</span>`;
-      } else {
-        weekBadge = `<span class="item-badge" style="background:rgba(90,154,106,0.15);color:var(--green);">${weekNum}주차</span>`;
-      }
-    }
+    const weekBadge = buildWeekBadgeHtml(s, true);
     return `<div class="menu-item" onclick="openDetail(${s.id})">
       <div class="item-left"><div class="item-dot"></div><p class="item-label">${s.name}</p></div>
       <div class="item-right">${weekBadge}<span class="item-arrow">›</span></div>
@@ -3662,14 +3631,16 @@ function renderTeacherDashboard() {
     } else {
       mStuList.innerHTML = students.slice(0,6).map(s => {
         const hasToday = (s.events||[]).some(ev => ev.date === todayStr);
-        const weekLabel = s.currentWeek ? s.currentWeek + '주차' : '미설정';
+        const cwM = getComputedWeek(s); const errsM = getWeekErrors(s);
+        const weekColorM = (!cwM || errsM.length) ? 'var(--red)' : (hasToday ? 'var(--gold)' : 'var(--green)');
+        const weekLabel = cwM ? cwM + '주차' : '미설정';
         return `<div class="td-student-item" onclick="openDetail(${s.id})">
           <div class="td-student-avatar">${s.profileEmoji||'👤'}</div>
           <div style="flex:1;">
             <p class="td-student-name">${s.name}</p>
             <p class="td-student-level">${s.level||''}${hasToday?' · 오늘 수업':''}</p>
           </div>
-          <span class="td-student-week">${weekLabel}</span>
+          <span class="td-student-week" style="color:${weekColorM};">${weekLabel}</span>
         </div>`;
       }).join('');
     }
@@ -3721,14 +3692,16 @@ function renderTeacherDashboard() {
     } else {
       dStuList.innerHTML = students.slice(0,6).map(s => {
         const hasToday = (s.events||[]).some(ev => ev.date === todayStr);
-        const weekLabel = s.currentWeek ? s.currentWeek + '주차' : '미설정';
+        const cw = getComputedWeek(s); const errs = getWeekErrors(s);
+        const weekColor = (!cw || errs.length) ? 'var(--red)' : (hasToday ? 'var(--gold)' : 'var(--green)');
+        const weekLabel = cw ? cw + '주차' : '미설정';
         return `<div class="td-d-stu-item" onclick="openDetail(${s.id})">
           <div class="td-d-stu-avatar">${s.profileEmoji||'👤'}</div>
           <div>
             <p class="td-d-stu-name">${s.name}</p>
             <p class="td-d-stu-level">${s.level||''}${hasToday?' · 오늘 수업':''}</p>
           </div>
-          <span class="td-d-stu-week">${weekLabel}</span>
+          <span class="td-d-stu-week" style="color:${weekColor};">${weekLabel}</span>
         </div>`;
       }).join('');
     }
@@ -3751,14 +3724,16 @@ function renderTeacherDashboard() {
       dTodayList.innerHTML = todayStudents.map(s => {
         const todayEvs = (s.events||[]).filter(ev => ev.date === todayStr);
         const timeStr = todayEvs[0]?.time || '';
-        const weekLabel = s.currentWeek ? s.currentWeek + '주차' : '미설정';
+        const cw2 = getComputedWeek(s); const errs2 = getWeekErrors(s);
+        const weekColor2 = (!cw2 || errs2.length) ? 'var(--red)' : 'var(--gold)';
+        const weekLabel = cw2 ? cw2 + '주차' : '미설정';
         return `<div class="td-d-stu-item" onclick="openDetail(${s.id})">
           <div class="td-d-stu-avatar" style="background:linear-gradient(135deg,#818cf8,#a78bfa);">${s.profileEmoji||'👤'}</div>
           <div style="flex:1;">
             <p class="td-d-stu-name">${s.name}</p>
             <p class="td-d-stu-level">${s.level||''}${timeStr?' · '+timeStr:''}</p>
           </div>
-          <span class="td-d-stu-week">${weekLabel}</span>
+          <span class="td-d-stu-week" style="color:${weekColor2};">${weekLabel}</span>
         </div>`;
       }).join('');
     }
@@ -3984,53 +3959,82 @@ function renderDetailAll(id) {
   document.getElementById('d-name').textContent=s.name;
   document.getElementById('d-meta').textContent=`${s.level} · ${months>0?months+'개월차':'시작일 미설정'}`;
 
-  // 주차 배지 (리스트와 동일한 색상 로직)
-  const todayD = new Date().toISOString().slice(0,10);
-  const weekNum = s.currentWeek;
+  // 주차 배지 (이벤트 날짜 기반 자동 계산)
   const badgeEl = document.getElementById('d-week-badge');
-  if (!weekNum) {
-    badgeEl.innerHTML = `<span class="item-badge" style="background:rgba(196,92,74,0.15);color:var(--red);cursor:pointer;"
-      data-tip="주차가 설정되지 않았습니다. 현재 주차를 입력해 주세요."
-      onclick="showWeekTip(this)" onmouseenter="showWeekTip(this)" onmouseleave="hideWeekTip()">주차 미설정</span>`;
-  } else {
-    const hasToday = (s.events||[]).some(ev => ev.date === todayD);
-    if (hasToday) {
-      badgeEl.innerHTML = `<span class="item-badge" style="background:rgba(129,140,248,0.15);color:var(--gold);">${weekNum}주차</span>`;
-    } else {
-      const cutoff = new Date(); cutoff.setDate(cutoff.getDate()-60);
-      const cutoffStr = cutoff.toISOString().slice(0,10);
-      const pastWeeks = (s.events||[]).filter(ev => ev.week && ev.date && ev.date < todayD && ev.date >= cutoffStr).map(ev => ev.week);
-      const maxPastWeek = pastWeeks.length ? Math.max(...pastWeeks) : 0;
-      const weekOutdated = maxPastWeek > weekNum && !(weekNum === 1 && maxPastWeek === 4);
-      const nextWeek = weekNum === 4 ? 1 : weekNum + 1;
-      const hasNextEvent = (s.events||[]).some(ev => ev.week === nextWeek);
-      const isRed = weekOutdated || !hasNextEvent;
-      if (isRed) {
-        const reasons = [];
-        if (weekOutdated) reasons.push(`${maxPastWeek}주차 수업 날짜가 지났지만 ${weekNum}주차로 표시 중입니다.`);
-        if (!hasNextEvent) reasons.push(`${nextWeek}주차 일정이 아직 등록되지 않았습니다.`);
-        badgeEl.innerHTML = `<span class="item-badge" style="background:rgba(196,92,74,0.15);color:var(--red);cursor:pointer;"
-          data-tip="${reasons.join(' / ')}"
-          onclick="showWeekTip(this)" onmouseenter="showWeekTip(this)" onmouseleave="hideWeekTip()">${weekNum}주차</span>`;
-      } else {
-        badgeEl.innerHTML = `<span class="item-badge" style="background:rgba(90,154,106,0.15);color:var(--green);">${weekNum}주차</span>`;
-      }
-    }
-  }
+  badgeEl.innerHTML = buildWeekBadgeHtml(s, false);
 
   renderProgressTab(s,months,pct);
   renderHomeworkTab(s,done);
   renderSongsTab(s);
 }
+// ── 주차 자동 계산 헬퍼 ─────────────────────────────────────
+function getComputedWeek(s) {
+  const events = (s.events||[]).filter(e => e.week && e.date);
+  if (!events.length) return null;
+  const sorted = [...events].sort((a,b) => a.date.localeCompare(b.date));
+  const todayStr = new Date().toISOString().slice(0,10);
+  let current = null;
+  for (const ev of sorted) {
+    if (ev.date <= todayStr) current = ev;
+    else break;
+  }
+  return current ? current.week : null;
+}
+
+function getWeekErrors(s) {
+  const events = (s.events||[]).filter(e => e.week && e.date);
+  if (!events.length) return ['수업 날짜가 등록되지 않았습니다. 캘린더에서 수업 일정을 추가해 주세요.'];
+  const sorted = [...events].sort((a,b) => a.date.localeCompare(b.date));
+  const todayStr = new Date().toISOString().slice(0,10);
+  const errors = [];
+  const pastEvents = sorted.filter(e => e.date <= todayStr);
+  if (!pastEvents.length) errors.push('현재 날짜 이전의 수업 일정이 없습니다. 이전 수업 날짜를 캘린더에 추가해 주세요.');
+  const futureEvents = sorted.filter(e => e.date > todayStr);
+  if (!futureEvents.length) errors.push('다음 수업 날짜가 등록되지 않았습니다. 캘린더에서 다음 수업을 추가해 주세요.');
+  return errors;
+}
+
+function buildWeekBadgeHtml(s, forList) {
+  const weekNum = getComputedWeek(s);
+  const errors = getWeekErrors(s);
+  const todayStr = new Date().toISOString().slice(0,10);
+  const hasToday = (s.events||[]).some(ev => ev.date === todayStr);
+  const stopProp = forList ? 'event.stopPropagation();' : '';
+  if (!weekNum || errors.length > 0) {
+    const tip = errors.join(' / ') || '주차 정보를 계산할 수 없습니다.';
+    const label = weekNum ? `${weekNum}주차` : '주차 미설정';
+    return `<span class="item-badge" style="background:rgba(196,92,74,0.15);color:var(--red);cursor:pointer;"
+      data-tip="${tip}"
+      onclick="${stopProp}showWeekTip(this)"
+      onmouseenter="showWeekTip(this)" onmouseleave="hideWeekTip()">${label}</span>`;
+  }
+  if (hasToday) {
+    return `<span class="item-badge" style="background:rgba(129,140,248,0.15);color:var(--gold);">${weekNum}주차</span>`;
+  }
+  return `<span class="item-badge" style="background:rgba(90,154,106,0.15);color:var(--green);">${weekNum}주차</span>`;
+}
+
 function renderProgressTab(s,months,pct) {
-  const week=s.currentWeek||1;
+  const week = getComputedWeek(s) || s.currentWeek || 1;
+  const nextWeek = week === 4 ? 1 : week + 1;
+  // 다음 수업 날짜 탐색
+  const todayStr2 = new Date().toISOString().slice(0,10);
+  const nextEv = (s.events||[])
+    .filter(e => e.date > todayStr2)
+    .sort((a,b) => a.date.localeCompare(b.date))[0];
+  const nextEvDateLabel = nextEv ? (() => { const [,m,d]=nextEv.date.split('-'); return `${parseInt(m)}월 ${parseInt(d)}일`; })() : null;
+  const memoHint = nextEvDateLabel
+    ? `저장 시 다음 수업(${nextEvDateLabel}) 강사용 메모에 자동 등록됩니다`
+    : '다음 수업 날짜가 없습니다. 먼저 캘린더에 다음 수업을 등록해 주세요.';
   document.getElementById('d-progress').innerHTML = `
     <div class="card">
-      <p class="card-label">현재 주차 설정</p>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-        <div class="week-grid" style="flex:1;" id="d-week-grid"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <p class="card-label" style="margin:0;">오늘 수업 피드백 메모</p>
+        <span style="font-size:10px;color:var(--text3);font-weight:500;">강사만 볼 수 있습니다</span>
       </div>
-      <p class="card-label" style="margin-top:10px;">다음 주 수업 내용 — ${week===4?1:week+1}주차</p>
+      <textarea id="d-progress-memo" rows="3" style="font-size:13px;padding:10px 12px;" placeholder="오늘 수업 피드백, 다음 수업에 전달할 내용을 적어주세요">${s.progressMemo||''}</textarea>
+      <p style="font-size:11px;color:${nextEvDateLabel?'var(--text3)':'var(--red)'};margin-top:4px;padding:0 2px;">${memoHint}</p>
+      <p class="card-label" style="margin-top:12px;">다음 주 수업 내용 — ${nextWeek}주차</p>
       <textarea id="d-next-lesson" rows="2" style="font-size:13px;padding:10px 12px;" placeholder="다음 수업에서 배울 내용을 입력하세요">${s.nextLesson||''}</textarea>
       <button class="save-btn" style="margin-top:8px;width:100%;padding:10px;" onclick="saveProgressSettings(${s.id})">저장</button>
     </div>
@@ -4104,7 +4108,6 @@ function renderProgressTab(s,months,pct) {
         </div>
       </div>
     </div>`;
-  buildDWeekGrid(week);
   buildProgressHwWeekGrid(week);
   renderCalendar(s);
 }
@@ -4119,11 +4122,22 @@ function selectDWeek(w) {
 }
 function saveProgressSettings(sid) {
   const students=loadStudents(); const s=students.find(x=>x.id===sid);
-  const selChip=document.querySelector('#d-week-grid .week-chip.selected');
-  if (selChip) s.currentWeek=parseInt(selChip.textContent);
-  s.nextLesson=document.getElementById('d-next-lesson').value.trim();
+  const memoText = document.getElementById('d-progress-memo')?.value.trim() || '';
+  s.progressMemo = memoText;
+  s.nextLesson = document.getElementById('d-next-lesson').value.trim();
+  if (memoText) {
+    const todayStr = new Date().toISOString().slice(0,10);
+    const futureEvs = (s.events||[])
+      .filter(e => e.date > todayStr)
+      .sort((a,b) => a.date.localeCompare(b.date));
+    if (futureEvs.length > 0) {
+      const target = futureEvs[0];
+      const idx = s.events.indexOf(target);
+      if (idx > -1) s.events[idx] = { ...target, memo: memoText };
+    }
+  }
   saveStudents(students);
-  renderDetailAll(sid); // 주차 배지 실시간 갱신
+  renderDetailAll(sid);
 }
 
 function saveJourneyStages(sid) {
@@ -4395,7 +4409,7 @@ const _JP_STAGES = [
 const _JP_W = 327, _JP_H = 1160, _JP_TOTAL = 76;
 
 function renderJourneyTab(s) {
-  const week = s.currentWeek || 1;
+  const week = getComputedWeek(s) || s.currentWeek || 1;
   const pct  = Math.min(week / _JP_TOTAL, 1);
   const disp = Math.round(pct * 100);
 
@@ -5511,7 +5525,7 @@ function enterStudent() {
   // 아바타 이니셜 설정
   const _avatarEl = document.getElementById('s-avatar');
   if (_avatarEl) _avatarEl.textContent = s.profileEmoji || '👤';
-  const week=s.currentWeek||1;
+  const week=getComputedWeek(s)||s.currentWeek||1;
   const weekPct=Math.round((week/4)*100);
   const pending=s.homework.filter(h=>!h.done);
   const done=s.homework.filter(h=>h.done).length;
