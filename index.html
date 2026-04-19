@@ -8002,6 +8002,34 @@ function _wInitDrag(el) {
   if (!bar || bar._wDragBound) return;
   bar._wDragBound = true;
 
+  // ── 드래그 중 스냅+가이드 공통 함수 ──
+  function _wDragMove(rawLeft, rawTop) {
+    const board = document.getElementById('td-widget-board');
+    const others = _wGetOtherEdges(el);
+    const THRESH = 18;
+    const w = el.offsetWidth, h = el.offsetHeight;
+    const xGuides = [], yGuides = [];
+
+    // X축: 왼쪽 엣지 / 오른쪽 엣지 스냅
+    let finalLeft = _wSnap(rawLeft);
+    const snapL = _wFindSnap(rawLeft, others.x, THRESH);
+    const snapR = _wFindSnap(rawLeft + w, others.x, THRESH);
+    if (snapL !== null) { finalLeft = snapL; xGuides.push(snapL); }
+    else if (snapR !== null) { finalLeft = snapR - w; xGuides.push(snapR); }
+
+    // Y축: 위쪽 엣지 / 아래쪽 엣지 스냅
+    let finalTop = _wSnap(Math.max(0, rawTop));
+    const snapT = _wFindSnap(rawTop, others.y, THRESH);
+    const snapB = _wFindSnap(rawTop + h, others.y, THRESH);
+    if (snapT !== null) { finalTop = Math.max(0, snapT); yGuides.push(snapT); }
+    else if (snapB !== null) { finalTop = Math.max(0, snapB - h); yGuides.push(snapB); }
+
+    el.style.left = finalLeft + 'px';
+    el.style.top  = finalTop  + 'px';
+    _wShowGuides(board, xGuides, yGuides);
+    _wUpdateBoardHeight();
+  }
+
   // ── 마우스 드래그 ──
   bar.addEventListener('mousedown', e => {
     if (e.button !== 0) return;
@@ -8010,12 +8038,12 @@ function _wInitDrag(el) {
     const oy = e.clientY - el.offsetTop;
     el.classList.add('td-w-dragging');
     function onMove(e) {
-      el.style.left = _wSnap(e.clientX - ox) + 'px';
-      el.style.top  = _wSnap(Math.max(0, e.clientY - oy)) + 'px';
-      _wUpdateBoardHeight();
+      _wDragMove(e.clientX - ox, e.clientY - oy);
     }
     function onUp() {
       el.classList.remove('td-w-dragging');
+      const board = document.getElementById('td-widget-board');
+      _wClearGuides(board);
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup',   onUp);
       _wSaveLayout();
@@ -8033,12 +8061,12 @@ function _wInitDrag(el) {
     el.classList.add('td-w-dragging');
     function onMove(e) {
       const t = e.touches[0];
-      el.style.left = _wSnap(t.clientX - ox) + 'px';
-      el.style.top  = _wSnap(Math.max(0, t.clientY - oy)) + 'px';
-      _wUpdateBoardHeight();
+      _wDragMove(t.clientX - ox, t.clientY - oy);
     }
     function onEnd() {
       el.classList.remove('td-w-dragging');
+      const board = document.getElementById('td-widget-board');
+      _wClearGuides(board);
       document.removeEventListener('touchmove', onMove);
       document.removeEventListener('touchend',  onEnd);
       _wSaveLayout();
