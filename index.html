@@ -4019,26 +4019,65 @@ function buildWeekBadgeHtml(s, forList) {
 function renderProgressTab(s,months,pct) {
   const week = getComputedWeek(s) || s.currentWeek || 1;
   const nextWeek = week === 4 ? 1 : week + 1;
-  // 다음 수업 날짜 탐색
   const todayStr2 = new Date().toISOString().slice(0,10);
+  // 다음 수업 이벤트
   const nextEv = (s.events||[])
     .filter(e => e.date > todayStr2)
     .sort((a,b) => a.date.localeCompare(b.date))[0];
   const nextEvDateLabel = nextEv ? (() => { const [,m,d]=nextEv.date.split('-'); return `${parseInt(m)}월 ${parseInt(d)}일`; })() : null;
-  const memoHint = nextEvDateLabel
-    ? `저장 시 다음 수업(${nextEvDateLabel}) 강사용 메모에 자동 등록됩니다`
-    : '다음 수업 날짜가 없습니다. 먼저 캘린더에 다음 수업을 등록해 주세요.';
+  // 오늘 수업 이벤트
+  const todayEv = (s.events||[]).find(e => e.date === todayStr2);
+  const todayEvDateLabel = todayEv ? (() => { const [,m,d]=todayEv.date.split('-'); return `${parseInt(m)}월 ${parseInt(d)}일`; })() : null;
+  const memoHint = todayEvDateLabel
+    ? `저장 시 오늘 수업(${todayEvDateLabel}) 강사용 메모에 자동 등록됩니다`
+    : '오늘 등록된 수업이 없습니다. 캘린더에서 오늘 수업을 먼저 등록해 주세요.';
+  // 지난 수업 이벤트 (오늘 제외, 엄밀히 이전 날짜 중 가장 최근)
+  const lastEv = (s.events||[])
+    .filter(e => e.date < todayStr2)
+    .sort((a,b) => b.date.localeCompare(a.date))[0];
+  const lastEvDateLabel = lastEv ? (() => { const [,m,d]=lastEv.date.split('-'); return `${parseInt(m)}월 ${parseInt(d)}일`; })() : null;
+  // 지난 수업 내용/메모 표시 블록
+  const lastEvBlock = (() => {
+    if (!lastEv) return `<p style="font-size:12px;color:var(--text3);padding:10px 12px;background:var(--bg);border-radius:10px;box-shadow:var(--sh-in-sm);">지난 수업 기록이 없습니다.</p>`;
+    const contentHtml = lastEv.content
+      ? `<p style="font-size:13px;color:var(--text);white-space:pre-wrap;">${lastEv.content}</p>`
+      : `<p style="font-size:12px;color:var(--text3);">수업 내용 미입력</p>`;
+    const memoHtml = lastEv.memo
+      ? `<p style="font-size:12px;color:var(--text2);margin-top:6px;padding-top:6px;border-top:1px solid var(--border);white-space:pre-wrap;">${lastEv.memo}</p>`
+      : '';
+    return `<div style="padding:10px 12px;background:var(--bg);border-radius:10px;box-shadow:var(--sh-in-sm);">${contentHtml}${memoHtml}</div>`;
+  })();
+  // 다음 수업 내용 표시 블록 (nextEv.content 에서 읽기 전용)
+  const nextEvContentBlock = (() => {
+    if (!nextEv) return `<p style="font-size:12px;color:var(--text3);padding:10px 12px;background:var(--bg);border-radius:10px;box-shadow:var(--sh-in-sm);">다음 수업이 등록되어 있지 않습니다.</p>`;
+    if (!nextEv.content) return `<p style="font-size:12px;color:var(--text3);padding:10px 12px;background:var(--bg);border-radius:10px;box-shadow:var(--sh-in-sm);">수업 내용 미입력 — 캘린더에서 수업 내용을 입력하면 여기에 표시됩니다.</p>`;
+    return `<div style="padding:10px 12px;background:var(--bg);border-radius:10px;box-shadow:var(--sh-in-sm);"><p style="font-size:13px;color:var(--text);white-space:pre-wrap;">${nextEv.content}</p></div>`;
+  })();
   document.getElementById('d-progress').innerHTML = `
     <div class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-        <p class="card-label" style="margin:0;">오늘 수업 피드백 메모</p>
-        <span style="font-size:10px;color:var(--text3);font-weight:500;">강사만 볼 수 있습니다</span>
+      <p class="card-label" style="margin-bottom:8px;">지난 수업 내용${lastEvDateLabel ? ` — ${lastEvDateLabel}` : ''}</p>
+      ${lastEvBlock}
+      <div style="margin-top:16px;">
+        <p class="card-label" style="margin-bottom:8px;">오늘 수업 내용${todayEvDateLabel ? ` — ${todayEvDateLabel}` : ''}</p>
+        ${(() => {
+          const contentHtml = todayEv && todayEv.content
+            ? `<p style="font-size:13px;color:var(--text);white-space:pre-wrap;">${todayEv.content}</p>`
+            : `<p style="font-size:12px;color:var(--text3);">수업 내용 미입력</p>`;
+          const memoVal = (todayEv&&todayEv.memo)||s.progressMemo||'';
+          return `<div style="padding:10px 12px;background:var(--bg);border-radius:10px;box-shadow:var(--sh-in-sm);">${contentHtml}</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;margin-bottom:6px;">
+            <p style="font-size:11px;font-weight:700;color:var(--text2);margin:0;">피드백 메모</p>
+            <span style="font-size:10px;color:var(--text3);font-weight:500;">강사만 볼 수 있습니다</span>
+          </div>
+          <textarea id="d-progress-memo" rows="3" style="font-size:13px;padding:10px 12px;" placeholder="오늘 수업 피드백, 다음 수업에 전달할 내용을 적어주세요">${memoVal}</textarea>
+          <p style="font-size:11px;color:${todayEvDateLabel?'var(--text3)':'var(--red)'};margin-top:4px;padding:0 2px;">${memoHint}</p>`;
+        })()}
       </div>
-      <textarea id="d-progress-memo" rows="3" style="font-size:13px;padding:10px 12px;" placeholder="오늘 수업 피드백, 다음 수업에 전달할 내용을 적어주세요">${s.progressMemo||''}</textarea>
-      <p style="font-size:11px;color:${nextEvDateLabel?'var(--text3)':'var(--red)'};margin-top:4px;padding:0 2px;">${memoHint}</p>
-      <p class="card-label" style="margin-top:12px;">다음 주 수업 내용 — ${nextWeek}주차</p>
-      <textarea id="d-next-lesson" rows="2" style="font-size:13px;padding:10px 12px;" placeholder="다음 수업에서 배울 내용을 입력하세요">${s.nextLesson||''}</textarea>
-      <button class="save-btn" style="margin-top:8px;width:100%;padding:10px;" onclick="saveProgressSettings(${s.id})">저장</button>
+      <div style="margin-top:16px;">
+        <p class="card-label" style="margin-bottom:8px;">다음 주 수업 내용${nextEvDateLabel ? ` — ${nextEvDateLabel}` : ''}</p>
+        ${nextEvContentBlock}
+      </div>
+      <button class="save-btn" style="margin-top:16px;width:100%;padding:10px;" onclick="saveProgressSettings(${s.id})">저장</button>
     </div>
     <div class="metrics">
       <div class="metric"><p class="metric-label">수강 기간</p><p class="metric-val">${months}<span>개월</span></p></div>
@@ -4126,17 +4165,10 @@ function saveProgressSettings(sid) {
   const students=loadStudents(); const s=students.find(x=>x.id===sid);
   const memoText = document.getElementById('d-progress-memo')?.value.trim() || '';
   s.progressMemo = memoText;
-  s.nextLesson = document.getElementById('d-next-lesson').value.trim();
-  if (memoText) {
-    const todayStr = new Date().toISOString().slice(0,10);
-    const futureEvs = (s.events||[])
-      .filter(e => e.date > todayStr)
-      .sort((a,b) => a.date.localeCompare(b.date));
-    if (futureEvs.length > 0) {
-      const target = futureEvs[0];
-      const idx = s.events.indexOf(target);
-      if (idx > -1) s.events[idx] = { ...target, memo: memoText };
-    }
+  const todayStr = new Date().toISOString().slice(0,10);
+  const todayIdx = (s.events||[]).findIndex(e => e.date === todayStr);
+  if (todayIdx > -1) {
+    s.events[todayIdx] = { ...s.events[todayIdx], memo: memoText };
   }
   saveStudents(students);
   renderDetailAll(sid);
