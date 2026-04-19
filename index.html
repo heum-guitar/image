@@ -1725,8 +1725,10 @@
     box-shadow:none !important;
     border-radius:0 !important;
     padding:0 !important;
-    transition:none;
+    transition:background 0.15s;
+    user-select:none; -webkit-user-select:none;
   }
+  .sc-info-dt-table-wrap tr.sc-info-dt-stu-card:hover { background:rgba(129,140,248,0.06); }
   .sc-info-dt-table-wrap tr.sc-info-dt-stu-card:active { transform:none !important; box-shadow:none !important; }
   .idt-check-btn {
     width:18px;height:18px;border-radius:6px;background:var(--bg);box-shadow:var(--sh-out-sm);
@@ -2494,7 +2496,7 @@
 <div id="sc-detail" class="hidden">
   <div class="screen">
     <div class="topbar">
-      <button class="btn-ghost" onclick="goBack()">← 목록</button>
+      <button class="btn-ghost" onclick="goScreen('sc-info')">← 목록</button>
       <div class="col" style="align-items:flex-end">
         <div style="display:flex;align-items:center;gap:6px;">
           <p class="bold" id="d-name"></p>
@@ -3801,12 +3803,12 @@ function renderInfoScreen() {
   if (_dtList) {
     _dtList.innerHTML = students.length ? students.map(s => {
       const lvColor = s.level==='초급' ? '#34d399' : s.level==='고급' ? '#f59e0b' : '#818cf8';
-      return `<tr class="sc-info-dt-stu-card" style="border-bottom:1px solid var(--border);" onmouseover="this.style.background='rgba(129,140,248,0.06)'" onmouseout="this.style.background=''">
-        <td style="padding:14px 20px;" onclick="event.stopPropagation()">
-          <div class="idt-check-btn" onclick="_idtToggleCheck(this)" title="체크">
+      return `<tr class="sc-info-dt-stu-card" style="border-bottom:1px solid var(--border);">
+        <td style="padding:14px 20px;">
+          <div class="idt-check-btn" onclick="event.stopPropagation();_idtToggleCheck(this)" title="체크">
           </div>
         </td>
-        <td style="padding:14px 12px;">
+        <td style="padding:14px 12px;cursor:pointer;" onclick="openDetail(${s.id})">
           <div style="display:flex;align-items:center;gap:10px;">
             <div class="sc-info-dt-stu-av">${s.profileEmoji||'👤'}</div>
             <div>
@@ -4675,7 +4677,10 @@ function renderHomeworkTab(s,done) {
           <p class="hw-text${h.done?' done':''}">${h.text}</p>
           ${h.week?`<p class="hw-week">${h.week}주차</p>`:''}
         </div>
-        <button class="btn-red" onclick="deleteHw(${s.id},${i})">×</button>
+        <div style="display:flex;gap:4px;">
+          <button class="btn" style="font-size:11px;padding:4px 8px;border-radius:8px;" onclick="editHw(${s.id},${i})">수정</button>
+          <button class="btn-red" onclick="deleteHw(${s.id},${i})">×</button>
+        </div>
       </div>`).join('')
     : '<p class="small muted" style="padding:12px 0;text-align:center;">아직 숙제가 없습니다</p>';
   document.getElementById('d-homework').innerHTML = `
@@ -4685,12 +4690,12 @@ function renderHomeworkTab(s,done) {
     </div>
     <button class="add-trigger" onclick="toggleHwPanel()">+ 숙제 추가</button>
     <div class="add-panel hidden" id="hw-add-panel">
-      <p class="add-panel-title">숙제 추가</p>
+      <p class="add-panel-title" id="hw-panel-title">숙제 추가</p>
       <div class="form-group"><p class="form-label">숙제 내용</p><textarea id="hw-input" rows="2" placeholder="예: Am-G-C-F 코드 진행 10분 연습"></textarea></div>
       <div class="form-group"><p class="form-label">주차 선택</p><div class="week-grid" id="week-grid"></div></div>
       <div class="panel-actions">
         <button class="panel-btn panel-btn-cancel" onclick="toggleHwPanel()">취소</button>
-        <button class="panel-btn panel-btn-submit" onclick="submitHomework()">추가</button>
+        <button class="panel-btn panel-btn-submit" id="hw-submit-btn" onclick="submitHomework()">추가</button>
       </div>
     </div>`;
   buildWeekGrid();
@@ -4721,11 +4726,39 @@ function deleteHw(sid, idx) {
   renderHomeworkTab(s,done);
   updateHwPct(s);
 }
+let _hwEditSid = null, _hwEditIdx = null;
+
+function editHw(sid, idx) {
+  const s = loadStudents().find(x => x.id === sid);
+  if (!s) return;
+  const h = s.homework[idx];
+  if (!h) return;
+  _hwEditSid = sid; _hwEditIdx = idx;
+  const panel = document.getElementById('hw-add-panel');
+  panel.classList.remove('hidden');
+  document.getElementById('hw-input').value = h.text || '';
+  buildWeekGrid();
+  if (h.week) selectWeek(h.week);
+  const titleEl = document.getElementById('hw-panel-title');
+  const btnEl = document.getElementById('hw-submit-btn');
+  if (titleEl) titleEl.textContent = '숙제 수정';
+  if (btnEl) btnEl.textContent = '수정 완료';
+}
+
 function toggleHwPanel() {
   const p=document.getElementById('hw-add-panel');
   const wasHidden=p.classList.contains('hidden');
   p.classList.toggle('hidden',!wasHidden);
-  if (wasHidden) { document.getElementById('hw-input').value=''; buildWeekGrid(); }
+  if (wasHidden) {
+    document.getElementById('hw-input').value=''; buildWeekGrid();
+    _hwEditSid = null; _hwEditIdx = null;
+    const titleEl = document.getElementById('hw-panel-title');
+    const btnEl = document.getElementById('hw-submit-btn');
+    if (titleEl) titleEl.textContent = '숙제 추가';
+    if (btnEl) btnEl.textContent = '추가';
+  } else {
+    _hwEditSid = null; _hwEditIdx = null;
+  }
 }
 function buildWeekGrid() {
   selectedWeek=null;
@@ -4741,10 +4774,24 @@ function selectWeek(w) {
 function submitHomework() {
   const text=document.getElementById('hw-input').value.trim();
   if (!text) { alert('숙제 내용을 입력하세요'); return; }
-  const students=loadStudents(); const s=students.find(x=>x.id===curDetailId);
-  s.homework.push({text,week:selectedWeek,done:false}); saveStudents(students);
-  const done=s.homework.filter(h=>h.done).length;
-  renderHomeworkTab(s,done);
+  const students=loadStudents();
+  if (_hwEditSid !== null && _hwEditIdx !== null) {
+    const s=students.find(x=>x.id===_hwEditSid);
+    if (s && s.homework[_hwEditIdx]) {
+      s.homework[_hwEditIdx] = { ...s.homework[_hwEditIdx], text, week: selectedWeek };
+    }
+    saveStudents(students);
+    const updated = loadStudents().find(x=>x.id===_hwEditSid);
+    const done = updated.homework.filter(h=>h.done).length;
+    _hwEditSid=null; _hwEditIdx=null;
+    renderHomeworkTab(updated,done);
+    updateHwPct(updated);
+  } else {
+    const s=students.find(x=>x.id===curDetailId);
+    s.homework.push({text,week:selectedWeek,done:false}); saveStudents(students);
+    const done=s.homework.filter(h=>h.done).length;
+    renderHomeworkTab(s,done);
+  }
 }
 
 // ── 곡 섹션 접기/펼치기 상태 ─────────────────────────────────
