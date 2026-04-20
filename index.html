@@ -7091,16 +7091,22 @@ function sCalDayClick(ds) {
       </div>`).join('')}`;
 }
 
+let _weekTipHideTimer = null;
 function showWeekTip(el) {
+  const isTouchEvent = window.event && (window.event.type === 'touchstart' || window.event.type === 'touchend' || window.event.type === 'click' && navigator.maxTouchPoints > 0);
   let tip = document.getElementById('_week-tip');
   if (!tip) {
     tip = document.createElement('div');
     tip.id = '_week-tip';
     tip.style.cssText = 'position:fixed;z-index:9000;background:var(--surface2);border:0.5px solid var(--border2);border-radius:10px;padding:9px 13px;font-size:12px;color:var(--text2);max-width:230px;line-height:1.6;box-shadow:0 4px 20px rgba(0,0,0,0.35);pointer-events:none;display:none;';
     document.body.appendChild(tip);
-    document.addEventListener('click', ()=>hideWeekTip());
+    document.addEventListener('click', (e) => {
+      if (navigator.maxTouchPoints > 0) return;
+      hideWeekTip();
+    });
     document.addEventListener('scroll', ()=>hideWeekTip(), true);
   }
+  if (_weekTipHideTimer) { clearTimeout(_weekTipHideTimer); _weekTipHideTimer = null; }
   tip.textContent = el.getAttribute('data-tip');
   tip.style.display = 'block';
   const r = el.getBoundingClientRect();
@@ -7110,8 +7116,12 @@ function showWeekTip(el) {
   if (top + 80 > window.innerHeight) top = r.top - 80;
   tip.style.top = top + 'px';
   tip.style.left = Math.max(8, left) + 'px';
+  if (navigator.maxTouchPoints > 0) {
+    _weekTipHideTimer = setTimeout(() => hideWeekTip(), 3000);
+  }
 }
 function hideWeekTip() {
+  if (_weekTipHideTimer) { clearTimeout(_weekTipHideTimer); _weekTipHideTimer = null; }
   const tip = document.getElementById('_week-tip');
   if (tip) tip.style.display = 'none';
 }
