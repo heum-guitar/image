@@ -4340,6 +4340,11 @@ function calDayClick(dateStr) {
   calSelectedDate = (calSelectedDate===dateStr) ? null : dateStr;
   renderCalendar(loadStudents().find(x=>x.id===curDetailId));
 }
+function calDayDblClick(dateStr) {
+  calSelectedDate = dateStr;
+  renderCalendar(loadStudents().find(x=>x.id===curDetailId));
+  showAddEvent();
+}
 function showAddEvent() {
   const panel = document.getElementById('event-add-panel');
   const isHidden = panel.classList.contains('hidden');
