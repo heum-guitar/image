@@ -4313,6 +4313,8 @@ function renderCalendar(s) {
       </div>
     </div>`;
   buildEventWeekGrid();
+  const calWrap = container.querySelector('.cal-wrap');
+  if (calWrap) _initCalSwipe(calWrap);
 }
 function calMove(dir) {
   calMonth += dir;
