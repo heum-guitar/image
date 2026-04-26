@@ -4520,8 +4520,9 @@ function editEvent(date, idx) {
   document.getElementById('event-add-panel').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 function cancelEventPanel() {
-  editingEventDate = null; editingEventIdx = null;
-  document.getElementById('event-add-panel').classList.add('hidden');
+  const panel = document.getElementById('event-add-panel');
+  if (!panel || panel.classList.contains('hidden')) return;
+  _closePanelAnim(panel, () => { editingEventDate = null; editingEventIdx = null; });
 }
 function buildEventWeekGrid() {
   const g=document.getElementById('ev-week-grid'); if(!g) return;
