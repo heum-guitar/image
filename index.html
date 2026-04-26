@@ -4516,8 +4516,8 @@ function editEvent(date, idx) {
   document.getElementById('event-panel-title').textContent='일정 수정';
   document.getElementById('event-submit-btn').textContent='저장';
   buildEventWeekGrid();
-  document.getElementById('event-add-panel').classList.remove('hidden');
-  document.getElementById('event-add-panel').scrollIntoView({behavior:'smooth',block:'nearest'});
+  const _ep = document.getElementById('event-add-panel');
+  if (_ep.classList.contains('hidden')) { _openPanelAnim(_ep); } else { _ep.scrollIntoView({behavior:'smooth',block:'nearest'}); }
 }
 function cancelEventPanel() {
   const panel = document.getElementById('event-add-panel');
