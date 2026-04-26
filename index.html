@@ -4443,6 +4443,44 @@ function calDayDblClick(dateStr) {
   renderCalendar(loadStudents().find(x=>x.id===curDetailId));
   showAddEvent();
 }
+function _openPanelAnim(panel) {
+  panel.style.overflow = 'hidden';
+  panel.style.transition = 'none';
+  panel.style.maxHeight = 'none';
+  panel.style.opacity = '0';
+  panel.style.marginTop = '0';
+  panel.classList.remove('hidden');
+  const h = panel.offsetHeight;
+  panel.style.maxHeight = '0';
+  panel.getBoundingClientRect();
+  requestAnimationFrame(() => {
+    panel.style.transition = 'max-height 0.36s cubic-bezier(0.4,0,0.2,1), opacity 0.28s ease, margin-top 0.28s ease';
+    panel.style.maxHeight = h + 'px';
+    panel.style.opacity = '1';
+    panel.style.marginTop = '12px';
+    setTimeout(() => { panel.style.overflow = ''; panel.style.maxHeight = ''; }, 380);
+  });
+  setTimeout(() => panel.scrollIntoView({behavior:'smooth',block:'nearest'}), 60);
+}
+function _closePanelAnim(panel, cb) {
+  const h = panel.offsetHeight;
+  panel.style.overflow = 'hidden';
+  panel.style.maxHeight = h + 'px';
+  panel.getBoundingClientRect();
+  panel.style.transition = 'max-height 0.26s cubic-bezier(0.4,0,0.2,1), opacity 0.2s ease, margin-top 0.22s ease';
+  panel.style.maxHeight = '0';
+  panel.style.opacity = '0';
+  panel.style.marginTop = '0';
+  setTimeout(() => {
+    panel.classList.add('hidden');
+    panel.style.overflow = '';
+    panel.style.maxHeight = '';
+    panel.style.marginTop = '';
+    panel.style.opacity = '';
+    panel.style.transition = '';
+    if (cb) cb();
+  }, 270);
+}
 function showAddEvent() {
   const panel = document.getElementById('event-add-panel');
   const isHidden = panel.classList.contains('hidden');
@@ -4459,7 +4497,7 @@ function showAddEvent() {
   document.getElementById('event-submit-btn').textContent='추가';
   eventWeekSel=null;
   buildEventWeekGrid();
-  panel.classList.remove('hidden');
+  _openPanelAnim(panel);
 }
 function editEvent(date, idx) {
   const s = loadStudents().find(x=>x.id===curDetailId);
