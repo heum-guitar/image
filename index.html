@@ -4321,6 +4321,22 @@ function calMove(dir) {
   calSelectedDate=null;
   renderCalendar(loadStudents().find(x=>x.id===curDetailId));
 }
+function _initCalSwipe(wrap) {
+  let startX = null, startY = null;
+  wrap.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+  wrap.addEventListener('touchend', e => {
+    if (startX === null) return;
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = e.changedTouches[0].clientY - startY;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+      calMove(dx < 0 ? 1 : -1);
+    }
+    startX = null; startY = null;
+  }, { passive: true });
+}
 function calDayClick(dateStr) {
   calSelectedDate = (calSelectedDate===dateStr) ? null : dateStr;
   renderCalendar(loadStudents().find(x=>x.id===curDetailId));
