@@ -4242,7 +4242,7 @@ function renderCalendar(s) {
     const isToday = dateStr===todayStr;
     const hasEvent = eventDates.has(dateStr);
     const isSel = dateStr===calSelectedDate;
-    cells += `<div class="cal-day${isToday?' today':''}${hasEvent?' has-event':''}${isSel?' selected':''}" onclick="calDayClick('${dateStr}')">
+    cells += `<div class="cal-day${isToday?' today':''}${hasEvent?' has-event':''}${isSel?' selected':''}" onclick="calDayClick('${dateStr}')" ondblclick="calDayDblClick('${dateStr}')">
       <span class="cal-num">${d}</span>
       <span class="cal-dot"></span>
     </div>`;
