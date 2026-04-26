@@ -4104,11 +4104,7 @@ function renderProgressTab(s,months,pct) {
       ${todayEv ? `
       <div style="border-top:1px solid var(--border);padding-top:14px;">
         <p class="card-label" style="margin-bottom:8px;">오늘 수업 내용 — ${todayEvDateLabel}</p>
-        <div style="padding:10px 12px;background:var(--bg);border-radius:10px;box-shadow:var(--sh-in-sm);">
-          ${todayEv.content
-            ? `<p style="font-size:13px;color:var(--text);white-space:pre-wrap;">${todayEv.content}</p>`
-            : `<p style="font-size:12px;color:var(--text3);">수업 내용 미입력</p>`}
-        </div>
+        <textarea id="d-progress-content" rows="3" style="font-size:13px;padding:10px 12px;" placeholder="오늘 수업에서 다룬 내용을 입력하세요 (레슨생에게 표시됩니다)">${todayEv.content||''}</textarea>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;margin-bottom:6px;">
           <p style="font-size:11px;font-weight:700;color:var(--text2);margin:0;">피드백 메모</p>
           <span style="font-size:10px;color:var(--text3);font-weight:500;">강사만 볼 수 있습니다</span>
