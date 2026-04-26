@@ -4166,11 +4166,12 @@ function selectDWeek(w) {
 function saveProgressSettings(sid) {
   const students=loadStudents(); const s=students.find(x=>x.id===sid);
   const memoText = document.getElementById('d-progress-memo')?.value.trim() || '';
+  const contentText = document.getElementById('d-progress-content')?.value.trim() || '';
   s.progressMemo = memoText;
   const todayStr = new Date().toISOString().slice(0,10);
   const todayIdx = (s.events||[]).findIndex(e => e.date === todayStr);
   if (todayIdx > -1) {
-    s.events[todayIdx] = { ...s.events[todayIdx], memo: memoText };
+    s.events[todayIdx] = { ...s.events[todayIdx], memo: memoText, content: contentText };
   }
   saveStudents(students);
   renderDetailAll(sid);
