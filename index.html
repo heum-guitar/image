@@ -518,6 +518,23 @@
     #sc-student .content { padding: 0 28px calc(120px + env(safe-area-inset-bottom)); }
   }
 
+  /* ── 강사 레슨생 세부정보(sc-detail) — 태블릿·노트북에서 한눈에 보이도록 밀도 개선 ── */
+  @media (min-width: 600px) {
+    /* 폭이 과하게 퍼지지 않게 가운데로 모으기 */
+    #sc-detail .content { max-width: 780px; margin: 0 auto; }
+    /* 통계 4칸을 한 줄로 → 세로 공간 절약 */
+    #sc-detail .metrics.metrics-detail { grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    #sc-detail .metric { padding: 16px 14px; }
+    #sc-detail .metric-label { font-size: 11px; margin-bottom: 6px; }
+    #sc-detail .metric-val { font-size: 23px; }
+    #sc-detail .metric-val span { font-size: 12px; }
+    #sc-detail .card { padding: 18px; }
+    /* 달력 — 정사각형 셀 대신 납작하게(높이↓) + 덜 빽빽하게 */
+    #sc-detail .cal-wrap { padding: 16px 18px; }
+    #sc-detail .cal-day { aspect-ratio: auto; min-height: 46px; padding: 4px 2px; }
+    #sc-detail .cal-num { font-size: 14px; }
+  }
+
   /* Student schedule fullscreen mode */
   #sc-student.sched-mode { overflow-y: hidden !important; }
   #sc-student.sched-mode .screen { max-width: 100%; width: 100%; height: 100%; min-height: 0; overflow: hidden; }
@@ -2840,17 +2857,22 @@ window.addEventListener('DOMContentLoaded', async ()=>{
 
   showLoading(false);
 
-  // 자동로그인 확인
+  // 자동로그인 — 기기에 기억된 마지막 역할/사람으로 바로 입장 (역할선택·PIN 생략)
   try {
-    const autoId = localStorage.getItem('heum_autologin_id');
-    if (autoId) {
-      const s = loadStudents().find(x=>x.id===parseInt(autoId));
-      if (s) {
-        curStudent=s;
-        const savedPw = getStudentPw(s.id);
-        startEnterPw(savedPw);
-        return;
-      }
+    const lastRole = localStorage.getItem('heum_last_role');
+    if (lastRole === 'teacher') {
+      document.body.classList.add('heum-teacher-mode');
+      goScreen('sc-teacher');
+      return;
+    }
+    // 레슨생: heum_last_role 우선, 없으면 기존 heum_autologin_id 호환
+    let sid = null;
+    if (lastRole && lastRole.indexOf('student:') === 0) sid = parseInt(lastRole.slice(8));
+    else { const a = localStorage.getItem('heum_autologin_id'); if (a) sid = parseInt(a); }
+    if (sid != null && !isNaN(sid)) {
+      const s = loadStudents().find(x=>x.id===sid);
+      if (s) { curStudent = s; enterStudent(); return; }
+      localStorage.removeItem('heum_last_role'); // 기억된 레슨생을 못 찾으면 해제
     }
   } catch(e){}
 });
@@ -3096,6 +3118,7 @@ function _initSidebarEvents() {
 document.addEventListener('DOMContentLoaded', _initSidebarEvents);
 
 function logout() {
+  try{localStorage.removeItem('heum_last_role');}catch(e){}
   _navHistory.length = 0;
   document.body.classList.remove('heum-teacher-mode');
   document.querySelectorAll('[id^="sc-"]').forEach(el => el.classList.add('hidden'));
@@ -3134,7 +3157,7 @@ function initTeacherPw() {
     showErr('tpw-err', `(이전 오류 ${fails}/${MAX_FAILS}회)`);
   }
   function handleTeacherPin(pin) {
-    if (pin === getTeacherPw()) { clearLockOut('teacher'); document.body.classList.add('heum-teacher-mode'); goScreen('sc-teacher'); }
+    if (pin === getTeacherPw()) { clearLockOut('teacher'); try{localStorage.setItem('heum_last_role','teacher');}catch(e){} document.body.classList.add('heum-teacher-mode'); goScreen('sc-teacher'); }
     else {
       const n = addLockFail('teacher');
       if (n >= MAX_FAILS) {
@@ -4116,11 +4139,9 @@ function renderProgressTab(s,months,pct) {
       </div>` : ''}
       <button class="save-btn" style="margin-top:14px;width:100%;padding:10px;" onclick="saveProgressSettings(${s.id})">저장</button>
     </div>
-    <div class="metrics">
+    <div class="metrics metrics-detail">
       <div class="metric"><p class="metric-label">수강 기간</p><p class="metric-val">${months}<span>개월</span></p></div>
       <div class="metric"><p class="metric-label">숙제 완료율</p><p class="metric-val" id="d-hw-pct">${pct}<span>%</span></p></div>
-    </div>
-    <div class="metrics">
       <div class="metric"><p class="metric-label">배울 수 있는 곡</p><p class="metric-val">${s.songs.canLearn.length}<span>곡</span></p></div>
       <div class="metric"><p class="metric-label">연습 필요한 곡</p><p class="metric-val">${(s.songs.notYetBeginner||[]).length+(s.songs.notYetIntermediate||[]).length}<span>곡</span></p></div>
     </div>
@@ -4304,7 +4325,7 @@ function renderCalendar(s) {
           </select>
         </div>
       </div>
-      <div class="form-group"><p class="form-label">수업 내용</p><textarea id="ev-content" rows="2" placeholder="이번 수업에서 다룬 내용을 입력하세요 (레슨생에게 표시됩니다)"></textarea></div>
+      <div class="form-group"><p class="form-label">수업 내용</p><textarea id="ev-content" rows="2" placeholder="그날 수업에서 다룰 내용을 입력하세요 (레슨생에게 표시됩니다)"></textarea></div>
       <div class="form-group"><p class="form-label">메모 (강사용)</p><textarea id="ev-memo" rows="2" placeholder="수업 내용이나 메모를 입력하세요"></textarea></div>
       <div class="panel-actions">
         <button class="panel-btn panel-btn-cancel" onclick="cancelEventPanel()">취소</button>
@@ -5481,8 +5502,8 @@ function submitStudentLogin() {
   try {
     localStorage.setItem('heum_saved_name', name);
     localStorage.setItem('heum_saved_birth', birth);
-    if (autoLogin) { localStorage.setItem('heum_autologin_id', s.id); }
-    else { localStorage.removeItem('heum_autologin_id'); }
+    if (autoLogin) { localStorage.setItem('heum_autologin_id', s.id); localStorage.setItem('heum_last_role','student:'+s.id); }
+    else { localStorage.removeItem('heum_autologin_id'); localStorage.removeItem('heum_last_role'); }
   } catch(e) {}
   curStudent = s;
   const saved = getStudentPw(s.id);
@@ -5490,6 +5511,7 @@ function submitStudentLogin() {
 }
 function resetStudentLogin() {
   localStorage.removeItem('heum_autologin_id');
+  try{localStorage.removeItem('heum_last_role');}catch(e){}
   curStudent = null;
   // 레슨생 로그인 관련 화면을 히스토리에서 제거해 '돌아가기'가 메인으로 가도록 보정
   const authScreens = new Set(['sc-enter-pw','sc-student-select','sc-set-pw','sc-birthdate']);
@@ -6664,6 +6686,7 @@ function _pickEmoji(em) {
 function goBackToStudent() { goBack(); }
 function studentLogout() {
   localStorage.removeItem('heum_autologin_id');
+  try{localStorage.removeItem('heum_last_role');}catch(e){}
   curStudent = null;
   _navHistory.length = 0;
   document.querySelectorAll('[id^="sc-"]').forEach(el => el.classList.add('hidden'));
@@ -8586,7 +8609,7 @@ document.addEventListener('touchstart', function() {}, {passive: true});
     <div style="margin-bottom:14px;">
       <p style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:6px;">수업 내용 <span style="font-weight:400;">(레슨생에게 표시)</span></p>
       <div style="border-radius:12px;background:var(--bg);box-shadow:var(--sh-in-sm);">
-        <textarea id="tsched-modal-content" rows="2" placeholder="이번 수업에서 다룬 내용" style="width:100%;padding:12px 14px;font-size:13px;color:var(--text);background:transparent;border:none;outline:none;resize:none;box-sizing:border-box;font-family:inherit;"></textarea>
+        <textarea id="tsched-modal-content" rows="2" placeholder="그날 수업에서 다룰 내용" style="width:100%;padding:12px 14px;font-size:13px;color:var(--text);background:transparent;border:none;outline:none;resize:none;box-sizing:border-box;font-family:inherit;"></textarea>
       </div>
     </div>
     <!-- 메모 -->
