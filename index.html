@@ -16,7 +16,14 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/image/sw.js');
+    navigator.serviceWorker.register('/image/sw.js').then(reg => { try { reg.update(); } catch(e){} });
+    // 새 서비스워커가 제어권을 잡으면(=새 버전 배포) 한 번 자동 새로고침
+    let _swReloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (_swReloaded) return;
+      _swReloaded = true;
+      location.reload();
+    });
   }
 </script>
 <style>
