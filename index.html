@@ -400,8 +400,29 @@
   .save-btn {
     background: linear-gradient(135deg, #818cf8, #818cf8); border: none; color:#fff;
     font-size:12px; font-weight:600; padding:8px 14px; border-radius:10px; flex-shrink:0;
-    box-shadow: var(--sh-out-sm);
+    box-shadow: var(--sh-out-sm); cursor: pointer;
+    transition: transform 0.09s ease, box-shadow 0.14s ease, filter 0.14s ease;
   }
+  .save-btn:active { transform: scale(0.96); box-shadow: var(--sh-in-sm); filter: brightness(0.9); }
+
+  /* ── 저장 완료 토스트 ── */
+  .heum-toast {
+    position: fixed; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom));
+    transform: translateX(-50%) translateY(16px) scale(0.96);
+    background: linear-gradient(135deg, #6f7bf0, #5b67e0); color: #fff;
+    font-size: 14px; font-weight: 700; letter-spacing: 0.01em;
+    padding: 13px 22px; border-radius: 30px;
+    box-shadow: 0 10px 30px rgba(91,103,224,0.5), 0 3px 10px rgba(0,0,0,0.18);
+    display: flex; align-items: center; gap: 9px;
+    opacity: 0; pointer-events: none; z-index: 10001;
+    transition: opacity 0.26s ease, transform 0.32s cubic-bezier(0.22,1,0.36,1);
+  }
+  .heum-toast.show { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+  .heum-toast .toast-check {
+    width: 21px; height: 21px; border-radius: 50%; background: rgba(255,255,255,0.28);
+    display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0;
+  }
+  @media (min-width: 1000px) { .heum-toast { bottom: 40px; } }
   .badge-warn { font-size:10px; padding:3px 8px; border-radius:20px; background:rgba(196,92,74,0.12); color:var(--red); }
   .badge-ok  { font-size:10px; padding:3px 8px; border-radius:20px; background:rgba(74,138,90,0.12); color:var(--green); }
   .info-student-block { border-bottom: 1px solid var(--border); }
@@ -2959,6 +2980,25 @@ function haptic(type) {
   navigator.vibrate(patterns[type] || patterns.light);
 }
 
+// ── 저장/완료 토스트 ─────────────────────────────────────────
+let _toastTimer = null;
+function showToast(msg, opts) {
+  opts = opts || {};
+  let el = document.getElementById('heum-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'heum-toast';
+    el.className = 'heum-toast';
+    document.body.appendChild(el);
+  }
+  el.innerHTML = '<span class="toast-check">✓</span><span></span>';
+  el.lastChild.textContent = msg;        // XSS 방지: 텍스트로 삽입
+  void el.offsetWidth;                    // 리플로우 강제 → 트랜지션 재생
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { el.classList.remove('show'); }, opts.duration || 1900);
+}
+
 function goScreen(id, _back) {
   // 사이드바 & 모바일 nav: 항상 갱신 (버튼 직접 클릭 / 프로그래밍 이동 모두 대응)
   _tdgUpdateActiveBtn(id);
@@ -4223,6 +4263,8 @@ function saveProgressSettings(sid) {
   }
   saveStudents(students);
   renderDetailAll(sid);
+  haptic('success');
+  showToast('저장되었습니다');
 }
 
 function saveJourneyStages(sid) {
@@ -4233,6 +4275,8 @@ function saveJourneyStages(sid) {
   });
   saveStudents(students);
   renderDetailAll(sid);
+  haptic('success');
+  showToast('단계 이름을 저장했어요');
 }
 function setCurrentStage(sid, stageIdx) {
   haptic('light');
