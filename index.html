@@ -473,6 +473,84 @@
     50% { transform: scale(1.4); opacity: 0.25; }
   }
 
+  .teacher-journey-shell { padding-bottom: 36px; }
+  .teacher-journey-summary {
+    background: var(--bg); box-shadow: var(--sh-out); border-radius: 24px;
+    padding: 18px 20px; display:flex; align-items:center; justify-content:space-between;
+    gap:16px; margin-bottom:18px;
+  }
+  .teacher-journey-current { display:flex; align-items:center; gap:14px; min-width:0; }
+  .teacher-journey-ring { position:relative; width:64px; height:64px; flex-shrink:0; }
+  .teacher-journey-ring svg { transform:rotate(-90deg); }
+  .teacher-journey-ring span { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:var(--text); }
+  .teacher-journey-kicker { font-size:10px; font-weight:800; color:var(--text2); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:5px; }
+  .teacher-journey-title { font-size:17px; font-weight:800; line-height:1.25; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .teacher-journey-sub { font-size:12px; color:var(--text2); margin-top:3px; }
+  .teacher-journey-actions { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+  .teacher-journey-map-grid { display:grid; grid-template-columns:1fr; gap:18px; align-items:start; }
+  .teacher-journey-map-card {
+    background: var(--bg); box-shadow: var(--sh-out); border-radius:24px;
+    padding:18px 14px 20px; overflow:hidden;
+  }
+  .teacher-journey-map-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:0 4px 14px; }
+  .teacher-journey-map-name { font-size:13px; font-weight:800; color:var(--text); }
+  .teacher-journey-map-range { font-size:10px; font-weight:800; color:var(--text2); letter-spacing:0.08em; }
+  .teacher-journey-map {
+    position:relative; width:100%; max-width:520px; height:900px; margin:0 auto;
+  }
+  .teacher-journey-node {
+    position:absolute; display:flex; flex-direction:column; align-items:center; z-index:5;
+    transform:translate(-50%, -50%);
+  }
+  .teacher-journey-icon {
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px;
+    border:none; color:var(--text); cursor:pointer; background:var(--bg);
+    transition:transform 0.14s ease, box-shadow 0.14s ease, opacity 0.14s ease;
+  }
+  .teacher-journey-icon:active { transform:scale(0.95); box-shadow:var(--sh-in-sm) !important; }
+  .teacher-journey-icon.done { box-shadow:var(--sh-in-sm); }
+  .teacher-journey-icon.locked { box-shadow:var(--sh-out); opacity:0.58; filter:grayscale(0.8); }
+  .teacher-journey-label,
+  .teacher-journey-label-input {
+    margin-top:6px; min-width:88px; max-width:132px; min-height:28px;
+    border-radius:10px; font-size:12px; font-weight:800; line-height:1.2;
+    text-align:center; color:var(--text); background:var(--bg);
+  }
+  .teacher-journey-label {
+    border:none; padding:6px 8px; box-shadow:var(--sh-out-sm);
+    cursor:text; white-space:normal; overflow-wrap:anywhere;
+  }
+  .teacher-journey-label:active { box-shadow:var(--sh-in-sm); color:var(--gold); }
+  .teacher-journey-label.locked { color:var(--text3); }
+  .teacher-journey-label-input {
+    border:none; outline:none; padding:6px 8px; box-shadow:var(--sh-in-sm);
+    user-select:text; -webkit-user-select:text;
+  }
+  .teacher-journey-avatar {
+    position:absolute; width:70px; display:flex; flex-direction:column; align-items:center; z-index:12;
+    transform:translate(-50%, -68%);
+  }
+  .teacher-journey-avatar-badge {
+    width:58px; height:58px; background:var(--bg); box-shadow:var(--sh-out); border-radius:18px;
+    display:flex; align-items:center; justify-content:center; font-weight:800; font-size:16px;
+    color:var(--text); position:relative;
+  }
+  .teacher-journey-avatar-chip {
+    margin-top:7px; padding:4px 10px; border-radius:20px; color:#fff;
+    font-size:9px; font-weight:800; white-space:nowrap; max-width:150px;
+    overflow:hidden; text-overflow:ellipsis;
+  }
+  @media (min-width: 760px) {
+    .teacher-journey-map-grid { grid-template-columns:1fr 1fr; }
+    .teacher-journey-map { height:820px; }
+  }
+  @media (min-width: 1120px) {
+    .teacher-journey-map-card { padding:20px 20px 22px; }
+    .teacher-journey-map { height:860px; }
+    .teacher-journey-label,
+    .teacher-journey-label-input { font-size:13px; max-width:150px; }
+  }
+
   /* Screen transitions */
   .sc-in-fwd, .sc-out-fwd, .sc-in-bwd, .sc-out-bwd { /* 애니메이션 없음 — 즉시 전환 */ }
 
@@ -549,7 +627,7 @@
   /* ── 강사 레슨생 세부정보(sc-detail) — 태블릿·노트북에서 한눈에 보이도록 밀도 개선 ── */
   @media (min-width: 600px) {
     /* 폭이 과하게 퍼지지 않게 가운데로 모으기 */
-    #sc-detail .content { max-width: 780px; margin: 0 auto; }
+    #sc-detail .content { width: 100%; max-width: 780px; margin: 0 auto; }
     /* 통계 4칸을 한 줄로 → 세로 공간 절약 */
     #sc-detail .metrics.metrics-detail { grid-template-columns: repeat(4, 1fr); gap: 10px; }
     #sc-detail .metric { padding: 16px 14px; }
@@ -568,13 +646,12 @@
     /* 양쪽 여백을 활용하도록 폭 확장 */
     #sc-detail .content { max-width: 1120px; }
     /* 진도 외 탭은 과도하게 퍼지지 않게 가운데 정렬 */
-    #sc-detail #d-homework, #sc-detail #d-songs, #sc-detail #d-journey { max-width: 720px; margin: 0 auto; }
-    /* 진도 탭을 2단 그리드(5:5)로 */
-    #d-progress { display: grid; grid-template-columns: 1fr 1fr; column-gap: 24px; row-gap: 14px; align-items: start; }
-    #d-progress > *:nth-child(1) { grid-column: 1; grid-row: 1; }            /* 수업 내용/저장 카드 → 좌 */
-    #d-progress > *:nth-child(2) { grid-column: 1; grid-row: 2; margin-bottom: 0; } /* 통계 → 좌 */
-    #d-progress > *:nth-child(4) { grid-column: 1; grid-row: 3; margin-top: 0; }    /* 이번 주 과제 → 좌 */
-    #d-progress > #cal-container { grid-column: 2; grid-row: 1 / span 3; }    /* 달력 → 우 */
+    #sc-detail #d-homework, #sc-detail #d-songs { max-width: 720px; margin: 0 auto; }
+    #sc-detail #d-journey { max-width: 1180px; margin: 0 auto; }
+    /* 진도 탭 2단 그리드(5:5) — 좌/우를 독립 칸으로 감싸 한쪽이 길어져도 반대쪽 영향 없음 */
+    #d-progress { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+    #d-progress > .dp-left  { grid-column: 1; min-width: 0; }   /* 레슨정보(수업·통계·과제) */
+    #d-progress > .dp-right { grid-column: 2; min-width: 0; }   /* 달력 — 일정 패널 펼쳐져도 왼쪽 무관 */
     /* 좁아진 왼쪽 열에 맞춰 통계는 2×2 */
     #sc-detail .metrics.metrics-detail { grid-template-columns: 1fr 1fr; gap: 10px; }
     /* 오른쪽 열 달력은 세로 여유가 있으니 셀 높이 살짝 키워 보기 좋게 */
@@ -4041,7 +4118,7 @@ function openDetail(id) {
   curDetailId=id;
   const now=new Date(); calYear=now.getFullYear(); calMonth=now.getMonth(); calSelectedDate=null;
   renderDetailAll(id);
-  ['progress','homework','songs'].forEach((t,i)=>document.getElementById('d-'+t).classList.toggle('hidden',i!==0));
+  ['progress','homework','songs','journey'].forEach((t,i)=>document.getElementById('d-'+t).classList.toggle('hidden',i!==0));
   document.querySelectorAll('#sc-detail .tab').forEach((t,i)=>t.classList.toggle('active',i===0));
   goScreen('sc-detail');
 }
@@ -4062,39 +4139,197 @@ function renderDetailAll(id) {
   renderSongsTab(s);
   renderJourneySettingsTab(s);
 }
+
+function _escHtml(v) {
+  return String(v ?? '').replace(/[&<>"']/g, ch => ({
+    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+  }[ch]));
+}
+
 function renderJourneySettingsTab(s) {
   const curW = s.currentWeek || 1;
-  let ci = s.currentStageIdx !== undefined ? s.currentStageIdx : _JP_STAGES.findIndex(st => curW <= st.maxWeek);
+  const week = getComputedWeek(s) || curW;
+  const pct = Math.min(week / _JP_TOTAL, 1);
+  const disp = Math.round(pct * 100);
+  const ringC = 163.3;
+  const ringOff = (ringC * (1 - pct)).toFixed(1);
+  const stages = _JP_STAGES.map((st, i) => ({
+    ...st,
+    name: (s.journeyStages && s.journeyStages[i]) || st.name
+  }));
+  let ci = s.currentStageIdx !== undefined ? s.currentStageIdx : stages.findIndex(st => week <= st.maxWeek);
   if (ci < 0) ci = _JP_STAGES.length - 1;
-  const stageRows = _JP_STAGES.map((st, i) => {
-    const isCur = i === ci;
-    const isAdv = st.adv === true;
-    const numColor = isCur ? 'var(--gold)' : (isAdv ? '#f87171' : 'var(--text2)');
-    const divider = i === 10 ? `
-      <div style="display:flex;align-items:center;gap:8px;margin:12px 0 10px;">
-        <div style="flex:1;height:1px;background:rgba(248,113,113,0.3);"></div>
-        <span style="font-size:9px;font-weight:800;color:#f87171;letter-spacing:0.1em;">ADVANCED LEVEL · 11~20단계</span>
-        <div style="flex:1;height:1px;background:rgba(248,113,113,0.3);"></div>
-      </div>` : '';
-    return divider + `
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-        <div style="width:28px;height:28px;border-radius:8px;background:var(--bg);box-shadow:${isAdv?'var(--sh-in-sm), inset 0 0 0 1px rgba(248,113,113,0.25)':'var(--sh-in-sm)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <span style="font-size:10px;font-weight:700;color:${numColor};">${i+1}</span>
-        </div>
-        <input type="text" id="d-stage-${i}" value="${((s.journeyStages && s.journeyStages[i]) || st.name).replace(/"/g,'&quot;')}" placeholder="${st.name}" style="font-size:13px;padding:8px 12px;${isAdv?'box-shadow:var(--sh-in-sm), inset 0 0 0 1px rgba(248,113,113,0.15);':''}">
-        <button onclick="setCurrentStage(${s.id},${i})" title="${isCur?'현재 단계':'이 단계로 설정'}"
-          style="flex-shrink:0;width:34px;height:34px;border-radius:10px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:box-shadow 0.15s,transform 0.15s;${isCur?'background:var(--gold);box-shadow:var(--sh-out-sm);color:#fff;':'background:var(--bg);box-shadow:var(--sh-out-sm);color:var(--text3);'}">
-          <i class="ph-${isCur?'fill':'bold'} ph-map-pin" style="font-size:14px;"></i>
-        </button>
+  const cur = stages[ci];
+  const isAdv = ci >= 10;
+  const curColor = isAdv ? '#f87171' : '#818cf8';
+  const stages1 = stages.slice(0, 10);
+  const stages2 = stages.slice(10, 20);
+  const ci1 = isAdv ? -1 : ci;
+  const ci2 = isAdv ? ci - 10 : -2;
+  const initials = _escHtml((s.name || '레슨생').slice(0, 2));
+
+  function buildTeacherNodes(stList, localCi, isAdvMap, offset) {
+    const totalLen = stList.length;
+    const checkColor = isAdvMap ? '#f87171' : '#4ade80';
+    return stList.map((st, i) => {
+      const globalIdx = offset + i;
+      const isCur = globalIdx === ci;
+      const isCompleted = localCi === -1 || i < localCi;
+      const isGoal = i === totalLen - 1;
+      const left = (st.svgX / _JP_W * 100).toFixed(2);
+      const top = (st.svgY / _JP_H * 100).toFixed(2);
+      const br = st.shape === 'sq' ? '18px' : '50%';
+      const iconSize = st.shape === 'sq' ? 20 : 17;
+      const iconState = isCompleted ? 'done' : 'locked';
+      const pinStyle = isCur
+        ? `box-shadow:var(--sh-out), 0 0 0 2px ${isAdvMap ? 'rgba(248,113,113,0.55)' : 'rgba(129,140,248,0.55)'};`
+        : '';
+      const iconHtml = isCur
+        ? `<i class="ph-fill ph-map-pin" style="color:${isAdvMap ? '#f87171' : '#818cf8'};font-size:${iconSize}px;"></i>${st.top?`<span style="font-size:7px;font-weight:800;color:var(--text2);">${_escHtml(st.top)}</span>`:''}`
+        : isCompleted
+          ? `<i class="ph-bold ph-check" style="color:${checkColor};font-size:${iconSize}px;"></i>${st.top?`<span style="font-size:7px;font-weight:800;color:var(--text2);">${_escHtml(st.top)}</span>`:''}`
+          : isGoal
+            ? `<i class="ph-fill ph-crown" style="color:${isAdvMap ? 'rgba(220,38,38,0.75)' : 'var(--text3)'};font-size:20px;"></i><span style="font-size:7px;font-weight:800;color:var(--text3);">GOAL</span>`
+            : `<i class="ph-bold ph-lock-key" style="color:var(--text3);font-size:17px;"></i>`;
+      const labelCls = isCompleted || isCur ? '' : ' locked';
+      return `
+        <div class="teacher-journey-node" style="left:${left}%;top:${top}%;">
+          <button class="teacher-journey-icon ${iconState}" onclick="setCurrentStage(${s.id},${globalIdx})" title="${isCur?'현재 단계':'이 단계로 설정'}"
+            style="width:${st.size}px;height:${st.size}px;border-radius:${br};${pinStyle}">
+            ${iconHtml}
+          </button>
+          <button class="teacher-journey-label${labelCls}" id="tj-label-${globalIdx}" onclick="editTeacherJourneyStage(${s.id},${globalIdx})" title="단계명 수정">${_escHtml(st.name)}</button>
+        </div>`;
+    }).join('');
+  }
+
+  function teacherAvatarHtml(st, isAdvMap) {
+    if (!st) return '';
+    const left = (st.svgX / _JP_W * 100).toFixed(2);
+    const top = (st.svgY / _JP_H * 100).toFixed(2);
+    const color = isAdvMap ? '#f87171' : '#818cf8';
+    return `
+      <div class="teacher-journey-avatar" style="left:${left}%;top:${top}%;">
+        <div style="position:absolute;width:70px;height:70px;border-radius:50%;background:${isAdvMap ? 'rgba(248,113,113,0.22)' : 'rgba(129,140,248,0.22)'};filter:blur(10px);animation:journeyPulse 2.2s ease-in-out infinite;"></div>
+        <div class="teacher-journey-avatar-badge" style="border:2px solid ${isAdvMap ? 'rgba(248,113,113,0.55)' : 'rgba(129,140,248,0.55)'};">${initials}</div>
+        <div class="teacher-journey-avatar-chip" style="background:${color};box-shadow:0 2px 8px ${isAdvMap ? 'rgba(248,113,113,0.4)' : 'rgba(129,140,248,0.4)'};">${_escHtml(st.name)}</div>
       </div>`;
-  }).join('');
+  }
+
+  function teacherMapHtml(title, range, stList, localCi, isAdvMap, offset) {
+    const mainStroke = isAdvMap ? '#fecaca' : '#d1d9e6';
+    const insetStroke = isAdvMap ? '#fee2e2' : '#e8ecf2';
+    const progress = isAdvMap ? '#f87171' : '#818cf8';
+    const avatarStage = localCi >= 0 ? stList[localCi] : null;
+    const dashInit = localCi === -1 ? '9999 9999' : '0 9999';
+    return `
+      <div class="teacher-journey-map-card">
+        <div class="teacher-journey-map-head">
+          <p class="teacher-journey-map-name">${title}</p>
+          <p class="teacher-journey-map-range">${range}</p>
+        </div>
+        <div class="teacher-journey-map">
+          <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 327 1160" preserveAspectRatio="none">
+            <path id="teacher-journey-main-${isAdvMap ? 'adv' : 'base'}" d="${_JP_D}" fill="none" stroke="${mainStroke}" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" style="filter:drop-shadow(2px 3px 4px rgba(0,0,0,0.12));"/>
+            <path d="${_JP_D}" fill="none" stroke="${insetStroke}" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+            <path id="teacher-journey-progress-${isAdvMap ? 'adv' : 'base'}" d="${_JP_D}" fill="none" stroke="${progress}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${dashInit}" style="filter:drop-shadow(0 0 5px ${isAdvMap ? 'rgba(248,113,113,0.55)' : 'rgba(129,140,248,0.55)'});"/>
+          </svg>
+          ${buildTeacherNodes(stList, localCi, isAdvMap, offset)}
+          ${teacherAvatarHtml(avatarStage, isAdvMap)}
+        </div>
+      </div>`;
+  }
+
   document.getElementById('d-journey').innerHTML = `
-    <div class="card">
-      <p class="card-label">진도 단계 이름 설정</p>
-      ${stageRows}
-      <button class="save-btn" style="margin-top:4px;width:100%;padding:10px;" onclick="saveJourneyStages(${s.id})">단계 이름 저장</button>
+    <div class="teacher-journey-shell">
+      <div class="teacher-journey-summary">
+        <div class="teacher-journey-current">
+          <div class="teacher-journey-ring">
+            <svg width="64" height="64" viewBox="0 0 64 64">
+              <circle cx="32" cy="32" r="26" stroke="var(--border2)" stroke-width="8" fill="transparent"/>
+              <circle cx="32" cy="32" r="26" stroke="${curColor}" stroke-width="8" fill="transparent" stroke-dasharray="${ringC}" stroke-dashoffset="${ringOff}" stroke-linecap="round"/>
+            </svg>
+            <span>${disp}%</span>
+          </div>
+          <div style="min-width:0;">
+            <p class="teacher-journey-kicker">CURRENT STAGE</p>
+            <p class="teacher-journey-title" style="color:${curColor};">${_escHtml(cur.name)}</p>
+            <p class="teacher-journey-sub">${week}주차 · ${ci + 1}단계</p>
+          </div>
+        </div>
+        <div class="teacher-journey-actions">
+          <button class="btn" onclick="renderJourneySettingsTab(loadStudents().find(x=>x.id===${s.id}))"><i class="ph-bold ph-arrows-clockwise" style="font-size:15px;"></i></button>
+        </div>
+      </div>
+      <div class="teacher-journey-map-grid">
+        ${teacherMapHtml('기본 과정', '1~10단계', stages1, ci1, false, 0)}
+        ${teacherMapHtml('고급 과정', '11~20단계', stages2, ci2, true, 10)}
+      </div>
     </div>`;
+  updateTeacherJourneyPaths(ci1, ci2, stages1, stages2);
 }
+
+function updateTeacherJourneyPaths(ci1, ci2, stages1, stages2) {
+  function setPath(kind, localCi, list) {
+    requestAnimationFrame(() => {
+      try {
+        const pathEl = document.getElementById(`teacher-journey-main-${kind}`);
+        const progEl = document.getElementById(`teacher-journey-progress-${kind}`);
+        if (!pathEl || !progEl) return;
+        if (localCi === -1) {
+          progEl.setAttribute('stroke-dasharray', '9999 9999');
+          return;
+        }
+        if (localCi < 0) {
+          progEl.setAttribute('stroke-dasharray', '0 9999');
+          return;
+        }
+        const tLen = pathEl.getTotalLength();
+        const stY = list[localCi].svgY;
+        const nxY = localCi < list.length - 1 ? list[localCi + 1].svgY : _JP_H;
+        const tgY = (stY + nxY) / 2;
+        let lo = 0, hi = tLen;
+        for (let k = 0; k < 28; k++) {
+          const m = (lo + hi) / 2;
+          pathEl.getPointAtLength(m).y < tgY ? (lo = m) : (hi = m);
+        }
+        progEl.setAttribute('stroke-dasharray', `${((lo + hi) / 2).toFixed(1)} 9999`);
+      } catch(e) {}
+    });
+  }
+  setPath('base', ci1, stages1);
+  setPath('adv', ci2, stages2);
+}
+
+function editTeacherJourneyStage(sid, stageIdx) {
+  haptic('light');
+  const label = document.getElementById('tj-label-' + stageIdx);
+  if (!label) return;
+  const students = loadStudents();
+  const s = students.find(x => x.id === sid);
+  if (!s) return;
+  const current = (s.journeyStages && s.journeyStages[stageIdx]) || _JP_STAGES[stageIdx].name;
+  label.outerHTML = `<input class="teacher-journey-label-input" id="tj-input-${stageIdx}" value="${_escHtml(current)}"
+    onblur="saveTeacherJourneyStage(${sid},${stageIdx},this.value)"
+    onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();} if(event.key==='Escape'){event.preventDefault();renderDetailAll(${sid});}">`;
+  requestAnimationFrame(() => {
+    const input = document.getElementById('tj-input-' + stageIdx);
+    if (input) { input.focus(); input.select(); }
+  });
+}
+
+function saveTeacherJourneyStage(sid, stageIdx, value) {
+  const students = loadStudents();
+  const s = students.find(x => x.id === sid);
+  if (!s) return;
+  if (!s.journeyStages) s.journeyStages = _JP_STAGES.map(st => st.name);
+  s.journeyStages[stageIdx] = String(value || '').trim() || _JP_STAGES[stageIdx].name;
+  saveStudents(students);
+  renderDetailAll(sid);
+  haptic('success');
+  showToast('단계 이름을 저장했어요');
+}
+
 // ── 주차 자동 계산 헬퍼 ─────────────────────────────────────
 function getComputedWeek(s) {
   const events = (s.events||[]).filter(e => e.week && e.date);
@@ -4180,6 +4415,7 @@ function renderProgressTab(s,months,pct) {
     return `<div style="padding:10px 12px;background:var(--bg);border-radius:10px;box-shadow:var(--sh-in-sm);"><p style="font-size:13px;color:var(--text);white-space:pre-wrap;">${nextEv.content}</p></div>`;
   })();
   document.getElementById('d-progress').innerHTML = `
+    <div class="dp-left">
     <div class="card" style="padding:14px;">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:${todayEv ? '14px' : '0'};">
         <div>
@@ -4210,7 +4446,6 @@ function renderProgressTab(s,months,pct) {
       <div class="metric"><p class="metric-label">배울 수 있는 곡</p><p class="metric-val">${s.songs.canLearn.length}<span>곡</span></p></div>
       <div class="metric"><p class="metric-label">연습 필요한 곡</p><p class="metric-val">${(s.songs.notYetBeginner||[]).length+(s.songs.notYetIntermediate||[]).length}<span>곡</span></p></div>
     </div>
-    <div id="cal-container"></div>
 
     <!-- 이번 주 과제 관리 -->
     <div class="card" style="margin-top:12px;">
@@ -4238,7 +4473,9 @@ function renderProgressTab(s,months,pct) {
           <button class="panel-btn panel-btn-submit" onclick="submitProgressHw(${s.id})">추가</button>
         </div>
       </div>
-    </div>`;
+    </div>
+    </div>
+    <div class="dp-right"><div id="cal-container"></div></div>`;
   buildProgressHwWeekGrid(week);
   renderCalendar(s);
 }
