@@ -542,6 +542,24 @@
     #sc-detail .cal-num { font-size: 14px; }
   }
 
+  /* ── 진도 탭: 넓은 화면(노트북/태블릿 가로)에서 5:5 — 왼쪽 레슨정보 / 오른쪽 달력 ── */
+  @media (min-width: 1000px) {
+    /* 양쪽 여백을 활용하도록 폭 확장 */
+    #sc-detail .content { max-width: 1120px; }
+    /* 진도 외 탭은 과도하게 퍼지지 않게 가운데 정렬 */
+    #sc-detail #d-homework, #sc-detail #d-songs, #sc-detail #d-journey { max-width: 720px; margin: 0 auto; }
+    /* 진도 탭을 2단 그리드(5:5)로 */
+    #d-progress { display: grid; grid-template-columns: 1fr 1fr; column-gap: 24px; row-gap: 14px; align-items: start; }
+    #d-progress > *:nth-child(1) { grid-column: 1; grid-row: 1; }            /* 수업 내용/저장 카드 → 좌 */
+    #d-progress > *:nth-child(2) { grid-column: 1; grid-row: 2; margin-bottom: 0; } /* 통계 → 좌 */
+    #d-progress > *:nth-child(4) { grid-column: 1; grid-row: 3; margin-top: 0; }    /* 이번 주 과제 → 좌 */
+    #d-progress > #cal-container { grid-column: 2; grid-row: 1 / span 3; }    /* 달력 → 우 */
+    /* 좁아진 왼쪽 열에 맞춰 통계는 2×2 */
+    #sc-detail .metrics.metrics-detail { grid-template-columns: 1fr 1fr; gap: 10px; }
+    /* 오른쪽 열 달력은 세로 여유가 있으니 셀 높이 살짝 키워 보기 좋게 */
+    #sc-detail .cal-day { min-height: 54px; }
+  }
+
   /* Student schedule fullscreen mode */
   #sc-student.sched-mode { overflow-y: hidden !important; }
   #sc-student.sched-mode .screen { max-width: 100%; width: 100%; height: 100%; min-height: 0; overflow: hidden; }
